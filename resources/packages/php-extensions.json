@@ -1,0 +1,18 @@
+﻿{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-16T00:00:00.0000000Z",
+  "phpPackages": [
+    { "id": "php-8.3.31", "line": "8.3", "toolset": "vs16" },
+    { "id": "php-8.4.22", "line": "8.4", "toolset": "vs17" }
+  ],
+  "builtin": [
+    "bcmath", "calendar", "ctype", "curl", "dom", "fileinfo", "filter", "gd", "hash", "iconv", "intl", "json", "mbstring", "mysqli", "openssl", "pdo", "pdo_mysql", "pdo_sqlite", "phar", "simplexml", "sockets", "sqlite3", "tokenizer", "xml", "zip"
+  ],
+  "extensions": [
+    { "id": "redis", "label": "Redis", "description": "Redis client extension for PHP.", "kind": "pecl", "pie": "pecl/redis", "dll": "php_redis.dll", "windowsSupported": true, "requiresAnyService": ["redis"], "downloads": { "php-8.3.31": "6.2.0", "php-8.4.22": "6.2.0" } },
+    { "id": "imagick", "label": "Imagick", "description": "ImageMagick bindings for PHP.", "kind": "pecl", "pie": "ext-imagick", "dll": "php_imagick.dll", "windowsSupported": true, "requiresAnyService": ["imagemagick"] },
+    { "id": "mongodb", "label": "MongoDB", "description": "MongoDB driver for PHP.", "kind": "pecl", "pie": "mongodb/mongodb-extension", "dll": "php_mongodb.dll", "windowsSupported": true, "requiresAnyService": ["mongodb"], "downloads": { "php-8.3.31": "1.20.0", "php-8.4.22": "1.20.0" } },
+    { "id": "memcached", "label": "Memcached", "description": "Memcached client extension for PHP.", "kind": "pecl", "pie": "php-memcached-dev/php-memcached", "dll": "php_memcached.dll", "windowsSupported": false, "requiresAnyService": ["memcached"] },
+    { "id": "xdebug", "label": "Xdebug", "description": "Debugger and profiler for PHP.", "kind": "pecl", "pie": "xdebug/xdebug", "dll": "php_xdebug.dll", "windowsSupported": true }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "starterKits": [
+    { "id": "none", "label": "None (plain Laravel)" },
+    { "id": "breeze", "label": "Breeze" },
+    { "id": "jetstream", "label": "Jetstream" }
+  ],
+  "stacks": [
+    { "id": "inertia", "label": "Inertia (Vue)" },
+    { "id": "livewire", "label": "Livewire (Blade)" },
+    { "id": "api", "label": "API only" }
+  ],
+  "databaseEngines": [
+    { "id": "mysql", "label": "MySQL" },
+    { "id": "mariadb", "label": "MariaDB" },
+    { "id": "postgresql", "label": "PostgreSQL" },
+    { "id": "sqlite", "label": "SQLite" }
+  ]
+}

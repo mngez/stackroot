@@ -1,0 +1,209 @@
+<Window x:Class="Stackroot.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:Stackroot.App.Views"
+        Title="Stackroot"
+        Width="1200"
+        Height="760"
+        MinWidth="980"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource StackrootWindowBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource StackrootSidebarBrush}">
+            <DockPanel Margin="12">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,10,8,14"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Text="Stackroot" />
+
+                <ListBox DockPanel.Dock="Bottom"
+                         ItemsSource="{Binding BottomNavigationItems}"
+                         SelectedValuePath="Key"
+                         SelectedValue="{Binding SelectedRoute, Mode=OneWay}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnNavigationItemPreviewMouseDown" />
+                            <Setter Property="Padding" Value="10,8" />
+                            <Setter Property="Margin" Value="0,2,0,2" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="ItemBorder"
+                                                Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="8">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource StackrootCardHoverBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="#223047" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                           FontSize="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding IconGlyph}" />
+                                <TextBlock Text="{Binding Title}"
+                                           FontSize="14"
+                                           FontWeight="Medium"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border DockPanel.Dock="Bottom"
+                        Margin="0,8,0,8"
+                        BorderBrush="{StaticResource StackrootBorderBrush}"
+                        BorderThickness="0,1,0,0" />
+
+                <ListBox ItemsSource="{Binding MainNavigationItems}"
+                         SelectedValuePath="Key"
+                         SelectedValue="{Binding SelectedRoute, Mode=OneWay}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnNavigationItemPreviewMouseDown" />
+                            <Setter Property="Padding" Value="10,8" />
+                            <Setter Property="Margin" Value="0,2,0,2" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="ItemBorder"
+                                                Padding="{TemplateBinding Padding}"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="8">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource StackrootCardHoverBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ItemBorder" Property="Background" Value="#223047" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Margin" Value="0" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFeaturedSite}" Value="True">
+                                                <Setter Property="Margin" Value="14,0,0,0" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock x:Name="IconText"
+                                           FontSize="16"
+                                           Margin="0,0,10,0"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding IconGlyph}" />
+                                <TextBlock Text="{Binding Title}"
+                                           FontSize="14"
+                                           FontWeight="Medium"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsFeaturedSite}" Value="True">
+                                    <Setter TargetName="IconText" Property="FontFamily" Value="{StaticResource StackrootIconFont}" />
+                                    <Setter TargetName="IconText" Property="FontSize" Value="15" />
+                                    <Setter TargetName="IconText" Property="Foreground" Value="{StaticResource StackrootWarnBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsFeaturedSite}" Value="False">
+                                    <Setter TargetName="IconText" Property="FontFamily" Value="{StaticResource StackrootIconFont}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Column="1" Background="{StaticResource StackrootWindowBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Height="48"
+                        BorderBrush="{StaticResource StackrootBorderBrush}"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0,0,16,0">
+                        <views:SessionActivityTray DataContext="{Binding ActivityTray}"
+                                                   Margin="0,0,8,0" />
+                        <views:DownloadTray DataContext="{Binding DownloadTray}" />
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer x:Name="MainContentScrollViewer"
+                              Grid.Row="1"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <ContentControl Content="{Binding CurrentPage}" />
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Grid Grid.ColumnSpan="2">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsShutdownOverlayVisible}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+
+            <Border Background="#CC020617">
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <TextBlock FontSize="24"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Text="{Binding OverlayTitle}" />
+                    <TextBlock Margin="0,8,0,0"
+                               HorizontalAlignment="Center"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="{Binding ShutdownMessage}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

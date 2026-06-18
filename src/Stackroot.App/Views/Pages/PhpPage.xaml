@@ -1,0 +1,270 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.PhpPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel>
+                <TextBlock Text="PHP"
+                           FontSize="28"
+                           FontWeight="SemiBold" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Manage installed PHP versions and FastCGI runtime" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Style="{StaticResource StackrootPageActionsStyle}">
+                <Button Style="{StaticResource StackrootIconButtonStyle}"
+                        Margin="0,0,10,0"
+                        ToolTip="PHP runtime settings"
+                        Command="{Binding OpenRuntimeSettingsCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="14"
+                               Text="&#xE713;" />
+                </Button>
+                <Button MinWidth="100"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <controls:DismissibleNoticeBanner Grid.Row="1"
+                                          Margin="0,12,0,0"
+                                          Text="{Binding StatusMessage}"
+                                          DismissCommand="{Binding DismissStatusMessageCommand}" />
+
+        <!-- Refreshing indicator -->
+        <Border Grid.Row="2"
+                Margin="0,14,0,0"
+                Padding="24"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding IsRefreshing, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock FontSize="16"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Text="Loading PHP data…" />
+                <ProgressBar Margin="0,14,0,0"
+                             Width="220"
+                             Height="4"
+                             IsIndeterminate="True"
+                             Foreground="{StaticResource StackrootAccentBrush}"
+                             Background="#223047"
+                             BorderThickness="0" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3"
+                Margin="0,18,0,0"
+                Padding="12"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          Margin="0,0,10,0"
+                          Padding="8,4"
+                          ItemsSource="{Binding CatalogPhpPackages}"
+                          DisplayMemberPath="Id"
+                          SelectedValuePath="Id"
+                          SelectedValue="{Binding SelectedCatalogPackageId}" />
+
+                <Button Grid.Column="1"
+                        Width="100"
+                        Margin="0,0,10,0"
+                        Content="Install"
+                        Command="{Binding InstallCommand}" />
+
+                <Button Grid.Column="2"
+                        Width="140"
+                        Margin="0,0,10,0"
+                        Content="Ensure FastCGI"
+                        Command="{Binding EnsureFastCgiCommand}" />
+            </Grid>
+        </Border>
+
+        <ItemsControl Grid.Row="4"
+                      Margin="0,14,0,0"
+                      ItemsSource="{Binding InstalledVersions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,10"
+                                Padding="14"
+                                Background="{StaticResource StackrootCardBrush}"
+                                BorderBrush="{Binding RowBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="220" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding Id}" />
+                                        <Border Margin="10,0,0,0"
+                                                Padding="8,2"
+                                                VerticalAlignment="Center"
+                                                Background="#1A4CAE8C"
+                                                CornerRadius="4"
+                                                Visibility="{Binding ShowActiveBadge, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock FontSize="11"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                       Text="Active" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Margin="0,4,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding Version, StringFormat=Version: {0}}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding InstallPath}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <ProgressBar Margin="0,8,0,0"
+                                                 Height="3"
+                                                 IsIndeterminate="True"
+                                                 Visibility="{Binding ShowRemovingProgress, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+
+                                <Border Grid.Column="1"
+                                        Margin="0,0,16,0"
+                                        Padding="6,3"
+                                        VerticalAlignment="Center"
+                                        Background="{Binding StatusBackgroundBrush}"
+                                        CornerRadius="4">
+                                    <TextBlock FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{Binding StatusForegroundBrush}"
+                                               Text="{Binding FastCgiSummary}" />
+                                </Border>
+
+                                <StackPanel Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal">
+                                    <Button Width="88"
+                                            Margin="0,0,6,0"
+                                            Content="Settings"
+                                            IsEnabled="{Binding CanInteract}"
+                                            Command="{Binding DataContext.OpenVersionSettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button Width="96"
+                                            Margin="0,0,6,0"
+                                            Content="Extensions"
+                                            IsEnabled="{Binding CanInteract}"
+                                            Command="{Binding DataContext.OpenExtensionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button Width="88"
+                                            Margin="0,0,6,0"
+                                            Content="{Binding ActiveButtonLabel}"
+                                            IsEnabled="{Binding CanSetActive}"
+                                            Command="{Binding DataContext.SetActiveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button MinWidth="88"
+                                            Content="{Binding UninstallButtonLabel}"
+                                            IsEnabled="{Binding CanInteract}"
+                                            Command="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        <Border Grid.Row="5"
+                Margin="0,14,0,24"
+                Padding="14"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowPhpInstallQueue, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <DockPanel LastChildFill="False">
+                    <TextBlock FontWeight="SemiBold"
+                               Text="Installing PHP versions" />
+                    <TextBlock DockPanel.Dock="Right"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               FontSize="12"
+                               Text="{Binding ActivePhpInstallCount, StringFormat={}{0} active}" />
+                </DockPanel>
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="Installs run in the background. You can queue another version from the list above." />
+
+                <ItemsControl Margin="0,10,0,0"
+                              ItemsSource="{Binding PhpInstallQueue}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8"
+                                    Padding="10"
+                                    Background="#121A24"
+                                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Text="{Binding DisplayName}" />
+                                        <StackPanel DockPanel.Dock="Right"
+                                                    Orientation="Horizontal">
+                                            <TextBlock Margin="0,0,8,0"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{Binding PhaseColor}"
+                                                       Text="{Binding PhaseLabel}" />
+                                            <Button Width="56"
+                                                    Height="24"
+                                                    Padding="4,0"
+                                                    FontSize="11"
+                                                    Content="Cancel"
+                                                    Command="{Binding CancelCommand}"
+                                                    Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <ProgressBar Margin="0,8,0,0"
+                                                 Height="5"
+                                                 Maximum="100"
+                                                 Value="{Binding Percent, Mode=OneWay}"
+                                                 Visibility="{Binding ShowProgress, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               FontSize="12"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding Message}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

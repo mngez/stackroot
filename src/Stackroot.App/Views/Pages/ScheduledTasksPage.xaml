@@ -1,0 +1,110 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.ScheduledTasksPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel>
+                <TextBlock Text="Scheduled Tasks"
+                           FontSize="28" FontWeight="SemiBold" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Cron-style scheduled commands — runs while Stackroot is open." />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Style="{StaticResource StackrootPageActionsStyle}">
+                <Button MinWidth="100" Content="+ Add"
+                        Margin="0,0,8,0"
+                        Command="{Binding AddCommand}" />
+                <Button MinWidth="100" Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Task list -->
+        <ScrollViewer Grid.Row="1" Margin="0,14,0,24" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Tasks}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,6" Padding="10,8"
+                                Background="{StaticResource StackrootCardBrush}"
+                                BorderBrush="{StaticResource StackrootBorderBrush}"
+                                BorderThickness="1" CornerRadius="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Grid.Column="0" Margin="0,0,10,0"
+                                          VerticalAlignment="Center"
+                                          IsChecked="{Binding IsEnabled}" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <WrapPanel>
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
+                                        <TextBlock Margin="8,0,0,0" FontFamily="Consolas" FontSize="12"
+                                                   Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                   Text="{Binding CronExpression}" />
+                                        <TextBlock Margin="6,0,0,0" FontSize="11"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{Binding CronDescription}" />
+                                    </WrapPanel>
+                                    <WrapPanel Margin="0,2,0,0">
+                                        <TextBlock FontSize="11"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   FontFamily="Consolas"
+                                                   Text="{Binding Command}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Margin="12,0,0,0" FontSize="11"
+                                                   Foreground="{Binding StatusColor}"
+                                                   Text="{Binding StatusDisplay}" />
+                                        <TextBlock Margin="6,0,0,0" FontSize="11"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{Binding LastRunDisplay, StringFormat=Last: {0}}" />
+                                        <TextBlock Margin="6,0,0,0" FontSize="11"
+                                                   Foreground="{StaticResource StackrootWarnBrush}"
+                                                   Text="{Binding Model.LastError}"
+                                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+                                    </WrapPanel>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                            VerticalAlignment="Center" Margin="8,0,0,0">
+                                    <Button Width="30" Height="30" Padding="0"
+                                            ToolTip="Run now"
+                                            Style="{StaticResource StackrootIconButtonStyle}"
+                                            Command="{Binding RunNowCommand}"
+                                            Content="{Binding RunButtonText}" />
+                                    <Button Content="Log" Width="36" Height="30" Padding="2"
+                                            Margin="2,0,0,0" FontSize="11"
+                                            ToolTip="View last run log"
+                                            Command="{Binding ViewLogCommand}" />
+                                    <Button Content="✎" Width="30" Height="30" Padding="0"
+                                            Margin="2,0,0,0"
+                                            ToolTip="Edit"
+                                            Style="{StaticResource StackrootIconButtonStyle}"
+                                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                    <Button Content="✕" Width="30" Height="30" Padding="0"
+                                            Margin="2,0,0,0"
+                                            ToolTip="Delete"
+                                            Style="{StaticResource StackrootStopButtonStyle}"
+                                            Command="{Binding DeleteCommand}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

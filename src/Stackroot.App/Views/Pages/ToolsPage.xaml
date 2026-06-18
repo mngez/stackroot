@@ -1,0 +1,242 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.ToolsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
+             xmlns:viewmodels="clr-namespace:Stackroot.App.ViewModels">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel>
+                <TextBlock Text="Tools"
+                           FontSize="28"
+                           FontWeight="SemiBold" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="CLI utilities, admin UIs — install and update from Stackroot." />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Style="{StaticResource StackrootPageActionsStyle}">
+                <Button MinWidth="100"
+                        Margin="0,0,10,0"
+                        Content="Check updates"
+                        Command="{Binding CheckUpdatesCommand}" />
+                <Button MinWidth="100"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <controls:DismissibleNoticeBanner Grid.Row="1"
+                                          Margin="0,12,0,0"
+                                          Text="{Binding Message}"
+                                          DismissCommand="{Binding DismissMessageCommand}" />
+
+        <Border Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="10,8"
+                Background="#121A26"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Width="24" Height="24"
+                        Padding="0"
+                        ToolTip="Dismiss"
+                        Style="{StaticResource StackrootIconButtonStyle}"
+                        Command="{Binding DismissUpdatesCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="11"
+                               Text="&#xE711;" />
+                </Button>
+                <TextBlock Text="{Binding UpdatesMessage}"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap" />
+            </DockPanel>
+        </Border>
+
+        <StackPanel Grid.Row="2"
+                    Margin="0,20,0,24">
+
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,12"
+                                Padding="12"
+                                Background="{StaticResource StackrootCardBrush}"
+                                BorderBrush="{StaticResource StackrootBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <StackPanel>
+                                <TextBlock FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding Title}" />
+                                <ItemsControl Margin="0,10,0,0"
+                                              ItemsSource="{Binding Items}">
+                                    <ItemsControl.Resources>
+                                        <DataTemplate DataType="{x:Type viewmodels:ServicePackageToolCardViewModel}">
+                                            <Border Margin="0,0,0,8"
+                                                    Padding="10"
+                                                    Background="{Binding RowBackgroundBrush}"
+                                                    BorderBrush="{Binding RowBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8">
+                                                <Grid Margin="4,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" MinWidth="100" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid Grid.Column="0" Width="16" Height="16"
+                                                          Margin="0,0,8,0" VerticalAlignment="Center">
+                                                        <Ellipse Width="10" Height="10"
+                                                                 Fill="{Binding IndicatorColor}" />
+                                                        <Ellipse Width="16" Height="16"
+                                                                 Stroke="{Binding IndicatorColor}"
+                                                                 StrokeThickness="1" Fill="Transparent"
+                                                                 Opacity="0.35" />
+                                                    </Grid>
+                                                    <StackPanel Grid.Column="1" Margin="0,0,32,0" VerticalAlignment="Center">
+                                                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="{Binding Name}" />
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                   Text="{Binding Hint}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding ShowHint, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                   Text="{Binding VersionLabel, StringFormat=Version: {0}}" />
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootWarnBrush}"
+                                                                   FontSize="12" Text="{Binding StatusNote}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding ShowStatusNote, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                                   FontSize="11" Text="{Binding InstallMessage}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding HasInstallMessage, Converter={StaticResource BoolToVis}}" />
+                                                        <ProgressBar Margin="0,8,0,0" Height="5" Maximum="100"
+                                                                     Value="{Binding InstallPercent, Mode=OneWay}"
+                                                                     Foreground="{StaticResource StackrootAccentBrush}"
+                                                                     Background="#223047" BorderThickness="0"
+                                                                     Visibility="{Binding ShowInstallProgress, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Width="36" Height="36" Margin="0,0,8,0"
+                                                                Style="{StaticResource StackrootPrimaryIconButtonStyle}"
+                                                                ToolTip="Install package" Command="{Binding InstallCommand}"
+                                                                Visibility="{Binding ShowInstallButton, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE896;" />
+                                                        </Button>
+                                                        <Button Width="36" Height="36"
+                                                                Style="{StaticResource StackrootIconButtonStyle}"
+                                                                ToolTip="Package versions" Command="{Binding VersionsCommand}"
+                                                                Visibility="{Binding ShowVersionsButton, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8FD;" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                        <DataTemplate DataType="{x:Type viewmodels:AdminUiToolViewModel}">
+                                            <Border Margin="0,0,0,8" Padding="10"
+                                                    Background="{Binding RowBackgroundBrush}"
+                                                    BorderBrush="{Binding RowBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="8">
+                                                <Grid Margin="4,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" MinWidth="100" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid Grid.Column="0" Width="16" Height="16"
+                                                          Margin="0,0,8,0" VerticalAlignment="Center">
+                                                        <Ellipse Width="10" Height="10"
+                                                                 Fill="{Binding IndicatorColor}" />
+                                                        <Ellipse Width="16" Height="16"
+                                                                 Stroke="{Binding IndicatorColor}"
+                                                                 StrokeThickness="1" Fill="Transparent"
+                                                                 Opacity="0.35" />
+                                                    </Grid>
+                                                    <StackPanel Grid.Column="1" Margin="0,0,32,0" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock FontSize="14" FontWeight="SemiBold" Text="{Binding Name}" />
+                                                            <Border Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center"
+                                                                    Background="#223047" CornerRadius="4"
+                                                                    Visibility="{Binding ShowBadge, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock FontSize="11" Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                                           Text="{Binding BadgeText}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                   Text="{Binding Description}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding ShowDescription, Converter={StaticResource BoolToVis}}" />
+                                                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                   Text="{Binding DetailsText}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding HasDetailsText, Converter={StaticResource BoolToVis}}" />
+                                                        <ProgressBar Margin="0,8,0,0" Height="5" IsIndeterminate="True"
+                                                                     Foreground="{StaticResource StackrootAccentBrush}"
+                                                                     Background="#223047" BorderThickness="0"
+                                                                     Visibility="{Binding ShowInstallProgress, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                        <TextBlock Margin="0,0,0,6" MaxWidth="280" HorizontalAlignment="Right"
+                                                                   FontSize="11" Foreground="{Binding StatusColor}"
+                                                                   Text="{Binding Message}" TextWrapping="Wrap"
+                                                                   Visibility="{Binding HasMessage, Converter={StaticResource BoolToVis}}" />
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Border Margin="0,0,12,0" Padding="8,3" VerticalAlignment="Center"
+                                                                    Background="#1A4CAE8C" CornerRadius="4"
+                                                                    Visibility="{Binding ShowLiveBadge, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock FontSize="11" FontWeight="Bold"
+                                                                           Foreground="{StaticResource StackrootAccentTextBrush}" Text="LIVE" />
+                                                            </Border>
+                                                            <TextBlock MinWidth="88" MaxWidth="140" Margin="0,0,16,0"
+                                                                       VerticalAlignment="Center" HorizontalAlignment="Right"
+                                                                       FontWeight="SemiBold" Foreground="{Binding StatusColor}"
+                                                                       Text="{Binding StatusText}" TextAlignment="Right"
+                                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText}" />
+                                                            <Button Width="36" Height="36" Margin="0,0,8,0"
+                                                                    Style="{StaticResource StackrootIconButtonStyle}"
+                                                                    ToolTip="Settings" Command="{Binding SettingsCommand}">
+                                                                <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE713;" />
+                                                            </Button>
+                                                            <Button Width="36" Height="36" Margin="0,0,8,0"
+                                                                    Style="{StaticResource StackrootPrimaryIconButtonStyle}"
+                                                                    ToolTip="Install package" Command="{Binding InstallCommand}"
+                                                                    Visibility="{Binding ShowInstallButton, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE896;" />
+                                                            </Button>
+                                                            <Button Width="36" Height="36" Margin="0,0,8,0"
+                                                                    Style="{StaticResource StackrootIconButtonStyle}"
+                                                                    ToolTip="Package versions" Command="{Binding VersionsCommand}"
+                                                                    Visibility="{Binding ShowVersionsButton, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8FD;" />
+                                                            </Button>
+                                                            <Button Width="36" Height="36"
+                                                                    Style="{StaticResource StackrootIconButtonStyle}"
+                                                                    ToolTip="Open in browser" Command="{Binding OpenCommand}"
+                                                                    Visibility="{Binding ShowOpenButton, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8A7;" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.Resources>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </Grid>
+</UserControl>

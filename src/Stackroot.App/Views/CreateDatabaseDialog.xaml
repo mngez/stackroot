@@ -1,0 +1,85 @@
+<Window x:Class="Stackroot.App.Views.CreateDatabaseDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
+        Title="Create database"
+        Width="480"
+        MinWidth="440"
+        SizeToContent="Height"
+        MaxHeight="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="Create database" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Register a local SQL database for development."
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <Border Padding="10"
+                    Background="#1AE9BD5B"
+                    BorderBrush="#52E9BD5B"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                <TextBlock Foreground="{StaticResource StackrootWarnBrush}"
+                           Text="{Binding ErrorMessage}"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <TextBlock Margin="0,12,0,6"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Database name" />
+            <TextBox Padding="10,6"
+                     Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,6"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Engine" />
+            <ComboBox Padding="8,4"
+                      ItemsSource="{Binding Engines}"
+                      SelectedItem="{Binding SelectedEngine}" />
+
+            <TextBlock Margin="0,12,0,6"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Link to site (optional)" />
+            <ComboBox Padding="8,4"
+                      ItemsSource="{Binding Sites}"
+                      DisplayMemberPath="Label"
+                      SelectedItem="{Binding SelectedSite}" />
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,18,0,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,8,0"
+                        Content="Cancel"
+                        Command="{Binding CloseCommand}" />
+                <Button Width="100"
+                        Content="Create"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding CreateCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <controls:OperationBusyOverlay Grid.RowSpan="3" />
+    </Grid>
+</Window>

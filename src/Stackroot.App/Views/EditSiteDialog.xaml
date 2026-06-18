@@ -1,0 +1,258 @@
+<Window x:Class="Stackroot.App.Views.EditSiteDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+        Title="Edit web domain"
+        Width="580"
+        MinWidth="540"
+        SizeToContent="Height"
+        MaxHeight="860"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="Edit web domain" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Update template, PHP backend, HTTPS behavior, and dev proxies."
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1"
+                      Margin="0,16,0,0"
+                      MaxHeight="620"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Padding="10"
+                        Background="#1AE9BD5B"
+                        BorderBrush="#52E9BD5B"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Foreground="{StaticResource StackrootWarnBrush}"
+                               Text="{Binding ErrorMessage}"
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <TextBlock Margin="0,12,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Domain" />
+                <TextBlock FontFamily="Consolas" Text="{Binding Domain}" />
+                <TextBlock Margin="0,2,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Domain cannot be changed — delete and re-add to rename." />
+
+                <TextBlock Margin="0,12,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Folder" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Padding="10,6"
+                             FontFamily="Consolas"
+                             Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Padding="12,6"
+                            Command="{Binding BrowseFolderCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="16"
+                                   Height="16"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   Source="{x:Static helpers:StackrootImages.FolderIcon}"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="Browse…" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <TextBlock Margin="0,4,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="nginx document root follows this folder and the template doc root."
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,16,0,8"
+                           FontWeight="SemiBold"
+                           Text="Template" />
+                <ItemsControl ItemsSource="{Binding TemplateCards}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="3" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="0,0,8,8"
+                                    Padding="10"
+                                    HorizontalContentAlignment="Left"
+                                    Command="{Binding SelectCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource StackrootButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource StackrootAccentBrush}" />
+                                                <Setter Property="Background" Value="#223047" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding DocumentRoot, StringFormat=doc root: {0}}" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Margin="0,8,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Site name" />
+                <TextBox Padding="10,6"
+                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Margin="0,12,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Backend (PHP)" />
+                <ComboBox Padding="8,4"
+                          ItemsSource="{Binding PhpVersions}"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Id"
+                          SelectedValue="{Binding SelectedPhpVersionId}"
+                          IsEnabled="{Binding PhpSelectorEnabled}" />
+
+                <TextBlock Margin="0,12,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Document root" />
+                <TextBlock FontFamily="Consolas"
+                           Text="{Binding DocumentRootLabel}" />
+
+                <CheckBox Margin="0,14,0,0"
+                          Content="Enabled (nginx vhost + hosts entry)"
+                          IsChecked="{Binding Enabled}" />
+                <CheckBox Margin="0,10,0,0"
+                          Content="Force HTTPS (redirect HTTP → HTTPS)"
+                          IsChecked="{Binding ForceHttps}" />
+                <TextBlock Margin="0,4,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="When off, the site is served over HTTP only — avoids browser auto-upgrade to HTTPS."
+                           TextWrapping="Wrap" />
+
+                <DockPanel Margin="0,18,0,8" LastChildFill="False">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Dev proxies" />
+                        <TextBlock Margin="0,4,0,0"
+                                   FontSize="12"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   Text="{Binding EnabledProxyCount, StringFormat={}{0} active}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button DockPanel.Dock="Right"
+                            Padding="10,4"
+                            Content="Add proxy"
+                            Command="{Binding AddProxyCommand}" />
+                </DockPanel>
+
+                <TextBlock Margin="0,0,0,8"
+                           FontSize="12"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="No proxies yet — add one to route e.g. /vite/ to a local dev server."
+                           Visibility="{Binding ShowEmptyProxies, Converter={StaticResource BoolToVis}}" />
+
+                <ItemsControl ItemsSource="{Binding DevProxies}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander Margin="0,0,0,10"
+                                      Padding="0"
+                                      Background="{StaticResource StackrootCardBrush}"
+                                      BorderBrush="{StaticResource StackrootBorderBrush}"
+                                      BorderThickness="1"
+                                      IsExpanded="{Binding IsExpanded}">
+                                <Expander.Header>
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock DockPanel.Dock="Right"
+                                                   Margin="12,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{Binding StatusHint}" />
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Text="{Binding HeaderText}" />
+                                    </DockPanel>
+                                </Expander.Header>
+                                <StackPanel Margin="12,0,12,12">
+                                    <DockPanel Margin="0,0,0,8" LastChildFill="False">
+                                        <CheckBox DockPanel.Dock="Left"
+                                                  Content="Enabled"
+                                                  IsChecked="{Binding Enabled}" />
+                                        <Button DockPanel.Dock="Right"
+                                                Padding="8,4"
+                                                Style="{StaticResource StackrootStopButtonStyle}"
+                                                Content="Remove"
+                                                Command="{Binding RemoveCommand}" />
+                                    </DockPanel>
+                                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="Name" />
+                                    <TextBox Margin="0,4,0,0"
+                                             Padding="8,4"
+                                             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Location path" />
+                                    <TextBox Margin="0,4,0,0"
+                                             Padding="8,4"
+                                             Text="{Binding LocationPath, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Target URL" />
+                                    <TextBox Margin="0,4,0,0"
+                                             Padding="8,4"
+                                             Text="{Binding TargetUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                    <CheckBox Margin="0,8,0,0"
+                                              Content="WebSocket support"
+                                              IsChecked="{Binding Websocket}" />
+                                </StackPanel>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <DockPanel Grid.Row="2" Margin="0,18,0,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,8,0"
+                        Content="Cancel"
+                        Command="{Binding CloseCommand}" />
+                <Button Width="88"
+                        Content="Save"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

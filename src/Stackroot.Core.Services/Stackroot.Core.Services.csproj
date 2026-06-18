@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Catalog\Stackroot.Core.Catalog.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Nginx\Stackroot.Core.Nginx.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Sites\Stackroot.Core.Sites.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Databases\Stackroot.Core.Databases.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Windows\Stackroot.Core.Windows.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" Version="1.60.0" />
+  </ItemGroup>
+</Project>

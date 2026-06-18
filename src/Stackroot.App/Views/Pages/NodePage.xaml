@@ -1,0 +1,309 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.NodePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="NodeMetaBadgeStyle" TargetType="Border">
+            <Setter Property="Background" Value="#121A26" />
+            <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel>
+                <TextBlock Text="Node"
+                           FontSize="28"
+                           FontWeight="SemiBold" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Install nvm-windows, add Node versions, and switch the active runtime" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Style="{StaticResource StackrootPageActionsStyle}">
+                <Button Style="{StaticResource StackrootIconButtonStyle}"
+                        Margin="0,0,10,0"
+                        ToolTip="Node settings"
+                        Command="{Binding OpenSettingsCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="14"
+                               Text="&#xE713;" />
+                </Button>
+                <Button MinWidth="100"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <controls:DismissibleNoticeBanner Grid.Row="1"
+                                          Margin="0,12,0,0"
+                                          Text="{Binding StatusMessage}"
+                                          DismissCommand="{Binding DismissStatusMessageCommand}" />
+
+        <Border Grid.Row="2"
+                Margin="0,18,0,0"
+                Padding="20"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowNvmSetup, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock FontSize="18"
+                           FontWeight="SemiBold"
+                           Text="Install nvm-windows first" />
+                <TextBlock Margin="0,8,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Stackroot uses nvm-windows to download and switch Node versions. Nothing else on this page works until nvm is installed."
+                           TextWrapping="Wrap" />
+                <Button Margin="0,16,0,0"
+                        HorizontalAlignment="Left"
+                        MinWidth="160"
+                        Padding="16,8"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Content="Install nvm-windows"
+                        Command="{Binding InstallNvmCommand}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2"
+                Margin="0,14,0,0"
+                Padding="14"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowNodeSections, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <DockPanel LastChildFill="False">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{Binding NvmVersionLabel}" />
+                        <StackPanel Margin="0,8,0,0"
+                                    Orientation="Horizontal">
+                            <Border Style="{StaticResource NodeMetaBadgeStyle}">
+                                <TextBlock FontSize="11"
+                                           Text="{Binding ActiveNodeLabel, StringFormat=Active Node: {0}}" />
+                            </Border>
+                            <Border Margin="8,0,0,0"
+                                    Style="{StaticResource NodeMetaBadgeStyle}"
+                                    Visibility="{Binding ShowNvmPackageLabel, Converter={StaticResource BoolToVis}}">
+                                <TextBlock FontSize="11"
+                                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                                           Text="{Binding NvmPackageLabel}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontFamily="Consolas"
+                                   FontSize="11"
+                                   Text="{Binding NodeExecutablePath}"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding NodeExecutablePath}" />
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal">
+                        <Button Margin="0,0,8,0"
+                                MinWidth="120"
+                                Content="{Binding UpdateNvmLabel}"
+                                Command="{Binding UpdateNvmCommand}"
+                                Visibility="{Binding CanUpdateNvm, Converter={StaticResource BoolToVis}}" />
+                        <Button MinWidth="88"
+                                Style="{StaticResource StackrootInlineButtonStyle}"
+                                Content="Remove nvm"
+                                Command="{Binding UninstallNvmCommand}" />
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="4"
+                Margin="0,14,0,0"
+                Padding="14"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowNodeSections, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock FontWeight="SemiBold"
+                           Text="Install Node version" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="Pick a version from the list, or type a custom version (the dropdown clears when you start typing)."
+                           TextWrapping="Wrap" />
+
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Column="0"
+                              Margin="0,0,8,0"
+                              Padding="8,4"
+                              IsEditable="False"
+                              ItemsSource="{Binding InstallVersionOptions}"
+                              SelectedItem="{Binding SelectedInstallVersion, Mode=TwoWay}" />
+
+                    <TextBox Grid.Column="1"
+                             Margin="0,0,8,0"
+                             Padding="10,6"
+                             FontFamily="Consolas"
+                             ToolTip="Optional custom semver"
+                             Text="{Binding CustomVersionInput, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Column="2"
+                            MinWidth="100"
+                            Style="{StaticResource StackrootPrimaryButtonStyle}"
+                            Content="Install"
+                            Command="{Binding InstallNodeCommand}" />
+
+                    <ProgressBar Grid.Column="3"
+                                 Margin="12,0,0,0"
+                                 Height="4"
+                                 VerticalAlignment="Center"
+                                 IsIndeterminate="True"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                </Grid>
+
+                <TextBlock Margin="0,14,0,6"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Quick install (downloads and activates immediately)" />
+
+                <ItemsControl ItemsSource="{Binding RecommendedVersions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button MinWidth="108"
+                                    Margin="0,0,6,6"
+                                    Padding="10,4"
+                                    Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
+                                    ToolTip="Download, install, and activate this Node version"
+                                    Command="{Binding DataContext.InstallRecommendedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <TextBlock Text="{Binding StringFormat=Install {0}}" />
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="5"
+                    Margin="0,14,0,24"
+                    Visibility="{Binding ShowNodeSections, Converter={StaticResource BoolToVis}}">
+            <TextBlock FontWeight="SemiBold"
+                       Text="Installed versions" />
+
+            <Border Margin="0,10,0,0"
+                    Padding="16"
+                    Background="{StaticResource StackrootCardBrush}"
+                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Visibility="{Binding ShowEmptyInstalledMessage, Converter={StaticResource BoolToVis}}">
+                <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="No Node versions installed yet. Use Install above or a quick-install chip." />
+            </Border>
+
+            <ItemsControl Margin="0,10,0,0"
+                          ItemsSource="{Binding InstalledVersions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,8"
+                                Padding="14"
+                                Background="{StaticResource StackrootCardBrush}"
+                                BorderBrush="{Binding RowBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="180" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding Version, StringFormat=Node {0}}" />
+                                        <Border Margin="10,0,0,0"
+                                                Padding="8,2"
+                                                VerticalAlignment="Center"
+                                                Background="#1A4CAE8C"
+                                                CornerRadius="4"
+                                                Visibility="{Binding ShowActiveBadge, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock FontSize="11"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                       Text="Active" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Border Margin="0,8,0,0"
+                                            Padding="6,3"
+                                            HorizontalAlignment="Left"
+                                            Background="{Binding StatusBackgroundBrush}"
+                                            CornerRadius="4">
+                                        <TextBlock FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{Binding StatusForegroundBrush}"
+                                                   Text="{Binding StatusLabel}" />
+                                    </Border>
+                                    <ProgressBar Margin="0,8,0,0"
+                                                 Height="3"
+                                                 IsIndeterminate="True"
+                                                 Visibility="{Binding IsRemoving, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal">
+                                    <Button Margin="0,0,6,0"
+                                            Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
+                                            Content="Activate"
+                                            IsEnabled="{Binding CanInteract}"
+                                            Command="{Binding DataContext.ActivateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Version}"
+                                            Visibility="{Binding ShowActivateButton, Converter={StaticResource BoolToVis}}" />
+                                    <Button MinWidth="88"
+                                            Style="{StaticResource StackrootInlineButtonStyle}"
+                                            Content="{Binding UninstallButtonLabel}"
+                                            IsEnabled="{Binding CanInteract}"
+                                            Command="{Binding DataContext.UninstallNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Version}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Grid>
+</UserControl>

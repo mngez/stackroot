@@ -1,0 +1,88 @@
+<Window x:Class="Stackroot.App.Views.PhpRedisAdminSettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="phpRedisAdmin settings"
+        Width="460"
+        MinWidth="420"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Grid Margin="20" ClipToBounds="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="phpRedisAdmin settings" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Connects to Redis using host/port from Services → Redis."
+                       TextWrapping="Wrap" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       TextWrapping="Wrap">
+                <Run Text="App domain: " />
+                <Run FontWeight="SemiBold" Text="{Binding AppDomain, Mode=OneWay}" />
+            </TextBlock>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <CheckBox Content="Enabled"
+                      IsChecked="{Binding Enabled}" />
+
+            <TextBlock Margin="0,16,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="URL path" />
+            <TextBox Margin="0,6,0,0"
+                     Padding="10,6"
+                     Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       FontSize="12"
+                       Text="{Binding PreviewUrl, StringFormat=Preview: {0}}"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Margin="0,16,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="PHP version" />
+            <ComboBox Margin="0,6,0,0"
+                      Padding="8,6"
+                      ItemsSource="{Binding PhpVersions}"
+                      SelectedValuePath="Id"
+                      DisplayMemberPath="Label"
+                      SelectedValue="{Binding SelectedPhpVersionId}" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       FontSize="12"
+                       Text="{Binding PhpRequirement, StringFormat=Requires {0} — click Save to apply}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Margin="0,18,0,0">
+            <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                       FontSize="12"
+                       MinHeight="16"
+                       Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap" />
+            <DockPanel Margin="0,12,0,0" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Width="88"
+                            Margin="0,0,8,0"
+                            Content="Close"
+                            Command="{Binding CloseCommand}" />
+                    <Button Width="88"
+                            Content="Save"
+                            Style="{StaticResource StackrootPrimaryButtonStyle}"
+                            Command="{Binding SaveCommand}" />
+                </StackPanel>
+            </DockPanel>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,29 @@
+<UserControl x:Class="Stackroot.App.Views.Controls.DismissibleNoticeBanner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+             x:Name="Root">
+    <UserControl.Resources>
+        <helpers:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis" />
+    </UserControl.Resources>
+
+    <Border Padding="10"
+            Background="#1A4A6A90"
+            BorderBrush="#3A6A90"
+            BorderThickness="1"
+            CornerRadius="8"
+            Visibility="{Binding Text, ElementName=Root, Converter={StaticResource StringNotEmptyToVis}}">
+        <DockPanel LastChildFill="True">
+            <Button DockPanel.Dock="Right"
+                    Margin="8,0,0,0"
+                    Padding="6,2"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource StackrootButtonStyle}"
+                    Content="✕"
+                    Command="{Binding DismissCommand, ElementName=Root}" />
+            <TextBlock Foreground="{StaticResource StackrootAccentTextBrush}"
+                       Text="{Binding Text, ElementName=Root}"
+                       TextWrapping="Wrap" />
+        </DockPanel>
+    </Border>
+</UserControl>

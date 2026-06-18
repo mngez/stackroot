@@ -1,0 +1,72 @@
+<Window x:Class="Stackroot.App.Views.LaravelInstallDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Install Laravel"
+        Width="480" MinWidth="440"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Install Laravel" />
+            <TextBlock Margin="0,6,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Configure your Laravel project. All fields are pre-filled." TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <!-- Database name -->
+            <TextBlock Margin="0,0,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database name" />
+            <TextBox Padding="10,6" Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!-- Database engine -->
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database engine" />
+            <ComboBox Padding="8,6"
+                      ItemsSource="{Binding DatabaseEngines}"
+                      DisplayMemberPath="Label"
+                      SelectedItem="{Binding SelectedEngine}" />
+
+            <!-- Starter kit -->
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Starter kit" />
+            <ComboBox Padding="8,6"
+                      ItemsSource="{Binding StarterKits}"
+                      DisplayMemberPath="Label"
+                      SelectedItem="{Binding SelectedStarterKit}" />
+
+            <!-- Stack (shown only when starter kit is chosen) -->
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Stack" />
+            <ComboBox Padding="8,6"
+                      IsEnabled="{Binding ShowStackOptions}"
+                      ItemsSource="{Binding Stacks}"
+                      DisplayMemberPath="Label"
+                      SelectedItem="{Binding SelectedStack}" />
+
+            <!-- npm build -->
+            <CheckBox Margin="0,16,0,0"
+                      Content="Run npm install &amp;&amp; npm run build after Composer"
+                      IsChecked="{Binding RunNpmBuild}" />
+            <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Requires Node.js. Uncheck if you prefer to run it manually." TextWrapping="Wrap" />
+
+            <!-- migrations -->
+            <CheckBox Margin="0,12,0,0"
+                      Content="Run database migrations (php artisan migrate)"
+                      IsChecked="{Binding RunMigrations}" />
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,18,0,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88" Margin="0,0,8,0" Content="Cancel" Command="{Binding CancelCommand}" />
+                <Button Width="100" Content="Install" Style="{StaticResource StackrootPrimaryButtonStyle}" Command="{Binding InstallCommand}" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

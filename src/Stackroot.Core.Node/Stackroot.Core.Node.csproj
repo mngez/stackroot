@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Catalog\Stackroot.Core.Catalog.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,143 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.LogsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Logs"
+                   FontSize="28"
+                   FontWeight="SemiBold" />
+
+        <DockPanel Grid.Row="1"
+                   Margin="0,14,0,12"
+                   LastChildFill="False">
+            <TextBlock VerticalAlignment="Center"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="{Binding TotalText}" />
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal">
+                <Button Width="124"
+                        Margin="0,0,8,0"
+                        Content="Cleanup old"
+                        Command="{Binding CleanupRetentionCommand}" />
+                <Button Width="112"
+                        Margin="0,0,8,0"
+                        Content="Cleanup all"
+                        Command="{Binding CleanupAllCommand}" />
+                <Button Width="96"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Loading state -->
+        <Border Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="24"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowLoadingState, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock FontSize="16"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Text="Loading logs…" />
+                <ProgressBar Margin="0,14,0,0"
+                             Width="220"
+                             Height="4"
+                             IsIndeterminate="True"
+                             Foreground="{StaticResource StackrootAccentBrush}"
+                             Background="#223047"
+                             BorderThickness="0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Empty state -->
+        <Border Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="24"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}">
+            <TextBlock HorizontalAlignment="Center"
+                       FontSize="15"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="No log files found." />
+        </Border>
+
+        <!-- Data grid -->
+        <Border Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="1"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowDataGrid, Converter={StaticResource BoolToVis}}">
+            <DataGrid AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      SelectionMode="Single"
+                      GridLinesVisibility="None"
+                      BorderThickness="0"
+                      Background="Transparent"
+                      AlternationCount="2"
+                      AlternatingRowBackground="#131D2A"
+                      RowBackground="Transparent"
+                      ItemsSource="{Binding Files}">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="MinHeight" Value="40" />
+                        <Setter Property="BorderBrush" Value="#1E324A" />
+                        <Setter Property="BorderThickness" Value="0,0,0,1" />
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1A2A3D" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#223047" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" />
+                    <DataGridTextColumn Header="Path" Binding="{Binding RelativePath}" Width="*" />
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="120" />
+                    <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedAt}" Width="180" />
+                    <DataGridTemplateColumn Header="Action" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Open"
+                                        Padding="6,2"
+                                        MinHeight="22"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <TextBlock Grid.Row="3"
+                   Margin="0,8,0,24"
+                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                   Text="{Binding StatusMessage}" />
+    </Grid>
+</UserControl>

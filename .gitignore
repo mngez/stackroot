@@ -1,0 +1,65 @@
+# Build / publish
+**/bin/
+**/obj/
+**/publish/
+publish/
+artifacts/
+release/
+*.nupkg
+
+# Test output
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets (keep local only)
+.env
+.env.*
+!.env.example
+
+
+# Locked installer leftovers at repo root
+/packages/
+
+# Node / pnpm (legacy tooling; should not land in this repo)
+node_modules/
+.pnpm/
+.pnpm-store/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Scratch / local experiments
+tmp/**
+tmp-*.csx
+scratch/
+
+# Portable NSIS toolchain (local only)
+resources/tools/nsis/
+
+# PIE phar (downloaded by ensure-pie.ps1 during pack/dev bootstrap)
+resources/packages/pie.phar
+
+# Test download cache (auto-populated on first test run; do not commit archives)
+tests/fixtures/cache/*
+!tests/fixtures/cache/.gitkeep
+
+# Legacy per-project test cache (hash-named files)
+tests/Stackroot.Core.Tests/fixtures/cache/**
+
+# Local log files
+*.log

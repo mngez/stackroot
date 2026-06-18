@@ -1,0 +1,461 @@
+<UserControl x:Class="Stackroot.App.Views.Pages.SitesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+             mc:Ignorable="d"
+             d:DesignHeight="640"
+             d:DesignWidth="1000">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="SitesMetaBadgeStyle" TargetType="Border">
+            <Setter Property="Background" Value="#121A26" />
+            <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SitesCountBadgeStyle" TargetType="Border" BasedOn="{StaticResource SitesMetaBadgeStyle}">
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="MinWidth" Value="24" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+
+        <Style x:Key="SitesTagBadgeStyle" TargetType="Border" BasedOn="{StaticResource SitesMetaBadgeStyle}">
+            <Setter Property="Padding" Value="7,3" />
+            <Setter Property="CornerRadius" Value="5" />
+        </Style>
+
+        <Style x:Key="SitesPinButtonStyle" TargetType="Button" BasedOn="{StaticResource StackrootIconButtonStyle}">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="32" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+        </Style>
+
+        <Style x:Key="SitesDomainLinkStyle" TargetType="Button" BasedOn="{StaticResource StackrootButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource StackrootAccentTextBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="MinHeight" Value="0" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding SiteIsEnabled}" Value="False">
+                    <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel>
+                <TextBlock Text="Web domains"
+                           FontSize="28"
+                           FontWeight="SemiBold" />
+                <TextBlock Margin="0,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Local development domains grouped by status" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        Style="{StaticResource StackrootPageActionsStyle}">
+                <Button Style="{StaticResource StackrootIconButtonStyle}"
+                        Margin="0,0,10,0"
+                        ToolTip="Sites settings"
+                        Command="{Binding OpenSettingsCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="14"
+                               Text="&#xE713;" />
+                </Button>
+                <Button Style="{StaticResource StackrootIconButtonStyle}"
+                        Margin="0,0,10,0"
+                        ToolTip="Open hosts file"
+                        Command="{Binding OpenHostsCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="14"
+                               Text="&#xE774;" />
+                </Button>
+                <Button MinWidth="132"
+                        MinHeight="36"
+                        Margin="0,0,10,0"
+                        Padding="14,8"
+                        ToolTip="Regenerate site vhosts, app domain, admin tools, and reload nginx"
+                        Content="Rebuild nginx"
+                        Command="{Binding RebuildNginxCommand}" />
+                <Button MinWidth="100"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Grid.Row="1"
+                   Margin="0,18,0,0"
+                   LastChildFill="False">
+            <Button Style="{StaticResource StackrootPrimaryButtonStyle}"
+                    Padding="16,8"
+                    Content="Add domain"
+                    Command="{Binding OpenAddSiteCommand}" />
+
+            <Border DockPanel.Dock="Right"
+                    Style="{StaticResource SitesMetaBadgeStyle}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Margin="0,0,8,0"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="WWW root" />
+                    <TextBlock FontFamily="Consolas"
+                               FontSize="11"
+                               Foreground="{StaticResource StackrootTextBrush}"
+                               Text="{Binding WwwPath, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+        </DockPanel>
+
+        <Border Grid.Row="2"
+                Margin="0,12,0,0"
+                Padding="10"
+                Background="#1AE88A92"
+                BorderBrush="#52E88A92"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right"
+                        Margin="8,0,0,0"
+                        Padding="6,2"
+                        Style="{StaticResource StackrootButtonStyle}"
+                        Content="✕"
+                        Command="{Binding DismissErrorCommand}" />
+                <TextBlock Foreground="{StaticResource StackrootDangerTextBrush}"
+                           Text="{Binding ErrorMessage}"
+                           TextWrapping="Wrap" />
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="3"
+                Margin="0,12,0,0"
+                Padding="10"
+                Background="#1AE9BD5B"
+                BorderBrush="#52E9BD5B"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right"
+                        Margin="8,0,0,0"
+                        Padding="6,2"
+                        Style="{StaticResource StackrootButtonStyle}"
+                        Content="✕"
+                        Command="{Binding DismissWarningCommand}" />
+                <TextBlock Foreground="{StaticResource StackrootWarnBrush}"
+                           Text="{Binding WarningMessage}"
+                           TextWrapping="Wrap" />
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="4"
+                Margin="0,16,0,0"
+                Padding="32"
+                Background="{StaticResource StackrootCardBrush}"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock FontSize="18"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Text="No domains yet" />
+                <TextBlock Margin="0,8,0,0"
+                           HorizontalAlignment="Center"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Pick a template and add your first local development domain."
+                           TextAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4"
+                    Margin="0,16,0,24">
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,0,20">
+                            <StackPanel Margin="0,0,0,10"
+                                        Orientation="Horizontal">
+                                <TextBlock FontSize="16"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Title}" />
+                                <Border Margin="8,0,0,0"
+                                        Style="{StaticResource SitesCountBadgeStyle}">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding Sites.Count}" />
+                                </Border>
+                                <Border Margin="8,0,0,0"
+                                        Style="{StaticResource SitesTagBadgeStyle}"
+                                        Visibility="{Binding ShowHint, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding Hint}" />
+                                </Border>
+                            </StackPanel>
+
+                            <ItemsControl ItemsSource="{Binding Sites}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8"
+                                                Padding="12,10"
+                                                Background="{StaticResource StackrootCardBrush}"
+                                                BorderBrush="{StaticResource StackrootBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="10">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{StaticResource StackrootCardBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SiteIsEnabled}" Value="False">
+                                                            <Setter Property="Background" Value="#141B27" />
+                                                            <Setter Property="BorderBrush" Value="#243044" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0"
+                                                        Width="3"
+                                                        Margin="0,2,12,2"
+                                                        CornerRadius="2"
+                                                        VerticalAlignment="Stretch">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource StackrootAccentBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding SiteIsEnabled}" Value="False">
+                                                                    <Setter Property="Background" Value="#445066" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+
+                                                <Button Grid.Column="1"
+                                                        Margin="0,0,12,0"
+                                                        Style="{StaticResource SitesPinButtonStyle}"
+                                                        ToolTip="Pin to featured"
+                                                        Command="{Binding TogglePinCommand}">
+                                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                                               FontSize="15"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="&#xE734;" />
+                                                                <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsFeatured}" Value="True">
+                                                                        <Setter Property="Text" Value="&#xE735;" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource StackrootWarnBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Button>
+
+                                                <StackPanel Grid.Column="2"
+                                                            VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Style="{StaticResource SitesDomainLinkStyle}"
+                                                                Content="{Binding Domain}"
+                                                                Command="{Binding OpenCommand}" />
+
+                                                        <Border Margin="8,0,0,0"
+                                                                Style="{StaticResource SitesTagBadgeStyle}"
+                                                                Visibility="{Binding SiteIsEnabled, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock FontSize="11"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                                       Text="Live" />
+                                                        </Border>
+
+                                                        <Border Margin="8,0,0,0">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border" BasedOn="{StaticResource SitesTagBadgeStyle}">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding SiteIsEnabled}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock FontSize="11"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                       Text="Off" />
+                                                        </Border>
+
+                                                        <Button Margin="6,0,0,0"
+                                                                Style="{StaticResource StackrootInlineButtonStyle}"
+                                                                Padding="7,3"
+                                                                ToolTip="Open site in browser (HTTPS)"
+                                                                Content="https"
+                                                                Command="{Binding OpenHttpsCommand}" />
+
+                                                        <Button Margin="6,0,0,0"
+                                                                Style="{StaticResource StackrootInlineButtonStyle}"
+                                                                Padding="7,3"
+                                                                ToolTip="Open site folder in Explorer"
+                                                                Command="{Binding OpenFolderCommand}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Image Width="16"
+                                                                       Height="16"
+                                                                       Margin="0,0,5,0"
+                                                                       VerticalAlignment="Center"
+                                                                       Source="{x:Static helpers:StackrootImages.FolderIcon}"
+                                                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                                                                <TextBlock FontSize="11"
+                                                                           VerticalAlignment="Center"
+                                                                           Text="Folder" />
+                                                            </StackPanel>
+                                                        </Button>
+
+                                                        <Border Margin="8,0,0,0"
+                                                                Style="{StaticResource SitesTagBadgeStyle}">
+                                                            <TextBlock FontSize="11"
+                                                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                       Text="{Binding Template}" />
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <StackPanel Margin="0,6,0,0"
+                                                                Orientation="Horizontal">
+                                                        <Border Style="{StaticResource SitesMetaBadgeStyle}">
+                                                            <TextBlock FontFamily="Consolas"
+                                                                       FontSize="11"
+                                                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                       Text="{Binding PathSummary, Mode=OneWay}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding PathSummary, Mode=OneWay}" />
+                                                        </Border>
+                                                        <Border Margin="6,0,0,0"
+                                                                Style="{StaticResource SitesMetaBadgeStyle}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Margin="0,0,6,0"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                                           Text="Name" />
+                                                                <TextBlock FontSize="11"
+                                                                           Foreground="{StaticResource StackrootTextBrush}"
+                                                                           Text="{Binding Name, Mode=OneWay}" />
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="3"
+                                                            Orientation="Horizontal"
+                                                            VerticalAlignment="Center">
+                                                    <ComboBox Width="118"
+                                                              Margin="0,0,6,0"
+                                                              Padding="6,4"
+                                                              ItemsSource="{Binding DataContext.PhpVersions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              DisplayMemberPath="Label"
+                                                              SelectedValuePath="Id"
+                                                              SelectedValue="{Binding SelectedPhpVersionId}"
+                                                              IsEnabled="{Binding RequiresPhp}" />
+
+                                                    <ComboBox Width="118"
+                                                              Margin="0,0,6,0"
+                                                              Padding="6,4"
+                                                              ItemsSource="{Binding DataContext.NodeVersions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              DisplayMemberPath="Label"
+                                                              SelectedValuePath="Id"
+                                                              SelectedValue="{Binding SelectedNodeVersionId}" />
+
+                                                    <Button Margin="0,0,6,0"
+                                                            Style="{StaticResource StackrootInlineButtonStyle}"
+                                                            Content="DB"
+                                                            Command="{Binding CreateDatabaseCommand}"
+                                                            Visibility="{Binding ShowDatabaseButton, Converter={StaticResource BoolToVis}}" />
+
+                                                    <Button Margin="0,0,6,0"
+                                                            Style="{StaticResource StackrootInlineButtonStyle}"
+                                                            Content="Edit"
+                                                            Command="{Binding EditCommand}" />
+
+                                                    <Button Margin="0,0,6,0"
+                                                            Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
+                                                            Content="Manage"
+                                                            Command="{Binding ManageCommand}" />
+
+                                                    <Button Margin="0,0,6,0"
+                                                            Style="{StaticResource StackrootInlineStopButtonStyle}"
+                                                            Content="Delete"
+                                                            Command="{Binding DeleteCommand}"
+                                                            Visibility="{Binding SiteIsDisabled, Converter={StaticResource BoolToVis}}" />
+
+                                                    <Button Style="{StaticResource StackrootInlineStopButtonStyle}"
+                                                            Content="{Binding ToggleButtonLabel}"
+                                                            Command="{Binding ToggleEnabledCommand}"
+                                                            IsEnabled="{Binding IsNotToggling}"
+                                                            Visibility="{Binding SiteIsEnabled, Converter={StaticResource BoolToVis}}" />
+
+                                                    <Button Content="{Binding ToggleButtonLabel}"
+                                                            Command="{Binding ToggleEnabledCommand}"
+                                                            IsEnabled="{Binding IsNotToggling}">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button"
+                                                                   BasedOn="{StaticResource StackrootInlinePrimaryButtonStyle}">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding SiteIsEnabled}" Value="False">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Grid>
+</UserControl>

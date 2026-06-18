@@ -1,0 +1,795 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-12T22:00:00.000Z",
+  "packages": [
+    {
+      "id": "php-8.5.7",
+      "type": "php",
+      "version": "8.5.7",
+      "platform": "win-x64",
+      "label": "PHP 8.5.7",
+      "description": "PHP 8.5 NTS x64 — newest; not compatible with phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.5.7-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.5.7-nts-Win32-vs17-x64.zip",
+        "sha256": "2ff43fea9a243085493b48c7c47152c0678cff0b05c61a3b4f4b43ba22de212c"
+      },
+      "installDir": "php/8.5.7",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.4.22",
+      "type": "php",
+      "version": "8.4.22",
+      "platform": "win-x64",
+      "label": "PHP 8.4.22",
+      "description": "PHP 8.4 NTS x64 — not compatible with phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.4.22-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.4.22-nts-Win32-vs17-x64.zip",
+        "sha256": "f661da9a4a6b7992a8e801ec7441ee22a2b5a6cd0ff178559a81427c9803f45a"
+      },
+      "installDir": "php/8.4.22",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.3.31",
+      "type": "php",
+      "version": "8.3.31",
+      "platform": "win-x64",
+      "label": "PHP 8.3.31",
+      "description": "PHP 8.3 NTS x64 — recommended for phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.3.31-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.3.31-nts-Win32-vs16-x64.zip",
+        "sha256": "389c1327d325f6b6b3b892a5b2e1484ca5b5df775b6c4ddf5d1b5dc3b34ac761"
+      },
+      "installDir": "php/8.3.31",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.2.31",
+      "type": "php",
+      "version": "8.2.31",
+      "platform": "win-x64",
+      "label": "PHP 8.2.31",
+      "description": "PHP 8.2 NTS x64 — stable for phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.2.31-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.2.31-nts-Win32-vs16-x64.zip",
+        "sha256": "941bd3b87683eb16d5ffa7f5997de9a5e07ef08ba875048e5c4d95b4fc778162"
+      },
+      "installDir": "php/8.2.31",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.1.34",
+      "type": "php",
+      "version": "8.1.34",
+      "platform": "win-x64",
+      "label": "PHP 8.1.34",
+      "description": "PHP 8.1 NTS x64",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.1.34-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.1.34-nts-Win32-vs16-x64.zip",
+        "sha256": "9cfe246cb144076c16f5913a3ef88a474c3dd7e60f0f0c8bb95faf68674016cc"
+      },
+      "installDir": "php/8.1.34",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.0.30",
+      "type": "php",
+      "version": "8.0.30",
+      "platform": "win-x64",
+      "label": "PHP 8.0.30",
+      "description": "PHP 8.0 NTS x64 — final 8.0 release",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.0.30-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.0.30-nts-Win32-vs16-x64.zip",
+        "sha256": "dfb70498ffa2c617f2f655a155564697e3c9cca41709938fd1a5997d1d5b0785"
+      },
+      "installDir": "php/8.0.30",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-7.4.33",
+      "type": "php",
+      "version": "7.4.33",
+      "platform": "win-x64",
+      "label": "PHP 7.4.33",
+      "description": "PHP 7.4 NTS x64 — last PHP 7 release (EOL)",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-7.4.33-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-7.4.33-nts-Win32-vc15-x64.zip",
+        "sha256": "14ae3250d4447c8ccfc4c45a70d90adfbcd61e728d85f0be56a7ddf8f9c8aace"
+      },
+      "installDir": "php/7.4.33",
+      "executable": "php.exe"
+    },
+    {
+      "id": "nginx-1.26.2",
+      "type": "nginx",
+      "version": "1.26.2",
+      "platform": "win-x64",
+      "label": "Nginx 1.26.2",
+      "description": "Nginx stable for Windows",
+      "source": {
+        "type": "bundled",
+        "archive": "nginx/nginx-1.26.2-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://packages.stackroot.dev/nginx/1.26.2/win-x64.zip"
+      },
+      "installDir": "nginx/1.26.2",
+      "executable": "nginx.exe"
+    },
+    {
+      "id": "redis-7.4.2",
+      "type": "redis",
+      "version": "7.4.2",
+      "platform": "win-x64",
+      "label": "Redis 7.4.2",
+      "description": "Redis for Windows (redis-windows community build)",
+      "source": {
+        "type": "bundled",
+        "archive": "redis/redis-7.4.2-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/redis-windows/redis-windows/releases/download/7.4.2/Redis-7.4.2-Windows-x64-msys2.zip",
+        "sha256": "65c8d2ff57572afa3cf4634820d4cdb8921e82760b272ad1dd12f38308414a96"
+      },
+      "installDir": "redis/7.4.2",
+      "executable": "redis-server.exe"
+    },
+    {
+      "id": "memcached-1.6.8",
+      "type": "memcached",
+      "version": "1.6.8",
+      "platform": "win-x64",
+      "label": "Memcached 1.6.8",
+      "description": "Memcached for Windows (jefyt native MinGW build)",
+      "source": {
+        "type": "bundled",
+        "archive": "memcached/memcached-1.6.8-win64-mingw.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw_libressl/memcached-1.6.8-win64-mingw.zip",
+        "sha256": "48ec62cef718f0d73698414b783c0e4a69821013553ca00afe0eed324eb5994b"
+      },
+      "installDir": "memcached/1.6.8",
+      "executable": "memcached.exe"
+    },
+    {
+      "id": "imagemagick-7.1.2-25",
+      "type": "imagemagick",
+      "version": "7.1.2-25",
+      "platform": "win-x64",
+      "label": "ImageMagick 7.1.2-25",
+      "description": "Portable Q16 build — Imagick PHP extension dependency",
+      "source": {
+        "type": "bundled",
+        "archive": "imagemagick/ImageMagick-7.1.2-25-portable-Q16-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://imagemagick.org/archive/binaries/ImageMagick-7.1.2-25-portable-Q16-x64.7z"
+      },
+      "installDir": "imagemagick/7.1.2-25",
+      "executable": "magick.exe"
+    },
+    {
+      "id": "gd-libs-8.4",
+      "type": "gdlibs",
+      "version": "8.4",
+      "platform": "win-x64",
+      "label": "GD Libraries 8.4",
+      "description": "libpng, libjpeg, libwebp — PHP GD extension dependencies",
+      "source": {
+        "type": "bundled",
+        "archive": "gdlibs/gd-libs-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.4.22-nts-Win32-vs17-x64.zip",
+        "mirrors": [
+          "https://windows.php.net/downloads/releases/archives/php-8.4.22-nts-Win32-vs17-x64.zip"
+        ]
+      },
+      "installDir": "gdlibs/8.4"
+    },
+    {
+      "id": "mariadb-10.5.29",
+      "type": "mariadb",
+      "version": "10.5.29",
+      "platform": "win-x64",
+      "label": "MariaDB 10.5.29",
+      "description": "Legacy branch — older WordPress / PHP apps",
+      "source": {
+        "type": "bundled",
+        "archive": "mariadb/mariadb-10.5.29-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dlm.mariadb.com/4238706/MariaDB/mariadb-10.5.29/winx64-packages/mariadb-10.5.29-winx64.zip"
+      },
+      "installDir": "mariadb/10.5.29",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mariadb-10.6.27",
+      "type": "mariadb",
+      "version": "10.6.27",
+      "platform": "win-x64",
+      "label": "MariaDB 10.6.27",
+      "description": "10.6 LTS — widely used for local dev",
+      "source": {
+        "type": "bundled",
+        "archive": "mariadb/mariadb-10.6.27-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dlm.mariadb.com/4686809/MariaDB/mariadb-10.6.27/winx64-packages/mariadb-10.6.27-winx64.zip"
+      },
+      "installDir": "mariadb/10.6.27",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mariadb-10.11.18",
+      "type": "mariadb",
+      "version": "10.11.18",
+      "platform": "win-x64",
+      "label": "MariaDB 10.11.18",
+      "description": "10.11 LTS — recommended default",
+      "source": {
+        "type": "bundled",
+        "archive": "mariadb/mariadb-10.11.18-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dlm.mariadb.com/4691364/MariaDB/mariadb-10.11.18/winx64-packages/mariadb-10.11.18-winx64.zip"
+      },
+      "installDir": "mariadb/10.11.18",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mariadb-11.7.2",
+      "type": "mariadb",
+      "version": "11.7.2",
+      "platform": "win-x64",
+      "label": "MariaDB 11.7.2",
+      "description": "Latest stable — Laravel / WordPress",
+      "source": {
+        "type": "bundled",
+        "archive": "mariadb/mariadb-11.7.2-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dlm.mariadb.com/4181758/MariaDB/mariadb-11.7.2/winx64-packages/mariadb-11.7.2-winx64.zip"
+      },
+      "installDir": "mariadb/11.7.2",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mariadb-11.4.5",
+      "type": "mariadb",
+      "version": "11.4.5",
+      "platform": "win-x64",
+      "label": "MariaDB 11.4.5",
+      "description": "LTS branch — keep for older projects",
+      "source": {
+        "type": "bundled",
+        "archive": "mariadb/mariadb-11.4.5-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dlm.mariadb.com/4047850/MariaDB/mariadb-11.4.5/winx64-packages/mariadb-11.4.5-winx64.zip"
+      },
+      "installDir": "mariadb/11.4.5",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mysql-9.7.0",
+      "type": "mysql",
+      "version": "9.7.0",
+      "platform": "win-x64",
+      "label": "MySQL 9.7.0",
+      "description": "MySQL 9.7 LTS — newest release line",
+      "source": {
+        "type": "bundled",
+        "archive": "mysql/mysql-9.7.0-winx64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://cdn.mysql.com/Downloads/MySQL-9.7/mysql-9.7.0-winx64.zip"
+      },
+      "installDir": "mysql/9.7.0",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mysql-8.4.9",
+      "type": "mysql",
+      "version": "8.4.9",
+      "platform": "win-x64",
+      "label": "MySQL 8.4.9",
+      "description": "MySQL 8.4 LTS — recommended for production",
+      "source": {
+        "type": "bundled",
+        "archive": "mysql/mysql-8.4.9-winx64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.9-winx64.zip"
+      },
+      "installDir": "mysql/8.4.9",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mysql-8.4.4",
+      "type": "mysql",
+      "version": "8.4.4",
+      "platform": "win-x64",
+      "label": "MySQL 8.4.4",
+      "description": "MySQL Community Server for Windows",
+      "source": {
+        "type": "bundled",
+        "archive": "mysql/mysql-8.4.4-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.4-winx64.zip"
+      },
+      "installDir": "mysql/8.4.4",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "mysql-8.0.40",
+      "type": "mysql",
+      "version": "8.0.40",
+      "platform": "win-x64",
+      "label": "MySQL 8.0.40",
+      "description": "MySQL 8.0 LTS — legacy apps",
+      "source": {
+        "type": "bundled",
+        "archive": "mysql/mysql-8.0.40-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.40-winx64.zip"
+      },
+      "installDir": "mysql/8.0.40",
+      "executable": "bin/mysqld.exe"
+    },
+    {
+      "id": "postgresql-14.23",
+      "type": "postgresql",
+      "version": "14.23",
+      "platform": "win-x64",
+      "label": "PostgreSQL 14.23",
+      "description": "PostgreSQL 14 LTS — legacy apps",
+      "source": {
+        "type": "bundled",
+        "archive": "postgresql/postgresql-14.23-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://get.enterprisedb.com/postgresql/postgresql-14.23-1-windows-x64-binaries.zip"
+      },
+      "installDir": "postgresql/14.23",
+      "executable": "bin/postgres.exe"
+    },
+    {
+      "id": "postgresql-15.18",
+      "type": "postgresql",
+      "version": "15.18",
+      "platform": "win-x64",
+      "label": "PostgreSQL 15.18",
+      "description": "PostgreSQL 15 LTS",
+      "source": {
+        "type": "bundled",
+        "archive": "postgresql/postgresql-15.18-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://get.enterprisedb.com/postgresql/postgresql-15.18-1-windows-x64-binaries.zip"
+      },
+      "installDir": "postgresql/15.18",
+      "executable": "bin/postgres.exe"
+    },
+    {
+      "id": "postgresql-16.14",
+      "type": "postgresql",
+      "version": "16.14",
+      "platform": "win-x64",
+      "label": "PostgreSQL 16.14",
+      "description": "PostgreSQL 16 LTS — recommended default",
+      "source": {
+        "type": "bundled",
+        "archive": "postgresql/postgresql-16.14-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://get.enterprisedb.com/postgresql/postgresql-16.14-1-windows-x64-binaries.zip"
+      },
+      "installDir": "postgresql/16.14",
+      "executable": "bin/postgres.exe"
+    },
+    {
+      "id": "postgresql-17.4",
+      "type": "postgresql",
+      "version": "17.4",
+      "platform": "win-x64",
+      "label": "PostgreSQL 17.4",
+      "description": "PostgreSQL portable binaries for Windows",
+      "source": {
+        "type": "bundled",
+        "archive": "postgresql/postgresql-17.4-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://get.enterprisedb.com/postgresql/postgresql-17.4-1-windows-x64-binaries.zip"
+      },
+      "installDir": "postgresql/17.4",
+      "executable": "bin/postgres.exe"
+    },
+    {
+      "id": "postgresql-17.10",
+      "type": "postgresql",
+      "version": "17.10",
+      "platform": "win-x64",
+      "label": "PostgreSQL 17.10",
+      "description": "PostgreSQL 17 — newest release line",
+      "source": {
+        "type": "bundled",
+        "archive": "postgresql/postgresql-17.10-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://get.enterprisedb.com/postgresql/postgresql-17.10-1-windows-x64-binaries.zip"
+      },
+      "installDir": "postgresql/17.10",
+      "executable": "bin/postgres.exe"
+    },
+    {
+      "id": "mongodb-8.0.8",
+      "type": "mongodb",
+      "version": "8.0.8",
+      "platform": "win-x64",
+      "label": "MongoDB 8.0.8",
+      "description": "MongoDB Community Server for Windows",
+      "source": {
+        "type": "bundled",
+        "archive": "mongodb/mongodb-8.0.8-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-8.0.8.zip"
+      },
+      "installDir": "mongodb/8.0.8",
+      "executable": "bin/mongod.exe"
+    },
+    {
+      "id": "phpmyadmin-5.2.3",
+      "type": "phpmyadmin",
+      "version": "5.2.3",
+      "platform": "win-x64",
+      "label": "phpMyAdmin 5.2.3",
+      "description": "Latest stable — Web UI for MySQL and MariaDB",
+      "source": {
+        "type": "bundled",
+        "archive": "phpmyadmin/phpMyAdmin-5.2.3-all-languages.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip"
+      },
+      "installDir": "phpmyadmin/5.2.3",
+      "requiresPhp": {
+        "min": "7.2.5",
+        "maxExclusive": "8.5.0"
+      }
+    },
+    {
+      "id": "phpmyadmin-5.2.2",
+      "type": "phpmyadmin",
+      "version": "5.2.2",
+      "platform": "win-x64",
+      "label": "phpMyAdmin 5.2.2",
+      "description": "Previous release — PHP 7.2.5 to 8.3.x only",
+      "source": {
+        "type": "bundled",
+        "archive": "phpmyadmin/phpMyAdmin-5.2.2-all-languages.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip"
+      },
+      "installDir": "phpmyadmin/5.2.2",
+      "requiresPhp": {
+        "min": "7.2.5",
+        "maxExclusive": "8.4.0"
+      }
+    },
+    {
+      "id": "phpredisadmin-1.26.0",
+      "type": "phpredisadmin",
+      "version": "1.26.0",
+      "platform": "win-x64",
+      "label": "phpRedisAdmin 1.26.0",
+      "description": "Web UI for Redis — uses Stackroot Redis host/port",
+      "source": {
+        "type": "bundled",
+        "archive": "phpredisadmin/phpRedisAdmin-1.26.0.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/erikdubbelboer/phpRedisAdmin/archive/refs/tags/v1.26.0.zip"
+      },
+      "installDir": "phpredisadmin/1.26.0",
+      "requiresPhp": {
+        "min": "7.4.0"
+      }
+    },
+    {
+      "id": "composer-2.8.9",
+      "type": "composer",
+      "version": "2.8.9",
+      "platform": "win-x64",
+      "label": "Composer 2.8.9",
+      "description": "PHP dependency manager — composer.phar + wrapper",
+      "source": {
+        "type": "remote",
+        "url": "https://getcomposer.org/download/2.8.9/composer.phar"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://getcomposer.org/download/2.8.9/composer.phar"
+      },
+      "installDir": "tools/composer/2.8.9"
+    },
+    {
+      "id": "pnpm-10.12.4",
+      "type": "pnpm",
+      "version": "10.12.4",
+      "platform": "win-x64",
+      "label": "pnpm 10.12.4",
+      "description": "Fast Node package manager — installed via npm into Stackroot",
+      "source": {
+        "type": "remote",
+        "url": "https://registry.npmjs.org/pnpm/-/pnpm-10.12.4.tgz"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://registry.npmjs.org/pnpm/-/pnpm-10.12.4.tgz"
+      },
+      "installDir": "tools/pnpm/10.12.4"
+    },
+    {
+      "id": "vite-8.0.16",
+      "type": "vite",
+      "version": "8.0.16",
+      "platform": "win-x64",
+      "label": "Vite 8.0.16",
+      "description": "Frontend dev server — installed via npm into Stackroot (Node 20.19+ or 22.12+)",
+      "source": {
+        "type": "remote",
+        "url": "https://registry.npmjs.org/vite/-/vite-8.0.16.tgz"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://registry.npmjs.org/vite/-/vite-8.0.16.tgz"
+      },
+      "installDir": "tools/vite/8.0.16"
+    },
+    {
+      "id": "nvm-1.2.2",
+      "type": "nvm",
+      "version": "1.2.2",
+      "platform": "win-x64",
+      "label": "nvm-windows 1.2.2",
+      "description": "Node Version Manager for Windows",
+      "source": {
+        "type": "bundled",
+        "archive": "nvm/nvm-1.2.2-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/coreybutler/nvm-windows/releases/download/1.2.2/nvm-noinstall.zip"
+      },
+      "installDir": "nvm/1.2.2",
+      "executable": "nvm.exe"
+    },
+    {
+      "id": "git-2.47.1",
+      "type": "git",
+      "version": "2.47.1",
+      "platform": "win-x64",
+      "label": "Git 2.47.1 (MinGit)",
+      "description": "Portable Git for Windows",
+      "source": {
+        "type": "remote",
+        "url": "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip"
+      },
+      "installDir": "tools/git/2.47.1",
+      "executable": "cmd/git.exe"
+    },
+    {
+      "id": "python-3.12.9",
+      "type": "python",
+      "version": "3.12.9",
+      "platform": "win-x64",
+      "label": "Python 3.12.9 (embed)",
+      "description": "Embeddable Python runtime",
+      "source": {
+        "type": "remote",
+        "url": "https://www.python.org/ftp/python/3.12.9/python-3.12.9-embed-amd64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://www.python.org/ftp/python/3.12.9/python-3.12.9-embed-amd64.zip"
+      },
+      "installDir": "tools/python/3.12.9",
+      "executable": "python.exe"
+    },
+    {
+      "id": "sqlite-3.47.2",
+      "type": "sqlite",
+      "version": "3.47.2",
+      "platform": "win-x64",
+      "label": "SQLite 3.47.2 CLI",
+      "description": "sqlite3 command-line shell",
+      "source": {
+        "type": "remote",
+        "url": "https://www.sqlite.org/2024/sqlite-tools-win-x64-3470200.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://www.sqlite.org/2024/sqlite-tools-win-x64-3470200.zip"
+      },
+      "installDir": "tools/sqlite/3.47.2",
+      "executable": "sqlite3.exe"
+    },
+    {
+      "id": "notepadpp-8.7.7",
+      "type": "notepadpp",
+      "version": "8.7.7",
+      "platform": "win-x64",
+      "label": "Notepad++ 8.7.7 (portable)",
+      "description": "Bundled portable editor — default when no editor is chosen",
+      "source": {
+        "type": "remote",
+        "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.7/npp.8.7.7.portable.x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.7/npp.8.7.7.portable.x64.zip"
+      },
+      "installDir": "tools/notepadpp/8.7.7",
+      "executable": "notepad++.exe"
+    },
+    {
+      "id": "mailpit-1.21.8",
+      "type": "mailpit",
+      "version": "1.21.8",
+      "platform": "win-x64",
+      "label": "Mailpit 1.21.8",
+      "description": "Local SMTP catcher and mail UI for development",
+      "source": {
+        "type": "remote",
+        "url": "https://github.com/axllent/mailpit/releases/download/v1.21.8/mailpit-windows-amd64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/axllent/mailpit/releases/download/v1.21.8/mailpit-windows-amd64.zip"
+      },
+      "installDir": "tools/mailpit/1.21.8",
+      "executable": "mailpit.exe"
+    },
+    {
+      "id": "wp-cli-2.11.0",
+      "type": "wpCli",
+      "version": "2.11.0",
+      "platform": "win-x64",
+      "label": "WP-CLI 2.11.0",
+      "description": "WordPress command-line interface — auto-installed for WordPress sites",
+      "source": {
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+      },
+      "installDir": "tools/wp-cli/2.11.0",
+      "requiresPhp": { "min": "7.4" }
+    },
+    {
+      "id": "laravel-installer-5.11",
+      "type": "laravel",
+      "version": "5.11.0",
+      "platform": "win-x64",
+      "label": "Laravel Installer 5.x",
+      "description": "Official laravel new command — installed via Composer",
+      "source": {
+        "type": "remote",
+        "url": "https://laravel.com/installer"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://laravel.com/installer"
+      },
+      "installDir": "tools/laravel/5.11.0"
+    },
+    {
+      "id": "mongosh-2.5.10",
+      "type": "mongosh",
+      "version": "2.5.10",
+      "platform": "win-x64",
+      "label": "MongoDB Shell 2.5.10",
+      "description": "mongosh — required for MongoDB delete operations",
+      "source": {
+        "type": "remote",
+        "url": "https://downloads.mongodb.com/compass/mongosh-2.5.10-win32-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://downloads.mongodb.com/compass/mongosh-2.5.10-win32-x64.zip"
+      },
+      "installDir": "tools/mongosh/2.5.10",
+      "executable": "bin/mongosh.exe"
+    },
+    {
+      "id": "mongodb-tools-100.14.0",
+      "type": "mongodbtools",
+      "version": "100.14.0",
+      "platform": "win-x64",
+      "label": "MongoDB Tools 100.14.0",
+      "description": "mongodump / mongorestore — required for MongoDB backup/restore",
+      "source": {
+        "type": "remote",
+        "url": "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-windows-x86_64-100.14.0.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://fastdl.mongodb.org/tools/db/mongodb-database-tools-windows-x86_64-100.14.0.zip"
+      },
+      "installDir": "tools/mongodb-tools/100.14.0",
+      "executable": "bin/mongodump.exe"
+    }
+  ]
+}

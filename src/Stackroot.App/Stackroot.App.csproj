@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Version>0.1.0</Version>
+    <AssemblyName>Stackroot</AssemblyName>
+    <Company>mngez</Company>
+    <Authors>mngez</Authors>
+    <Product>Stackroot</Product>
+    <Description>Local development environment manager for Windows</Description>
+    <Copyright>Copyright © mngez</Copyright>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>..\..\assets\icons\icon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Views\Pages\ShellPages.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.AdminTools\Stackroot.Core.AdminTools.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Databases\Stackroot.Core.Databases.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.IO\Stackroot.Core.IO.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Windows\Stackroot.Core.Windows.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Catalog\Stackroot.Core.Catalog.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Node\Stackroot.Core.Node.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Services\Stackroot.Core.Services.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Sites\Stackroot.Core.Sites.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Supervisor\Stackroot.Core.Supervisor.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Observability\Stackroot.Core.Observability.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\resources\packages\catalog.json">
+      <Link>resources\packages\catalog.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\resources\packages\php-extensions.json">
+      <Link>resources\packages\php-extensions.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\resources\packages\laravel-options.json">
+      <Link>resources\packages\laravel-options.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\assets\icons\tray.png">
+      <Link>Assets\tray.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\assets\images\*.png">
+      <Link>Assets\Images\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

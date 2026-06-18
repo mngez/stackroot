@@ -1,0 +1,105 @@
+<Window x:Class="Stackroot.App.Views.PhpVersionSettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding VersionLabel, StringFormat=Settings — {0}}"
+        Width="480"
+        MinWidth="440"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Text="{Binding VersionLabel, StringFormat=Settings — {0}}" />
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <TextBlock FontWeight="SemiBold" Text="Runtime limits" />
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,10">
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="memory_limit" />
+                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding MemoryLimit, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,10">
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="max_execution_time" />
+                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding MaxExecutionTime, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="upload_max_filesize" />
+                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding UploadMaxFilesize, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="post_max_size" />
+                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding PostMaxSize, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Margin="0,16,0,0" FontWeight="SemiBold" Text="Errors and warnings" />
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Stackroot writes these into the generated php.ini."
+                       TextWrapping="Wrap" />
+            <CheckBox Margin="0,10,0,0"
+                      Content="Show errors in the browser (display_errors)"
+                      IsChecked="{Binding DisplayErrors}" />
+            <CheckBox Margin="0,8,0,0"
+                      Content="Log errors to file (log_errors)"
+                      IsChecked="{Binding LogErrors}" />
+            <CheckBox Margin="0,8,0,0"
+                      Content="Hide PHP warnings"
+                      IsChecked="{Binding HideWarnings}" />
+            <CheckBox Margin="0,8,0,0"
+                      Content="Hide deprecation notices"
+                      IsChecked="{Binding HideDeprecated}" />
+
+            <TextBlock Margin="0,16,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       FontSize="12"
+                       Text="{Binding IniPath, StringFormat=Generated ini: {0}}"
+                       TextWrapping="Wrap" />
+            <Button Margin="0,8,0,0"
+                    HorizontalAlignment="Left"
+                    Padding="10,4"
+                    Content="Open generated ini"
+                    Command="{Binding OpenIniCommand}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Margin="0,18,0,0">
+            <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                       FontSize="12"
+                       MinHeight="16"
+                       Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap" />
+            <DockPanel Margin="0,12,0,0" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Width="88"
+                            Margin="0,0,8,0"
+                            Content="Close"
+                            Command="{Binding CloseCommand}" />
+                    <Button Width="88"
+                            Content="Save"
+                            Style="{StaticResource StackrootPrimaryButtonStyle}"
+                            Command="{Binding SaveCommand}" />
+                </StackPanel>
+            </DockPanel>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,96 @@
+<Window x:Class="Stackroot.App.Views.SiteProcessLogDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title, FallbackValue=Log}"
+        Width="820"
+        MinWidth="560"
+        Height="560"
+        MinHeight="360"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="True">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="True">
+            <StackPanel>
+                <TextBlock FontSize="18"
+                           FontWeight="SemiBold"
+                           Text="{Binding Title, FallbackValue=Log}" />
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="{Binding ProcessName}" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <TextBlock Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource StackrootAccentTextBrush}"
+                           Text="{Binding RunningLabel}" />
+                <TextBlock Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="{Binding PidLabel}" />
+            </StackPanel>
+        </DockPanel>
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,10,0,0"
+                   FontFamily="Consolas"
+                   FontSize="12"
+                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                   Text="{Binding CommandLine}"
+                   TextWrapping="Wrap" />
+
+        <Border Grid.Row="2"
+                Margin="0,10,0,0"
+                Padding="10"
+                Background="#1E1E1E"
+                BorderBrush="{StaticResource StackrootBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+            <RichTextBox x:Name="LogViewer"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         FontFamily="Consolas"
+                         FontSize="12"
+                         Foreground="#D4D4D4"
+                         IsReadOnly="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto" />
+        </Border>
+
+        <TextBlock Grid.Row="3"
+                   Margin="0,8,0,0"
+                   Foreground="{StaticResource StackrootDangerBrush}"
+                   Text="{Binding StatusMessage}"
+                   TextWrapping="Wrap" />
+
+        <DockPanel Grid.Row="4" Margin="0,12,0,0" LastChildFill="False">
+            <CheckBox DockPanel.Dock="Left"
+                      VerticalAlignment="Center"
+                      Content="Live updates"
+                      IsChecked="{Binding LiveUpdates}" />
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,8,0"
+                        Content="Refresh"
+                        Command="{Binding RefreshCommand}" />
+                <Button Width="88"
+                        Content="Close"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding CloseCommand}"
+                        Click="OnCloseClick" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

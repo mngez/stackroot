@@ -1,0 +1,57 @@
+<Window x:Class="Stackroot.App.Views.WordPressInstallDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Install WordPress"
+        Width="480" MinWidth="440"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Install WordPress" />
+            <TextBlock Margin="0,6,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Configure your WordPress site. All fields are pre-filled." TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <TextBlock Margin="0,0,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Site title" />
+            <TextBox Padding="10,6" Text="{Binding SiteTitle, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Admin username" />
+            <TextBox Padding="10,6" Text="{Binding AdminUser, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Admin password" />
+            <TextBox Padding="10,6" Text="{Binding AdminPassword, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Admin email" />
+            <TextBox Padding="10,6" Text="{Binding AdminEmail, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database name" />
+            <TextBox Padding="10,6" Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database engine" />
+            <ComboBox Padding="8,6" SelectedIndex="0"
+                      SelectedValue="{Binding SelectedEngine}"
+                      SelectedValuePath="Content">
+                <ComboBoxItem Content="MySQL" />
+                <ComboBoxItem Content="MariaDB" />
+            </ComboBox>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,18,0,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88" Margin="0,0,8,0" Content="Cancel" Command="{Binding CancelCommand}" />
+                <Button Width="100" Content="Install" Style="{StaticResource StackrootPrimaryButtonStyle}" Command="{Binding InstallCommand}" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>
