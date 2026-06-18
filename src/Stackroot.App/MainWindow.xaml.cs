@@ -136,7 +136,6 @@ public partial class MainWindow : Window
             case CloseBehavior.Background:
                 e.Cancel = true;
                 HideToTray();
-                _ = ShutdownAndQuitAsync();
                 return;
 
             default:

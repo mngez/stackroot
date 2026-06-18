@@ -98,6 +98,8 @@ public sealed class SettingsStore
             CloseBehavior = patch.CloseBehavior ?? settings.General.CloseBehavior,
             LogRetentionDays = patch.LogRetentionDays ?? settings.General.LogRetentionDays,
             AddBinToPath = patch.AddBinToPath ?? settings.General.AddBinToPath,
+            ThumbnailsEnabled = patch.ThumbnailsEnabled ?? settings.General.ThumbnailsEnabled,
+            LaunchAtStartup = patch.LaunchAtStartup ?? settings.General.LaunchAtStartup,
             DiagnosticsLogEnabled = patch.DiagnosticsLogEnabled ?? settings.General.DiagnosticsLogEnabled,
             DownloadCachePath = patch.DownloadCachePath ?? settings.General.DownloadCachePath
         };
@@ -296,6 +298,8 @@ public sealed class SettingsStore
                 CloseBehavior = stored.General.CloseBehavior ?? defaults.General.CloseBehavior,
                 LogRetentionDays = stored.General.LogRetentionDays ?? defaults.General.LogRetentionDays,
                 AddBinToPath = stored.General.AddBinToPath ?? defaults.General.AddBinToPath,
+                ThumbnailsEnabled = stored.General.ThumbnailsEnabled ?? defaults.General.ThumbnailsEnabled,
+                LaunchAtStartup = stored.General.LaunchAtStartup ?? defaults.General.LaunchAtStartup,
                 DiagnosticsLogEnabled = stored.General.DiagnosticsLogEnabled ?? defaults.General.DiagnosticsLogEnabled,
                 DownloadCachePath = stored.General.DownloadCachePath ?? defaults.General.DownloadCachePath
             },
