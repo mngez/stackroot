@@ -520,7 +520,6 @@ public static class StackrootBootstrap
             new[]
             {
                 Path.Combine(repoRoot, "resources", "packages"),
-                Path.Combine(repoRoot, "_old", "resources", "packages"),
                 Path.Combine(AppContext.BaseDirectory, "resources", "packages")
             };
 
@@ -648,23 +647,7 @@ public static class StackrootBootstrap
         }
 
         var resourcesBundled = Path.Combine(repoRoot, "resources", "tools", "7zip", "7za.exe");
-        if (File.Exists(resourcesBundled))
-        {
-            return resourcesBundled;
-        }
-
-        var bundledCandidate = Path.Combine(
-            repoRoot,
-            "_old",
-            "node_modules",
-            ".pnpm",
-            "7zip-bin@5.2.0",
-            "node_modules",
-            "7zip-bin",
-            "win",
-            "x64",
-            "7za.exe");
-        return File.Exists(bundledCandidate) ? bundledCandidate : null;
+        return File.Exists(resourcesBundled) ? resourcesBundled : null;
     }
 
     private static string ResolveRepoRoot()

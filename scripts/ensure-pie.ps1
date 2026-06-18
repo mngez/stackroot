@@ -16,14 +16,6 @@ if (Test-PiePharReady $Dest) {
     return $Dest
 }
 
-$Legacy = Join-Path $RepoRoot "_old\resources\packages\pie.phar"
-if (Test-PiePharReady $Legacy) {
-    New-Item -ItemType Directory -Path (Split-Path $Dest) -Force | Out-Null
-    Copy-Item $Legacy $Dest -Force
-    Write-Host "Copied pie.phar from _old resources."
-    return $Dest
-}
-
 $url = "https://github.com/php/pie/releases/download/$PieVersion/pie.phar"
 Write-Host "Downloading PIE $PieVersion..."
 New-Item -ItemType Directory -Path (Split-Path $Dest) -Force | Out-Null

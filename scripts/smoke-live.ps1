@@ -101,10 +101,6 @@ function Resolve-SevenZipPath {
     if ($envPath -and (Test-Path -LiteralPath $envPath)) { return $envPath }
     $resourcesBundled = Join-Path $Root "resources\tools\7zip\7za.exe"
     if (Test-Path -LiteralPath $resourcesBundled) { return $resourcesBundled }
-    $bundled = Join-Path $Root "_old\node_modules\.pnpm\7zip-bin@5.2.0\node_modules\7zip-bin\win\x64\7za.exe"
-    if (Test-Path -LiteralPath $bundled) { return $bundled }
-    $local = Join-Path $Root "resources\tools\7zip\7za.exe"
-    if (Test-Path -LiteralPath $local) { return $local }
     return $null
 }
 

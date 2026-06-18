@@ -54,12 +54,5 @@ resources/tools/nsis/
 # PIE phar (downloaded by ensure-pie.ps1 during pack/dev bootstrap)
 resources/packages/pie.phar
 
-# Test download cache (auto-populated on first test run; do not commit archives)
-tests/fixtures/cache/*
-!tests/fixtures/cache/.gitkeep
-
-# Legacy per-project test cache (hash-named files)
-tests/Stackroot.Core.Tests/fixtures/cache/**
-
 # Local log files
 *.log

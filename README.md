@@ -149,7 +149,6 @@ src/
 ├─ Stackroot.Core.Sites/         # sites CRUD, installers (WP, Laravel)
 ├─ Stackroot.Core.Supervisor/    # background process supervision
 └─ Stackroot.Core.Windows/       # Windows helpers (hosts, processes)
-_old/                            # legacy Electron implementation (reference)
 ```
 
 ## Data Directory

@@ -323,7 +323,7 @@ public sealed class PackageInstaller
         {
             throw new FileNotFoundException(
                 "7-Zip executable was not found. Set STACKROOT_7Z to 7za.exe/7z.exe, " +
-                "or copy 7za.exe from _old/node_modules/.pnpm/7zip-bin@5.2.0/node_modules/7zip-bin/win/x64/7za.exe.");
+                "or place 7za.exe in resources/tools/7zip/7za.exe.");
         }
 
         if (Directory.Exists(destination))
