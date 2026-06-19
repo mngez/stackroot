@@ -210,7 +210,8 @@ public sealed class SettingsStore
         var settings = Load();
         settings.Sites = settings.Sites with
         {
-            AutoHosts = patch.AutoHosts
+            AutoHosts = patch.AutoHosts,
+            TestDnsEnabled = patch.TestDnsEnabled
         };
 
         Save(settings);
@@ -347,7 +348,8 @@ public sealed class SettingsStore
             },
             Sites = defaults.Sites with
             {
-                AutoHosts = stored.Sites.AutoHosts
+                AutoHosts = stored.Sites.AutoHosts,
+                TestDnsEnabled = stored.Sites.TestDnsEnabled
             },
             Databases = defaults.Databases with
             {

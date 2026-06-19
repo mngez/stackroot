@@ -151,6 +151,9 @@ public static class StackrootBootstrap
         });
 
         services.AddSingleton<HostsFileEditor>();
+        services.AddSingleton<TestDnsCoordinator>(provider => new TestDnsCoordinator(
+            provider.GetRequiredService<SettingsStore>(),
+            provider.GetRequiredService<IDiagnosticsReporter>()));
         services.AddSingleton<SiteCommandRunner>();
         services.AddSingleton<ISiteInstaller, LaravelSiteInstaller>();
         services.AddSingleton<ISiteInstaller, WordPressSiteInstaller>();
@@ -339,6 +342,19 @@ public static class StackrootBootstrap
 
                 var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
                 await activityCoordinator.NotifyCoreStartupFinishedAsync(cancellationToken).ConfigureAwait(false);
+
+                var testDns = services.GetRequiredService<TestDnsCoordinator>();
+                if (settings.Sites.TestDnsEnabled)
+                {
+                    try
+                    {
+                        await testDns.ApplySettingsAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        diagnostics.LogUserError("Test DNS", ex.Message);
+                    }
+                }
             },
             cancellationToken).ConfigureAwait(false);
 

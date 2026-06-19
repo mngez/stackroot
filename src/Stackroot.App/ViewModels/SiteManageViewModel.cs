@@ -13,6 +13,7 @@ using Stackroot.Core.Catalog;
 using Stackroot.Core.Databases;
 using Stackroot.Core.Databases.Models;
 using Stackroot.Core.IO;
+using Stackroot.Core.Nginx;
 using Stackroot.Core.Node;
 using Stackroot.Core.Services;
 using Stackroot.Core.Sites.Commands;
@@ -38,6 +39,7 @@ public sealed class SiteManageViewModel : ViewModelBase
     private readonly SessionActivityCoordinator _activityCoordinator;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly SiteThumbnailService _thumbnailService;
+    private readonly StackrootPaths _paths;
     private SiteModel? _site;
     private bool _isCapturing;
     private bool _isInstalling;
@@ -64,7 +66,8 @@ public sealed class SiteManageViewModel : ViewModelBase
         SessionActivityCoordinator activityCoordinator,
         IDiagnosticsReporter diagnostics,
         SettingsStore settingsStore,
-        SiteThumbnailService thumbnailService)
+        SiteThumbnailService thumbnailService,
+        StackrootPaths paths)
     {
         _siteManager = siteManager;
         _processManager = processManager;
@@ -76,6 +79,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         _diagnostics = diagnostics;
         _settingsStore = settingsStore;
         _thumbnailService = thumbnailService;
+        _paths = paths;
 
         // Auto-refresh processes when any process changes (e.g. auto-start)
         _processManager.Changed += (_, _) =>
@@ -128,8 +132,11 @@ public sealed class SiteManageViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(ShowCustomCommandStatus));
             }
         });
+        OpenSslPathsCommand = new RelayCommand(_ => OpenSslPathsDialog(), _ => HasDevSslPaths);
         BackCommand = new RelayCommand(_ => _services.GetRequiredService<ShellViewModel>().Navigate("sites"));
     }
+
+    public bool HasDevSslPaths => DevSslCertificateManager.TryGetExisting(_paths) is not null;
 
     public string SiteId { get; private set; } = string.Empty;
 
@@ -658,6 +665,7 @@ public sealed class SiteManageViewModel : ViewModelBase
     public RelayCommand ShowAddCommandCommand { get; }
     public RelayCommand RemoveCustomCommandCommand { get; }
     public RelayCommand DismissCustomStatusCommand { get; }
+    public RelayCommand OpenSslPathsCommand { get; }
     public RelayCommand BackCommand { get; }
 
     public void Load(string siteId)
@@ -683,6 +691,8 @@ public sealed class SiteManageViewModel : ViewModelBase
         RebuildProcessPresets();
         await RefreshProcessesAsync();
         RefreshLinkedDatabases();
+        RaisePropertyChanged(nameof(HasDevSslPaths));
+        OpenSslPathsCommand.RaiseCanExecuteChanged();
         RaiseQuickActionCanExecute();
         CleanupOldLoginFiles();
         LoadVersions();
@@ -1095,6 +1105,25 @@ public sealed class SiteManageViewModel : ViewModelBase
             "Database connection settings for this site.",
             StackrootDialogKind.Info,
             details: snippet);
+    }
+
+    private void OpenSslPathsDialog()
+    {
+        var ssl = DevSslCertificateManager.TryGetExisting(_paths);
+        if (ssl is null)
+        {
+            SetProcessStatus("Dev SSL certificates are not available yet. Enable HTTPS and add at least one site.");
+            return;
+        }
+
+        var dialogVm = new DevSslPathsDialogViewModel(ssl.CertAbs, ssl.KeyAbs);
+        var dialog = new DevSslPathsDialog
+        {
+            DataContext = dialogVm,
+            Owner = Application.Current?.MainWindow
+        };
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+        dialog.ShowDialog();
     }
 
     private void OpenCreateDatabaseDialog()

@@ -33,6 +33,7 @@ public sealed class StackrootShutdownCoordinator
     private readonly IProcessJobManager _processJobManager;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly ShellViewModel _shellViewModel;
+    private readonly TestDnsCoordinator _testDnsCoordinator;
     private int _shutdownCompleted;
 
     public StackrootShutdownCoordinator(
@@ -42,7 +43,8 @@ public sealed class StackrootShutdownCoordinator
         DeferredStartupCoordinator deferredStartup,
         IProcessJobManager processJobManager,
         IDiagnosticsReporter diagnostics,
-        ShellViewModel shellViewModel)
+        ShellViewModel shellViewModel,
+        TestDnsCoordinator testDnsCoordinator)
     {
         _serviceManager = serviceManager;
         _globalProcessManager = globalProcessManager;
@@ -51,6 +53,7 @@ public sealed class StackrootShutdownCoordinator
         _processJobManager = processJobManager;
         _diagnostics = diagnostics;
         _shellViewModel = shellViewModel;
+        _testDnsCoordinator = testDnsCoordinator;
     }
 
     public async Task ShutdownAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -118,6 +121,16 @@ public sealed class StackrootShutdownCoordinator
     private async Task StopAllManagedAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        try
+        {
+            _diagnostics.LogActivity("Shutdown", "Stopping local .test DNS…");
+            await _testDnsCoordinator.StopForShutdownAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _diagnostics.LogException("Shutdown", ex);
+        }
 
         try
         {

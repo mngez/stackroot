@@ -291,6 +291,12 @@ public record class NodeSettings
 public record class SiteDefaults
 {
     public bool AutoHosts { get; set; } = true;
+
+    /// <summary>
+    /// Route <c>.test</c> DNS queries to Stackroot's local resolver (127.0.0.1:53 via NRPT).
+    /// Disabled by default; does not affect other domains.
+    /// </summary>
+    public bool TestDnsEnabled { get; set; }
 }
 
 public record class DatabaseCredentials

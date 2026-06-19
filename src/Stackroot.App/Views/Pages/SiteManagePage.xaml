@@ -48,6 +48,12 @@
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
+                        Content="SSL paths"
+                        ToolTip="Local dev.crt and dev.key paths"
+                        Command="{Binding OpenSslPathsCommand}"
+                        Visibility="{Binding HasDevSslPaths, Converter={StaticResource BoolToVis}}" />
+                <Button MinWidth="100"
+                        Margin="0,0,10,0"
                         Content="Refresh"
                         Command="{Binding RefreshCommand}" />
                 <Button MinWidth="100"
