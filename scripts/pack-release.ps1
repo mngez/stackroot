@@ -105,7 +105,8 @@ if (-not $Publish) { return }
 $Tag = "v$Version"
 $Repo = Resolve-GitHubRepo
 $Title = "Stackroot $Version"
-$Notes = "Windows installer (NSIS)."
+$NotesPath = Join-Path $Root "release-notes/$Version.md"
+$Notes = if (Test-Path $NotesPath) { Get-Content $NotesPath -Raw } else { "Windows installer (NSIS)." }
 
 if (Get-Command gh -ErrorAction SilentlyContinue) {
     gh auth status --hostname github.com *> $null

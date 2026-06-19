@@ -105,6 +105,8 @@ public sealed class ServicesViewModel : ViewModelBase
         _ = RefreshAsync(force: true);
     }
 
+    public Task RefreshFromExternalAsync() => RefreshAsync(force: true);
+
     private async Task InitializeInBackgroundAsync()
     {
         if (_initialized || IsRefreshing)

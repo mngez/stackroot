@@ -1,4 +1,5 @@
 <UserControl x:Class="Stackroot.App.Views.Pages.PhpPage"
+             x:Name="PhpPageRoot"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Stackroot.App.Views.Controls">
@@ -26,6 +27,16 @@
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
+                <Button MinWidth="118"
+                        Margin="0,0,10,0"
+                        Content="Import profiles"
+                        ToolTip="Import one or more PHP profiles. Missing PHP versions are installed automatically."
+                        Command="{Binding ImportProfilesCommand}" />
+                <Button MinWidth="118"
+                        Margin="0,0,10,0"
+                        Content="Export profiles"
+                        ToolTip="Export all installed PHP versions with settings and extensions."
+                        Command="{Binding ExportAllProfilesCommand}" />
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
                         ToolTip="PHP runtime settings"
@@ -171,25 +182,48 @@
                                             Margin="0,0,6,0"
                                             Content="Settings"
                                             IsEnabled="{Binding CanInteract}"
-                                            Command="{Binding DataContext.OpenVersionSettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Command="{Binding DataContext.OpenVersionSettingsCommand, ElementName=PhpPageRoot}"
                                             CommandParameter="{Binding Id}" />
                                     <Button Width="96"
                                             Margin="0,0,6,0"
                                             Content="Extensions"
                                             IsEnabled="{Binding CanInteract}"
-                                            Command="{Binding DataContext.OpenExtensionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Command="{Binding DataContext.OpenExtensionsCommand, ElementName=PhpPageRoot}"
                                             CommandParameter="{Binding Id}" />
                                     <Button Width="88"
                                             Margin="0,0,6,0"
                                             Content="{Binding ActiveButtonLabel}"
                                             IsEnabled="{Binding CanSetActive}"
-                                            Command="{Binding DataContext.SetActiveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Command="{Binding DataContext.SetActiveCommand, ElementName=PhpPageRoot}"
                                             CommandParameter="{Binding Id}" />
-                                    <Button MinWidth="88"
-                                            Content="{Binding UninstallButtonLabel}"
-                                            IsEnabled="{Binding CanInteract}"
-                                            Command="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding Id}" />
+                                    <Button Width="36"
+                                            Height="36"
+                                            Margin="0,0,0,0"
+                                            Style="{StaticResource StackrootIconButtonStyle}"
+                                            ToolTip="More actions"
+                                            Tag="{Binding}"
+                                            Click="OpenRowMenu_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <Button Content="Export profile"
+                                                        Style="{StaticResource StackrootContextMenuButtonStyle}"
+                                                        Click="ExportProfileMenuItem_Click" />
+                                                <Button Content="Import profile"
+                                                        Style="{StaticResource StackrootContextMenuButtonStyle}"
+                                                        Click="ImportProfileMenuItem_Click" />
+                                                <Border Height="1"
+                                                        Margin="8,2"
+                                                        Background="{StaticResource StackrootBorderBrush}" />
+                                                <Button Tag="uninstall"
+                                                        Content="Uninstall"
+                                                        Style="{StaticResource StackrootContextMenuButtonStyle}"
+                                                        Click="UninstallMenuItem_Click" />
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                                   FontSize="16"
+                                                   Text="&#xE712;" />
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>

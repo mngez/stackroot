@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Reflection;
+using System.Text;
 using System.Windows;
 using System.Windows.Data;
 
@@ -8,6 +11,7 @@ using Stackroot.App.Helpers;
 using Stackroot.App.Views;
 
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
 
 using Stackroot.Core.Catalog;
 
@@ -55,6 +59,12 @@ public sealed class PhpViewModel : ViewModelBase
 
     private readonly SessionActivityReporter _activity;
 
+    private readonly PhpProfileExporter _profileExporter;
+
+    private readonly PhpProfileImporter _profileImporter;
+
+    private readonly ServicesViewModel _servicesViewModel;
+
     private readonly ICollectionView _phpInstallQueueView;
 
     private bool _isRefreshing;
@@ -95,7 +105,13 @@ public sealed class PhpViewModel : ViewModelBase
 
         NginxWebStackRebuilder nginxWebStackRebuilder,
 
-        SessionActivityReporter activity)
+        SessionActivityReporter activity,
+
+        PhpProfileExporter profileExporter,
+
+        PhpProfileImporter profileImporter,
+
+        ServicesViewModel servicesViewModel)
 
     {
 
@@ -122,6 +138,12 @@ public sealed class PhpViewModel : ViewModelBase
         _nginxWebStackRebuilder = nginxWebStackRebuilder;
 
         _activity = activity;
+
+        _profileExporter = profileExporter;
+
+        _profileImporter = profileImporter;
+
+        _servicesViewModel = servicesViewModel;
 
         _installTracker.Changed += (_, _) => OnInstallTrackerChanged();
 
@@ -152,6 +174,14 @@ public sealed class PhpViewModel : ViewModelBase
         OpenVersionSettingsCommand = new RelayCommand(arg => OpenVersionSettingsDialog(arg as string), _ => !_isRefreshing);
 
         OpenExtensionsCommand = new RelayCommand(arg => OpenExtensionsDialog(arg as string), _ => !_isRefreshing);
+
+        ExportProfileCommand = new RelayCommand(arg => ExportProfile(arg as string), _ => !_isRefreshing);
+
+        ImportProfileCommand = new RelayCommand(arg => _ = ImportProfilesFromFileAsync(arg as string), _ => !_isRefreshing);
+
+        ImportProfilesCommand = new RelayCommand(_ => _ = ImportProfilesFromFileAsync(), _ => !_isRefreshing);
+
+        ExportAllProfilesCommand = new RelayCommand(_ => ExportAllProfiles(), _ => !_isRefreshing);
 
         UninstallCommand = new RelayCommand(
 
@@ -194,6 +224,14 @@ public sealed class PhpViewModel : ViewModelBase
     public RelayCommand OpenVersionSettingsCommand { get; }
 
     public RelayCommand OpenExtensionsCommand { get; }
+
+    public RelayCommand ExportProfileCommand { get; }
+
+    public RelayCommand ImportProfileCommand { get; }
+
+    public RelayCommand ImportProfilesCommand { get; }
+
+    public RelayCommand ExportAllProfilesCommand { get; }
 
     public RelayCommand UninstallCommand { get; }
 
@@ -296,6 +334,14 @@ public sealed class PhpViewModel : ViewModelBase
         OpenVersionSettingsCommand.RaiseCanExecuteChanged();
 
         OpenExtensionsCommand.RaiseCanExecuteChanged();
+
+        ExportProfileCommand.RaiseCanExecuteChanged();
+
+        ImportProfileCommand.RaiseCanExecuteChanged();
+
+        ImportProfilesCommand.RaiseCanExecuteChanged();
+
+        ExportAllProfilesCommand.RaiseCanExecuteChanged();
 
         UninstallCommand.RaiseCanExecuteChanged();
 
@@ -1282,6 +1328,518 @@ public sealed class PhpViewModel : ViewModelBase
         var dialogVm = new PhpExtensionsDialogViewModel(_extensionManager, _peclInstaller, versionId, label);
 
         ShowDialog(new PhpExtensionsDialog { DataContext = dialogVm }, dialogVm, refreshOnChange: true);
+
+    }
+
+
+
+    public void ExportProfileForVersion(string versionId)
+
+    {
+
+        if (_isRefreshing || string.IsNullOrWhiteSpace(versionId))
+
+        {
+
+            return;
+
+        }
+
+
+
+        ExportProfile(versionId);
+
+    }
+
+
+
+    public void ImportProfileForVersion(string versionId)
+
+    {
+
+        if (_isRefreshing || string.IsNullOrWhiteSpace(versionId))
+
+        {
+
+            return;
+
+        }
+
+
+
+        _ = ImportProfilesFromFileAsync(versionId);
+
+    }
+
+
+
+    private void ExportAllProfiles()
+
+    {
+
+        if (_isRefreshing)
+
+        {
+
+            return;
+
+        }
+
+
+
+        try
+
+        {
+
+            var stackrootVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
+
+            var bundle = _profileExporter.ExportAll(stackrootVersion);
+
+
+
+            using var dialog = new System.Windows.Forms.SaveFileDialog
+
+            {
+
+                Title = "Export PHP profiles",
+
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+
+                FileName = $"php-profiles-{DateTime.Now:yyyyMMdd-HHmm}.json",
+
+                OverwritePrompt = true
+
+            };
+
+
+
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+
+            {
+
+                return;
+
+            }
+
+
+
+            var activityId = _activity.Begin("PHP", SessionActivityMessages.ExportingPhpProfiles(bundle.Profiles.Count));
+
+            try
+
+            {
+
+                var json = _profileExporter.SerializeBundleToJson(bundle);
+
+                File.WriteAllText(dialog.FileName, json, Encoding.UTF8);
+
+                StatusMessage = SessionActivityMessages.PhpProfilesExported(bundle.Profiles.Count);
+
+                _activity.Complete(activityId, "PHP", StatusMessage);
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                StatusMessage = ex.Message;
+
+                _activity.Fail(activityId, "PHP", StatusMessage, ex);
+
+                StackrootDialogs.ShowError(Application.Current?.MainWindow, "Export PHP profiles", ex.Message);
+
+            }
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            StatusMessage = ex.Message;
+
+            _activity.LogError("PHP", StatusMessage);
+
+            StackrootDialogs.ShowError(Application.Current?.MainWindow, "Export PHP profiles", ex.Message);
+
+        }
+
+    }
+
+
+
+    private void ExportProfile(string? versionId)
+
+    {
+
+        if (string.IsNullOrWhiteSpace(versionId))
+
+        {
+
+            return;
+
+        }
+
+
+
+        using var dialog = new System.Windows.Forms.SaveFileDialog
+
+        {
+
+            Title = "Export PHP profile",
+
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+
+            FileName = $"php-profile-{versionId}.json",
+
+            OverwritePrompt = true
+
+        };
+
+
+
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+
+        {
+
+            return;
+
+        }
+
+
+
+        try
+
+        {
+
+            var stackrootVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
+
+            var document = _profileExporter.Export(versionId, stackrootVersion);
+
+            var json = _profileExporter.SerializeToJson(document);
+
+            var activityId = _activity.Begin("PHP", SessionActivityMessages.ExportingPhpProfile(versionId));
+
+            try
+
+            {
+
+                File.WriteAllText(dialog.FileName, json, Encoding.UTF8);
+
+                StatusMessage = SessionActivityMessages.PhpProfileExported(versionId);
+
+                _activity.Complete(activityId, "PHP", StatusMessage);
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                StatusMessage = ex.Message;
+
+                _activity.Fail(activityId, "PHP", StatusMessage, ex);
+
+                StackrootDialogs.ShowError(Application.Current?.MainWindow, "Export PHP profile", ex.Message);
+
+            }
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            StatusMessage = ex.Message;
+
+            _activity.LogError("PHP", StatusMessage);
+
+            StackrootDialogs.ShowError(Application.Current?.MainWindow, "Export PHP profile", ex.Message);
+
+        }
+
+    }
+
+
+
+    private async Task ImportProfilesFromFileAsync(string? clickedVersionId = null)
+
+    {
+
+        using var dialog = new System.Windows.Forms.OpenFileDialog
+
+        {
+
+            Title = "Import PHP profile",
+
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*"
+
+        };
+
+
+
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+
+        {
+
+            return;
+
+        }
+
+
+
+        IReadOnlyList<PhpProfileDocument> profiles;
+
+        try
+
+        {
+
+            var json = await File.ReadAllTextAsync(dialog.FileName).ConfigureAwait(true);
+
+            profiles = PhpProfileImporter.ParseProfiles(json);
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            StatusMessage = ex.Message;
+
+            _activity.LogError("PHP", StatusMessage);
+
+            StackrootDialogs.ShowError(Application.Current?.MainWindow, "Import PHP profile", ex.Message);
+
+            return;
+
+        }
+
+
+
+        if (profiles.Count == 1
+
+            && !string.IsNullOrWhiteSpace(clickedVersionId)
+
+            && !string.Equals(clickedVersionId, profiles[0].TargetVersionId, StringComparison.OrdinalIgnoreCase))
+
+        {
+
+            var proceed = StackrootDialogs.ConfirmWarning(
+
+                Application.Current?.MainWindow,
+
+                "Import PHP profile",
+
+                $"This profile targets {profiles[0].TargetVersionId}. You clicked import on {clickedVersionId}. Continue and install or update {profiles[0].TargetVersionId}?");
+
+            if (!proceed)
+
+            {
+
+                return;
+
+            }
+
+        }
+
+        else if (profiles.Count > 1)
+
+        {
+
+            var versionList = string.Join(", ", profiles.Select(static profile => profile.TargetVersionId));
+
+            var proceed = StackrootDialogs.ConfirmWarning(
+
+                Application.Current?.MainWindow,
+
+                "Import PHP profiles",
+
+                $"Import {profiles.Count} PHP profiles ({versionList})? Missing versions will be installed automatically.");
+
+            if (!proceed)
+
+            {
+
+                return;
+
+            }
+
+        }
+
+
+
+        IsRefreshing = true;
+
+        var progressMessage = profiles.Count == 1
+
+            ? SessionActivityMessages.ImportingPhpProfile(profiles[0].TargetVersionId)
+
+            : SessionActivityMessages.ImportingPhpProfiles(profiles.Count);
+
+        StatusMessage = progressMessage;
+
+        var activityId = _activity.Begin("PHP", progressMessage);
+
+
+
+        try
+
+        {
+
+            var results = new List<PhpProfileImportResult>(profiles.Count);
+
+            foreach (var profile in profiles)
+
+            {
+
+                var result = await Task.Run(async () =>
+
+                        await _profileImporter.ImportAsync(
+
+                            profile,
+
+                            message => _activity.UpdateProgress(activityId, "PHP", message))
+
+                            .ConfigureAwait(false))
+
+                    .ConfigureAwait(true);
+
+                results.Add(result);
+
+            }
+
+
+
+            await RefreshAsync().ConfigureAwait(true);
+
+            await _servicesViewModel.RefreshFromExternalAsync().ConfigureAwait(true);
+
+
+
+            var failedCount = results.Sum(static result => result.Failed.Count);
+
+            var title = failedCount == 0 ? "Import complete" : "Import completed with warnings";
+
+            var details = string.Join(
+
+                Environment.NewLine + Environment.NewLine,
+
+                results.Select(BuildProfileImportDetails));
+
+            var summary = string.Join("; ", results.Select(static result => result.Summary));
+
+            StatusMessage = profiles.Count == 1
+
+                ? SessionActivityMessages.PhpProfileImported(results[0].TargetVersionId, results[0].Summary)
+
+                : SessionActivityMessages.PhpProfilesImported(results.Count, summary);
+
+
+
+            var tone = failedCount == 0 ? SessionActivityTone.Success : SessionActivityTone.Warning;
+
+            _activity.Complete(activityId, "PHP", StatusMessage, tone);
+
+
+
+            if (failedCount == 0)
+
+            {
+
+                StackrootDialogs.ShowInfo(Application.Current?.MainWindow, title, StatusMessage, details);
+
+            }
+
+            else
+
+            {
+
+                StackrootDialogs.ShowWarning(Application.Current?.MainWindow, title, StatusMessage, details);
+
+            }
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            StatusMessage = ex.Message;
+
+            _activity.Fail(activityId, "PHP", StatusMessage, ex);
+
+            StackrootDialogs.ShowError(Application.Current?.MainWindow, "Import PHP profile", ex.Message);
+
+        }
+
+        finally
+
+        {
+
+            IsRefreshing = false;
+
+        }
+
+    }
+
+
+
+    private static string BuildProfileImportDetails(PhpProfileImportResult result)
+
+    {
+
+        var lines = new List<string> { result.TargetVersionId };
+
+        if (result.InstalledPackages.Count > 0)
+
+        {
+
+            lines.Add($"Installed packages: {string.Join(", ", result.InstalledPackages)}");
+
+        }
+
+        if (result.InstalledExtensions.Count > 0)
+
+        {
+
+            lines.Add($"Installed extensions: {string.Join(", ", result.InstalledExtensions)}");
+
+        }
+
+        if (result.StartedServices.Count > 0)
+
+        {
+
+            lines.Add($"Started services: {string.Join(", ", result.StartedServices)}");
+
+        }
+
+        if (result.EnabledExtensions.Count > 0)
+
+        {
+
+            lines.Add($"Enabled extensions: {string.Join(", ", result.EnabledExtensions)}");
+
+        }
+
+        if (result.Skipped.Count > 0)
+
+        {
+
+            lines.Add($"Skipped: {string.Join(", ", result.Skipped)}");
+
+        }
+
+        if (result.Failed.Count > 0)
+
+        {
+
+            lines.Add($"Failed: {string.Join(", ", result.Failed)}");
+
+        }
+
+        return lines.Count == 0 ? string.Empty : string.Join(Environment.NewLine, lines);
 
     }
 

@@ -127,6 +127,8 @@ public static class StackrootBootstrap
         services.AddSingleton<PhpExtensionsManifestStore>();
         services.AddSingleton<PhpExtensionManager>();
         services.AddSingleton<PeclInstaller>();
+        services.AddSingleton<PhpProfileExporter>();
+        services.AddSingleton<PhpProfileImporter>();
         services.AddSingleton<DatabaseRegistryStore>(provider =>
         {
             var paths = provider.GetRequiredService<StackrootPaths>();

@@ -70,6 +70,12 @@ public sealed class SessionActivityReporter
         _activity.Fail(id, message);
     }
 
+    public void UpdateProgress(Guid id, string area, string message)
+    {
+        _diagnostics.LogActivity(area, message);
+        _activity.UpdateProgress(id, message);
+    }
+
     public async Task RunAsync(
         string area,
         string progressMessage,

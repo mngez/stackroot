@@ -15,4 +15,6 @@ public static class DataDocumentSchemas
     public const int DownloadCache = 1;
     public const int SiteWpCredentials = 1;
     public const int SiteCustomCommands = 1;
+    public const int PhpProfile = 1;
+    public const int PhpProfilesBundle = 1;
 }

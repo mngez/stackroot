@@ -54,6 +54,9 @@ public sealed class SessionActivityService : ViewModelBase
 
     public void Fail(Guid id, string message) => Complete(id, message, SessionActivityTone.Error);
 
+    public void UpdateProgress(Guid id, string message) =>
+        RunOnUi(() => UpdateEntry(id, message, SessionActivityTone.Progress));
+
     public void Log(string message, SessionActivityTone tone = SessionActivityTone.Info)
     {
         RunOnUi(() =>

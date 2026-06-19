@@ -127,6 +127,43 @@
             <Setter Property="FontWeight" Value="Normal" />
         </Style>
 
+        <Style x:Key="StackrootContextMenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="MaxHeight" Value="26" />
+            <Setter Property="MinWidth" Value="144" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource StackrootCardHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="StackrootInlinePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
             <Setter Property="Padding" Value="10,2" />
             <Setter Property="MinHeight" Value="24" />
@@ -379,18 +416,38 @@
             <Setter Property="Background" Value="#121A26" />
             <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
             <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <StackPanel IsItemsHost="True"
+                                        KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="MenuItem">
             <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Padding" Value="12,8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Icon" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
                                 Padding="{TemplateBinding Padding}"
+                                HorizontalAlignment="Stretch"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Stretch"
                                               VerticalAlignment="Center"
@@ -413,6 +470,23 @@
                     <Setter Property="Background" Value="{StaticResource StackrootCardHoverBrush}" />
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Separator">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
+            <Setter Property="Height" Value="7" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Height="1"
+                                Margin="8,3"
+                                Background="{StaticResource StackrootBorderBrush}"
+                                SnapsToDevicePixels="True" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="DataGrid">

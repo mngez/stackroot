@@ -249,6 +249,34 @@ public sealed class PhpExtensionManager
         ToggleExtension(versionId, extensionId, enabled: true);
     }
 
+    public void ApplyImportedProfile(string versionId, PhpVersionSettings profile)
+    {
+        var settings = _settingsStore.Load();
+        var versions = settings.Php.Versions is null
+            ? new Dictionary<string, PhpVersionSettings>()
+            : new Dictionary<string, PhpVersionSettings>(settings.Php.Versions);
+
+        var merged = MergeDiscoveredExtensions(versionId, profile);
+        versions[versionId] = merged with
+        {
+            MemoryLimit = profile.MemoryLimit,
+            MaxExecutionTime = profile.MaxExecutionTime,
+            UploadMaxFilesize = profile.UploadMaxFilesize,
+            PostMaxSize = profile.PostMaxSize,
+            DisplayErrors = profile.DisplayErrors,
+            HideWarnings = profile.HideWarnings,
+            HideDeprecated = profile.HideDeprecated,
+            LogErrors = profile.LogErrors,
+            Extensions = new Dictionary<string, bool>(profile.Extensions, StringComparer.OrdinalIgnoreCase),
+            IniOverrides = profile.IniOverrides is null
+                ? []
+                : new Dictionary<string, string>(profile.IniOverrides, StringComparer.Ordinal)
+        };
+
+        settings = _settingsStore.UpdatePhp(settings.Php with { Versions = versions });
+        _configWriter.WritePhpConfig(settings, versionId);
+    }
+
     private PhpVersionSettings ResolveVersionSettings(AppSettings settings, string versionId)
     {
         if (settings.Php.Versions is not null && settings.Php.Versions.TryGetValue(versionId, out var version))

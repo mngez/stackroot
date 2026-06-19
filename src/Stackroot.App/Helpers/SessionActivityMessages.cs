@@ -160,6 +160,24 @@ public static class SessionActivityMessages
 
     public static string PhpVersionUninstalled(string versionId) => $"PHP {versionId} uninstalled.";
 
+    public static string ExportingPhpProfile(string versionId) => $"Exporting PHP profile for {versionId}…";
+
+    public static string PhpProfileExported(string versionId) => $"Exported PHP profile for {versionId}.";
+
+    public static string ExportingPhpProfiles(int count) => $"Exporting {count} PHP profile(s)…";
+
+    public static string PhpProfilesExported(int count) => $"Exported {count} PHP profile(s).";
+
+    public static string ImportingPhpProfile(string versionId) => $"Importing PHP profile for {versionId}…";
+
+    public static string ImportingPhpProfiles(int count) => $"Importing {count} PHP profiles…";
+
+    public static string PhpProfileImported(string versionId, string summary) =>
+        $"Imported PHP profile for {versionId}. {summary}";
+
+    public static string PhpProfilesImported(int count, string summary) =>
+        $"Imported {count} PHP profiles. {summary}";
+
     public static string FormatLiveState(ServiceDefinition definition, ServiceInfo info)
     {
         if (info.Enabled == false)
