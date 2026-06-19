@@ -131,7 +131,7 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
 }
 
 if ($ghAuthenticated) {
-    gh release view $Tag --repo $Repo *> $null
+    gh release view $Tag --repo $Repo 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
         gh release upload $Tag $SetupPath --repo $Repo --clobber
     } else {
