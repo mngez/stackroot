@@ -131,8 +131,13 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
 }
 
 if ($ghAuthenticated) {
+    $prevErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     gh release view $Tag --repo $Repo 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    $releaseExists = $LASTEXITCODE -eq 0
+    $ErrorActionPreference = $prevErrorAction
+
+    if ($releaseExists) {
         gh release upload $Tag $SetupPath --repo $Repo --clobber
     } else {
         gh release create $Tag $SetupPath --repo $Repo --title $Title --notes $Notes
