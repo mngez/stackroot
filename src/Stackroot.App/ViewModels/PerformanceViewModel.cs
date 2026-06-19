@@ -15,7 +15,9 @@ public sealed class PerformanceViewModel : ViewModelBase
     private readonly PerformanceSampler _performanceSampler;
     private DispatcherTimer? _pollTimer;
     private string _sampledAt = "-";
-    private string _totalMemory = "0 MB";
+    private string _serviceTotalMemory = "0 MB";
+    private string _processTotalMemory = "0 MB";
+    private bool _hasProcesses;
     private int _refreshInFlight;
 
     public PerformanceViewModel(
@@ -29,11 +31,13 @@ public sealed class PerformanceViewModel : ViewModelBase
         _processSupervisor = processSupervisor;
         _performanceSampler = performanceSampler;
 
-        Items = [];
+        ServiceItems = [];
+        ProcessItems = [];
         RefreshCommand = new RelayCommand(_ => Refresh());
     }
 
-    public ObservableCollection<PerformanceRowViewModel> Items { get; }
+    public ObservableCollection<PerformanceRowViewModel> ServiceItems { get; }
+    public ObservableCollection<PerformanceRowViewModel> ProcessItems { get; }
     public RelayCommand RefreshCommand { get; }
 
     public string SampledAt
@@ -42,10 +46,22 @@ public sealed class PerformanceViewModel : ViewModelBase
         private set => SetProperty(ref _sampledAt, value);
     }
 
-    public string TotalMemory
+    public string ServiceTotalMemory
     {
-        get => _totalMemory;
-        private set => SetProperty(ref _totalMemory, value);
+        get => _serviceTotalMemory;
+        private set => SetProperty(ref _serviceTotalMemory, value);
+    }
+
+    public string ProcessTotalMemory
+    {
+        get => _processTotalMemory;
+        private set => SetProperty(ref _processTotalMemory, value);
+    }
+
+    public bool HasProcesses
+    {
+        get => _hasProcesses;
+        private set => SetProperty(ref _hasProcesses, value);
     }
 
     public void BeginLoading()
@@ -113,29 +129,52 @@ public sealed class PerformanceViewModel : ViewModelBase
                     Environment.ProcessId);
             });
 
-            Items.Clear();
-            foreach (var item in snapshot.Items.OrderByDescending(row => row.MemoryMb ?? 0))
+            var serviceRows = snapshot.Items
+                .Where(item => item.Kind is PerformanceItemKind.App or PerformanceItemKind.Service)
+                .OrderByDescending(row => row.MemoryMb ?? 0)
+                .Select(ToRow)
+                .ToList();
+
+            var processRows = snapshot.Items
+                .Where(item => item.Kind == PerformanceItemKind.Process)
+                .OrderByDescending(row => row.MemoryMb ?? 0)
+                .Select(ToRow)
+                .ToList();
+
+            ServiceItems.Clear();
+            foreach (var row in serviceRows)
             {
-                Items.Add(new PerformanceRowViewModel
-                {
-                    Id = item.Id,
-                    Label = item.Label,
-                    Kind = item.Kind.ToString(),
-                    Status = item.Status ?? "-",
-                    Pid = item.Pid?.ToString() ?? "-",
-                    Memory = item.MemoryMb.HasValue ? $"{item.MemoryMb.Value:F1} MB" : "-"
-                });
+                ServiceItems.Add(row);
+            }
+
+            ProcessItems.Clear();
+            foreach (var row in processRows)
+            {
+                ProcessItems.Add(row);
             }
 
             SampledAt = snapshot.SampledAt.ToLocalTime().ToString("g");
-            var total = snapshot.Items.Sum(item => item.MemoryMb ?? 0);
-            TotalMemory = $"{total:F1} MB";
+            ServiceTotalMemory = FormatTotalMb(serviceRows.Sum(row => row.MemoryMb ?? 0));
+            ProcessTotalMemory = FormatTotalMb(processRows.Sum(row => row.MemoryMb ?? 0));
+            HasProcesses = processRows.Count > 0;
         }
         finally
         {
             Interlocked.Exchange(ref _refreshInFlight, 0);
         }
     }
+
+    private static PerformanceRowViewModel ToRow(ProcessPerformance item) => new()
+    {
+        Id = item.Id,
+        Label = item.Label,
+        Kind = item.Kind.ToString(),
+        Status = item.Status ?? "-",
+        Pid = item.Pid?.ToString() ?? "-",
+        MemoryMb = item.MemoryMb
+    };
+
+    private static string FormatTotalMb(double totalMb) => $"{totalMb:F1} MB";
 
     private void StartAutoPoll()
     {
@@ -174,5 +213,6 @@ public sealed class PerformanceRowViewModel
     public string Kind { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public string Pid { get; init; } = "-";
-    public string Memory { get; init; } = "-";
+    public double? MemoryMb { get; init; }
+    public string Memory => MemoryMb.HasValue ? $"{MemoryMb.Value:F1} MB" : "-";
 }
