@@ -30,7 +30,7 @@ public static class ProcessWorkingDirectory
     }
 
     /// <summary>
-    /// On Windows, legacy Electron cwd values like "/game/" resolve against the site workDir,
+    /// On Windows, legacy Electron cwd values like "/folder/" resolve against the site workDir,
     /// not the current drive root.
     /// </summary>
     private static string TreatUnixStyleRelativeCwd(string raw)

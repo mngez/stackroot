@@ -98,7 +98,10 @@ public sealed class GlobalProcessStore
             Name = name,
             WorkDir = workDir,
             Cwd = cwd,
-            Argv = argv
+            Argv = argv,
+            RestartDelaySeconds = process.RestartDelaySeconds is int delay and > 0
+                ? Math.Min(delay, 86_400)
+                : null
         };
     }
 

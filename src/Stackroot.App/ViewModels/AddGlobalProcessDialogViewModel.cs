@@ -32,6 +32,7 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
     private bool _enabled = true;
     private bool _autoStart;
     private bool _featured;
+    private string _restartDelaySeconds = string.Empty;
     private string _statusMessage = string.Empty;
     private bool _isSaving;
 
@@ -191,6 +192,12 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
         set => SetProperty(ref _featured, value);
     }
 
+    public string RestartDelaySeconds
+    {
+        get => _restartDelaySeconds;
+        set => SetProperty(ref _restartDelaySeconds, value);
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -234,6 +241,7 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
         AutoStart = process.AutoStart;
         Featured = process.Featured == true;
         SelectedPhpVersionId = process.PhpVersionId;
+        RestartDelaySeconds = process.RestartDelaySeconds?.ToString() ?? string.Empty;
         SyncDefaultPhpVersion(force: string.IsNullOrWhiteSpace(process.PhpVersionId));
     }
 
@@ -304,6 +312,22 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(trimmed) ? "." : trimmed;
     }
 
+    private static int? ParseRestartDelaySeconds(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        if (!int.TryParse(trimmed, out var seconds) || seconds <= 0)
+        {
+            throw new InvalidOperationException("Restart delay must be a positive number of seconds.");
+        }
+
+        return Math.Min(seconds, 86_400);
+    }
+
     private void Save()
     {
         StatusMessage = string.Empty;
@@ -335,6 +359,17 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
         IsSaving = true;
         try
         {
+            int? restartDelaySeconds;
+            try
+            {
+                restartDelaySeconds = ParseRestartDelaySeconds(RestartDelaySeconds);
+            }
+            catch (InvalidOperationException ex)
+            {
+                StatusMessage = ex.Message;
+                return;
+            }
+
             var trimmedSiteId = string.IsNullOrWhiteSpace(SiteId) ? null : SiteId;
             var trimmedWorkDir = ResolveStoredWorkDir(trimmedSiteId);
             var trimmedCwd = NormalizeStoredCwd(WorkingDirectory);
@@ -362,7 +397,8 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
                 Enabled = Enabled,
                 AutoStart = AutoStart,
                 Featured = Featured,
-                PhpVersionId = phpVersionId
+                PhpVersionId = phpVersionId,
+                RestartDelaySeconds = restartDelaySeconds
             };
 
             if (IsEdit && _editProcess is not null)

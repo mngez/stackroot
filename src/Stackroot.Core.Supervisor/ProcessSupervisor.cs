@@ -13,12 +13,16 @@ public sealed class ProcessSupervisor : IDisposable
     private readonly Dictionary<string, ManagedProcess> _running = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, LogBuffer> _logs = new(StringComparer.OrdinalIgnoreCase);
     private readonly IProcessJobManager _jobManager;
+    private Func<ProcessScope, ProcessRunTarget?>? _resolveTarget;
     private bool _disposed;
 
     public ProcessSupervisor(IProcessJobManager jobManager)
     {
         _jobManager = jobManager;
     }
+
+    public void SetTargetResolver(Func<ProcessScope, ProcessRunTarget?>? resolver) =>
+        _resolveTarget = resolver;
 
     public ManagedProcessSnapshot Start(ProcessRunTarget target)
     {
@@ -211,7 +215,14 @@ public sealed class ProcessSupervisor : IDisposable
         };
 
         var managed = new ManagedProcess(target, process, ProcessStatus.Running, null, restartAttempt, commandLine);
-        InitializeLog(key, target, commandLine);
+        if (restartAttempt == 0)
+        {
+            InitializeLog(key, target, commandLine);
+        }
+        else
+        {
+            AppendRestartSectionIfConfigChanged(key, target, commandLine, restartAttempt);
+        }
         WireOutputHandlers(process, key);
         WireExitHandler(process, key);
 
@@ -229,12 +240,13 @@ public sealed class ProcessSupervisor : IDisposable
 
         lock (_sync)
         {
-            if (_running.TryGetValue(key, out var previous))
+            if (_running.TryGetValue(key, out var previous) && previous != managed)
             {
-                // If another thread already started a process for this scope
-                // (e.g. a concurrent Start call), kill this one to avoid
-                // duplicate listeners fighting over the same port.
-                if (previous != managed && !previous.Stopping)
+                if (previous.Stopping)
+                {
+                    CancelRestart(previous);
+                }
+                else if (IsProcessRunning(previous.Process))
                 {
                     duplicateSnapshot = previous.ToSnapshot();
                     _running[key] = previous;
@@ -242,6 +254,14 @@ public sealed class ProcessSupervisor : IDisposable
                 else
                 {
                     CancelRestart(previous);
+                    try
+                    {
+                        previous.Process.Dispose();
+                    }
+                    catch
+                    {
+                        // Best-effort cleanup of the exited process handle.
+                    }
                 }
             }
 
@@ -325,7 +345,7 @@ public sealed class ProcessSupervisor : IDisposable
             }
 
             var nextAttempt = current.RestartAttempt + 1;
-            var delayMs = ComputeRestartDelayMs(current.RestartAttempt);
+            var delayMs = ComputeRestartDelayMs(current.Target, current.RestartAttempt);
             var restartCancellation = new CancellationTokenSource();
             bool stopping;
             lock (_sync)
@@ -376,7 +396,8 @@ public sealed class ProcessSupervisor : IDisposable
 
             try
             {
-                StartInternal(current.Target, nextAttempt);
+                var target = _resolveTarget?.Invoke(current.Target.Scope) ?? current.Target;
+                StartInternal(target, nextAttempt);
             }
             catch (Exception ex)
             {
@@ -441,23 +462,72 @@ public sealed class ProcessSupervisor : IDisposable
         restartCancellation.Dispose();
     }
 
+    private void AppendRestartSectionIfConfigChanged(string key, ProcessRunTarget target, string commandLine, int restartAttempt)
+    {
+        var fingerprint = BuildConfigFingerprint(target, commandLine);
+        lock (_sync)
+        {
+            if (!_logs.TryGetValue(key, out var log))
+            {
+                log = new LogBuffer(commandLine);
+                WriteLogPreamble(log, target, commandLine);
+                log.ConfigFingerprint = fingerprint;
+                _logs[key] = log;
+                return;
+            }
+
+            if (string.Equals(log.ConfigFingerprint, fingerprint, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            log.Content.AppendLine();
+            log.Content.AppendLine($"[supervisor] --- restart #{restartAttempt} (config updated) at {DateTimeOffset.Now:u} ---");
+            WriteLogPreamble(log, target, commandLine);
+            log.ConfigFingerprint = fingerprint;
+        }
+    }
+
     private void InitializeLog(string key, ProcessRunTarget target, string commandLine)
     {
         lock (_sync)
         {
             var log = new LogBuffer(commandLine);
-            log.Content.AppendLine($"[supervisor] starting {target.Label}");
-            log.Content.AppendLine($"[supervisor] cwd: {target.WorkingDirectory}");
-            log.Content.AppendLine($"[supervisor] command: {commandLine}");
-            if (target.EnvironmentVariables is not null
-                && target.EnvironmentVariables.TryGetValue("PHPRC", out var phpRc)
-                && !string.IsNullOrWhiteSpace(phpRc))
-            {
-                log.Content.AppendLine($"[supervisor] PHPRC: {phpRc}");
-            }
-
+            WriteLogPreamble(log, target, commandLine);
+            log.ConfigFingerprint = BuildConfigFingerprint(target, commandLine);
             _logs[key] = log;
         }
+    }
+
+    private static void WriteLogPreamble(LogBuffer log, ProcessRunTarget target, string commandLine)
+    {
+        log.Content.AppendLine($"[supervisor] starting {target.Label}");
+        log.Content.AppendLine($"[supervisor] cwd: {target.WorkingDirectory}");
+        log.Content.AppendLine($"[supervisor] command: {commandLine}");
+        if (target.RestartDelaySeconds is int delaySeconds)
+        {
+            log.Content.AppendLine($"[supervisor] restart delay: {delaySeconds}s");
+        }
+
+        if (target.EnvironmentVariables is not null
+            && target.EnvironmentVariables.TryGetValue("PHPRC", out var phpRc)
+            && !string.IsNullOrWhiteSpace(phpRc))
+        {
+            log.Content.AppendLine($"[supervisor] PHPRC: {phpRc}");
+        }
+    }
+
+    private static string BuildConfigFingerprint(ProcessRunTarget target, string commandLine)
+    {
+        var env = target.EnvironmentVariables is null
+            ? string.Empty
+            : string.Join(
+                ';',
+                target.EnvironmentVariables
+                    .OrderBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(static pair => $"{pair.Key}={pair.Value}"));
+
+        return $"{target.Label}|{target.WorkingDirectory}|{commandLine}|{target.RestartDelaySeconds}|{env}";
     }
 
     private void AppendLog(string key, string line)
@@ -482,8 +552,13 @@ public sealed class ProcessSupervisor : IDisposable
         }
     }
 
-    private static int ComputeRestartDelayMs(int restartAttempt)
+    private static int ComputeRestartDelayMs(ProcessRunTarget target, int restartAttempt)
     {
+        if (target.RestartDelaySeconds is int seconds and > 0)
+        {
+            return seconds * 1000;
+        }
+
         if (restartAttempt <= 0)
         {
             return 2000;
@@ -574,5 +649,6 @@ public sealed class ProcessSupervisor : IDisposable
 
         public StringBuilder Content { get; }
         public string CommandLine { get; }
+        public string? ConfigFingerprint { get; set; }
     }
 }

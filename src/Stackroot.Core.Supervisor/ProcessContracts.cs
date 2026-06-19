@@ -9,7 +9,8 @@ public sealed record ProcessRunTarget(
     IReadOnlyList<string> Arguments,
     string WorkingDirectory,
     IReadOnlyDictionary<string, string?>? EnvironmentVariables = null,
-    bool Supervised = true);
+    bool Supervised = true,
+    int? RestartDelaySeconds = null);
 
 public sealed record ManagedProcessSnapshot(
     ProcessScope Scope,

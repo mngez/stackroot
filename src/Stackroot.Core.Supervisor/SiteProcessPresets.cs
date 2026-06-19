@@ -62,7 +62,7 @@ public static class SiteProcessPresets
         new(
             "shell-custom",
             "Shell command",
-            "Any command line (exe, game server, etc.)",
+            "Any command line (exe, server, etc.)",
             SiteCommandRuntime.Shell,
             ["echo Hello"])
     ];

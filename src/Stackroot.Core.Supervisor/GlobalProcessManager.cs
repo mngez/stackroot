@@ -16,6 +16,7 @@ public sealed class GlobalProcessManager
         _supervisor = supervisor;
         _store = store;
         _argvResolver = argvResolver;
+        _supervisor.SetTargetResolver(ResolveRunTarget);
     }
 
     public event EventHandler? Changed;
@@ -272,6 +273,7 @@ public sealed class GlobalProcessManager
                 ?? string.Join(' ', argv),
             PhpVersionId = process.PhpVersionId,
             NodeVersion = process.NodeVersion,
+            RestartDelaySeconds = process.RestartDelaySeconds,
             Pid = pid,
             Message = snapshot?.Message,
             FromPreset = process.FromPreset,
@@ -284,6 +286,17 @@ public sealed class GlobalProcessManager
 
     private ProcessRunTarget ToRunTarget(GlobalProcess process) =>
         BuildRunTarget(process, ResolveArgv(process));
+
+    private ProcessRunTarget? ResolveRunTarget(ProcessScope scope)
+    {
+        if (scope.Type != ProcessScopeType.Global || string.IsNullOrWhiteSpace(scope.ProcessId))
+        {
+            return null;
+        }
+
+        var process = _store.GetById(scope.ProcessId);
+        return process is null ? null : ToRunTarget(process);
+    }
 
     private IReadOnlyList<string> ResolveArgv(GlobalProcess process) =>
         _argvResolver?.Resolve(process) ?? process.Argv ?? [];
@@ -310,7 +323,8 @@ public sealed class GlobalProcessManager
             arguments,
             cwd,
             environment,
-            Supervised: true);
+            Supervised: true,
+            RestartDelaySeconds: process.RestartDelaySeconds);
     }
 
     private static string FormatRuntimeLabel(GlobalProcess process)

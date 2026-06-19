@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Stackroot.App.Commands;
 using Stackroot.App.Scheduling;
+using Stackroot.App.Views;
 
 namespace Stackroot.App.ViewModels;
 
@@ -57,13 +58,18 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
 
     private void ConfirmDelete()
     {
-        var result = System.Windows.MessageBox.Show(
-            $"Delete scheduled task \"{Label}\"?",
-            "Delete task",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question);
-        if (result == System.Windows.MessageBoxResult.Yes)
-            _parent.Delete(Id);
+        var owner = Application.Current?.MainWindow;
+        if (!ConfirmDialog.Show(
+                owner,
+                "Delete scheduled task?",
+                $"Delete \"{Label}\"? This cannot be undone.",
+                "Delete",
+                isDanger: true))
+        {
+            return;
+        }
+
+        _parent.Delete(Id);
     }
 
     public void Refresh()

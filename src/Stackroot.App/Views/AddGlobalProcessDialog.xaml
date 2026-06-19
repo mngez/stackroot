@@ -70,7 +70,7 @@
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Relative to the project folder (. or game), or an absolute path that overrides it."
+                           Text="Relative to the project folder , or an absolute path that overrides it."
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,12,0,0"
@@ -108,6 +108,18 @@
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
                            Text="Shell: full command. Other runtimes: arguments after the executable."
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,12,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Restart delay (seconds)" />
+                <TextBox Margin="0,6,0,0"
+                         Padding="10,6"
+                         Text="{Binding RestartDelaySeconds, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="Wait time after exit before restarting. Leave empty for default (2s, then increasing backoff)."
                            TextWrapping="Wrap" />
 
                 <CheckBox Margin="0,14,0,0"

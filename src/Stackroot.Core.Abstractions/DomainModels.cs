@@ -455,6 +455,8 @@ public record class SupervisedProcessDefinition
     public string? FromPreset { get; init; }
     public string? PhpVersionId { get; init; }
     public string? NodeVersion { get; init; }
+    /// <summary>Seconds to wait before restarting after exit. Null uses supervisor default (2s, then backoff).</summary>
+    public int? RestartDelaySeconds { get; init; }
 }
 
 public record class GlobalProcess : SupervisedProcessDefinition
@@ -497,6 +499,7 @@ public record class ProcessInfo
     public string CommandLine { get; init; } = string.Empty;
     public string? PhpVersionId { get; init; }
     public string? NodeVersion { get; init; }
+    public int? RestartDelaySeconds { get; init; }
     public int? Pid { get; init; }
     public string? Message { get; init; }
     public string? FromPreset { get; init; }
