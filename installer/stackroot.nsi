@@ -1,8 +1,9 @@
-; Stackroot NSIS installer — parity with legacy electron-builder NSIS settings.
+; Stackroot NSIS installer
 ; Build: makensis /DPRODUCT_VERSION=0.1.0 /DPUBLISH_DIR=... /DRELEASE_DIR=... /DICON_PATH=... stackroot.nsi
 
 !include "MUI2.nsh"
 !include "x64.nsh"
+!include "LogicLib.nsh"
 
 !ifndef PRODUCT_VERSION
   !define PRODUCT_VERSION "0.1.0"
@@ -49,7 +50,10 @@ VIAddVersionKey "ProductVersion" "${PRODUCT_VERSION}"
 !define MUI_ABORTWARNING
 !define MUI_ICON "${ICON_PATH}"
 !define MUI_UNICON "${ICON_PATH}"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXE}"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch ${PRODUCT_NAME}"
 
+!insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -59,8 +63,53 @@ VIAddVersionKey "ProductVersion" "${PRODUCT_VERSION}"
 
 !insertmacro MUI_LANGUAGE "English"
 
+; nsExec runs hidden — no flashing cmd/powershell windows.
+!macro DefineCloseStackrootFunctions PREFIX
+Function ${PREFIX}IsStackrootRunning
+  ClearErrors
+  nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq ${PRODUCT_EXE}" /NH'
+  Pop $0
+  Pop $1
+  StrLen $2 $1
+  IntCmp $2 0 ${PREFIX}not_running
+  StrCpy $3 $1 1
+  StrCmp $3 "I" ${PREFIX}not_running
+  StrCpy $3 $1 12
+  StrCmp $3 "${PRODUCT_EXE}" ${PREFIX}running ${PREFIX}not_running
+  ${PREFIX}running:
+    Push 1
+    Return
+  ${PREFIX}not_running:
+    Push 0
+FunctionEnd
+
+Function ${PREFIX}EnsureStackrootClosed
+  ; Silent kill first (no prompt). Handles tray-only instances.
+  nsExec::Exec 'taskkill /IM ${PRODUCT_EXE} /T /F'
+  Sleep 2000
+
+  ${PREFIX}check_again:
+  Call ${PREFIX}IsStackrootRunning
+  Pop $0
+  ${If} $0 == 0
+    Return
+  ${EndIf}
+
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION \
+    "${PRODUCT_NAME} is still running in the background.$\n$\nRight-click the tray icon and choose Quit, then click Retry." \
+    /SD IDRETRY IDCANCEL ${PREFIX}user_abort IDRETRY ${PREFIX}check_again
+
+  ${PREFIX}user_abort:
+    Abort
+FunctionEnd
+!macroend
+
+!insertmacro DefineCloseStackrootFunctions ""
+!insertmacro DefineCloseStackrootFunctions "un."
+
 Section "Install" SecInstall
   SectionIn RO
+  Call EnsureStackrootClosed
   SetOutPath "$INSTDIR"
   File /r "${PUBLISH_DIR}\*"
 
@@ -81,6 +130,7 @@ Section "Install" SecInstall
 SectionEnd
 
 Section "Uninstall"
+  Call un.EnsureStackrootClosed
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
