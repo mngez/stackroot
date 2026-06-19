@@ -1171,7 +1171,7 @@ public sealed class ServicesViewModel : ViewModelBase
 
                 if (result.PortOpen == true || result.Status == ServiceStatus.Running)
                 {
-                    item.StatusText = id is ServiceId.Imagemagick or ServiceId.Gdlibs ? "Ready" : "Running";
+                    item.StatusText = id is ServiceId.Imagemagick ? "Ready" : "Running";
                     item.StatusColor = "#8FD6B6";
                     item.Message = null;
                     _activity.Complete(activityId, "Services", SessionActivityMessages.ServiceAction(item.Name, "restarted", true));

@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stackroot.Core.Observabilit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stackroot.Core.Node", "src\Stackroot.Core.Node\Stackroot.Core.Node.csproj", "{512C705C-9741-4266-98AB-C87B63366F40}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.Launcher", "src\Stackroot.Launcher\Stackroot.Launcher.csproj", "{0F943BDC-A3CC-4C42-A144-25E0B8E215CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{512C705C-9741-4266-98AB-C87B63366F40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{512C705C-9741-4266-98AB-C87B63366F40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{512C705C-9741-4266-98AB-C87B63366F40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F943BDC-A3CC-4C42-A144-25E0B8E215CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F943BDC-A3CC-4C42-A144-25E0B8E215CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F943BDC-A3CC-4C42-A144-25E0B8E215CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F943BDC-A3CC-4C42-A144-25E0B8E215CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,5 +111,6 @@ Global
 		{F3A8CC92-12B9-4F2F-9E17-2D730A3B6E55} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 		{6622E27A-B6CF-4BF8-90CA-A5655CB0BF9F} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 		{512C705C-9741-4266-98AB-C87B63366F40} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
+		{0F943BDC-A3CC-4C42-A144-25E0B8E215CA} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 	EndGlobalSection
 EndGlobal

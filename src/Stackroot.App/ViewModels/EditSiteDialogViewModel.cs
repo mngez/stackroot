@@ -276,6 +276,8 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
     private bool _forceHttps;
 
+    private string _domainAliasesText = string.Empty;
+
     private string _errorMessage = string.Empty;
 
 
@@ -297,6 +299,8 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
         _configuredWwwPath = configuredWwwPath ?? string.Empty;
 
         Domain = site.Domain;
+
+        _domainAliasesText = SiteDomainNames.FormatAliasesText(site.DomainAliases);
 
         _path = site.Path;
 
@@ -359,6 +363,18 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
     public string Domain { get; }
+
+
+
+    public string DomainAliasesText
+
+    {
+
+        get => _domainAliasesText;
+
+        set => SetProperty(ref _domainAliasesText, value);
+
+    }
 
 
 
@@ -698,6 +714,24 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
 
+        var aliasError = SiteDomainNames.ValidateAliases(
+
+            Domain,
+
+            SiteDomainNames.ParseAliasesText(DomainAliasesText));
+
+        if (aliasError is not null)
+
+        {
+
+            ErrorMessage = aliasError;
+
+            return;
+
+        }
+
+
+
         foreach (var proxy in DevProxies)
 
         {
@@ -735,6 +769,8 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
             Path = trimmedPath,
 
             PathMode = ResolvePathMode(trimmedPath),
+
+            DomainAliases = SiteDomainNames.ParseAliasesText(DomainAliasesText),
 
             DevProxies = DevProxies.Select(proxy => proxy.ToModel()).ToList()
 

@@ -46,6 +46,7 @@ public sealed class AddSiteDialogViewModel : ViewModelBase
     private string _name = string.Empty;
     private string _domain = string.Empty;
     private string _domainSuffix = "test";
+    private string _domainAliasesText = string.Empty;
     private string _selectedTemplate = SiteTemplateIds.Static;
     private string _selectedPhpVersionId = "no-php";
     private string _selectedNodeVersionId = "none";
@@ -130,6 +131,12 @@ public sealed class AddSiteDialogViewModel : ViewModelBase
                 RefreshPathPreview();
             }
         }
+    }
+
+    public string DomainAliasesText
+    {
+        get => _domainAliasesText;
+        set => SetProperty(ref _domainAliasesText, value);
     }
 
     public string SelectedPhpVersionId
@@ -337,14 +344,24 @@ public sealed class AddSiteDialogViewModel : ViewModelBase
             return;
         }
 
+        var preview = PreviewDomain;
+        var aliasError = SiteDomainNames.ValidateAliases(
+            preview,
+            SiteDomainNames.ParseAliasesText(DomainAliasesText));
+        if (aliasError is not null)
+        {
+            ErrorMessage = aliasError;
+            return;
+        }
+
         IsCreating = true;
 
-        var preview = PreviewDomain;
         SiteCreated?.Invoke(this, new CreateSiteInput
         {
             Name = string.IsNullOrWhiteSpace(Name) ? preview : Name.Trim(),
             Domain = domainInput,
             DomainSuffix = DomainSuffix.Trim(),
+            DomainAliases = SiteDomainNames.ParseAliasesText(DomainAliasesText),
             Template = _selectedTemplate,
             PhpVersionId = SelectedPhpVersionId == "no-php" ? null : SelectedPhpVersionId,
             NodeVersionId = SelectedNodeVersionId == "none" ? null : SelectedNodeVersionId,

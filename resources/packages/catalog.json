@@ -210,26 +210,6 @@
       "executable": "magick.exe"
     },
     {
-      "id": "gd-libs-8.4",
-      "type": "gdlibs",
-      "version": "8.4",
-      "platform": "win-x64",
-      "label": "GD Libraries 8.4",
-      "description": "libpng, libjpeg, libwebp — PHP GD extension dependencies",
-      "source": {
-        "type": "bundled",
-        "archive": "gdlibs/gd-libs-win-x64.zip"
-      },
-      "remote": {
-        "type": "remote",
-        "url": "https://windows.php.net/downloads/releases/php-8.4.22-nts-Win32-vs17-x64.zip",
-        "mirrors": [
-          "https://windows.php.net/downloads/releases/archives/php-8.4.22-nts-Win32-vs17-x64.zip"
-        ]
-      },
-      "installDir": "gdlibs/8.4"
-    },
-    {
       "id": "mariadb-10.5.29",
       "type": "mariadb",
       "version": "10.5.29",

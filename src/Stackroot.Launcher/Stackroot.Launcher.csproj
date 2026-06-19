@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Stackroot.Launcher</AssemblyName>
+    <RootNamespace>Stackroot.Launcher</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>..\..\assets\icons\icon.ico</ApplicationIcon>
+    <Description>Stable Stackroot entry point — loads the versioned app payload.</Description>
+    <Company>mngez</Company>
+    <Product>Stackroot</Product>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <PlatformTarget>x64</PlatformTarget>
+    <RollForward>LatestMajor</RollForward>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+</Project>

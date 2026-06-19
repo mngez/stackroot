@@ -1,12 +1,14 @@
 ## Stackroot (unreleased)
 
-### Processes (supervisor)
+Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-- **Restart delay** — set wait time (seconds) before auto-restart when adding or editing a process. Empty = default (2s, then backoff).
-- **Process log** — one log per process for the app session; output is appended across restarts instead of rewritten.
-- **Auto-restart fix** — supervised processes actually restart after exit (stale duplicate detection no longer blocks the new instance).
-- **Log preamble** — `starting` / `cwd` / `command` header appears once at session start, or again only when process settings change (`config updated`).
+**Current target:** see `release-notes/0.2.2.md` (next release after the published **0.2.1**).
 
-### Scheduled tasks
+### How publishing works
 
-- **Delete confirmation** — uses the app’s styled confirm dialog instead of the system `MessageBox`.
+1. Set `<Version>` in `src/Stackroot.App/Stackroot.App.csproj` (must match the tag).
+2. Write release notes in `release-notes/{Version}.md` — **not** in `0.2.1.md` after that version is already on GitHub.
+3. `.\scripts\pack-release.ps1` — local build; `pack-release.ps1 -Publish` uses `release-notes/{Version}.md`.
+4. Tag `v{Version}` and push — CI validates the tag against the csproj version and publishes the Setup exe.
+
+`next.md` is only a scratch pad. **`pack-release.ps1` does not read this file.**

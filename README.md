@@ -112,7 +112,24 @@ Stackroot manages services (nginx, MySQL, Redis, etc.), PHP versions, Node.js, s
 
 ### Requirements
 - Windows 10/11 x64
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (development)
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (installed automatically by the Stackroot setup when missing)
+
+### Install layout
+
+```
+%LOCALAPPDATA%\Programs\Stackroot\
+  Stackroot.exe              # pinned launcher — same binary, installed once
+  current.txt                # active version, e.g. 0.2.1
+  app\0.2.1\                 # framework-dependent app payload (changes each release)
+    Stackroot.exe            # WPF app host (inside version folder)
+    Stackroot.dll
+    …
+```
+
+The root `Stackroot.exe` is built via `scripts/build-pinned-launcher.ps1` and stored in `installer/pinned/` (the `.exe` is gitignored; `launcher.version` is committed). Release builds copy it into the installer stage. Upgrades **keep** the existing launcher when `launcher.version` matches; the installer replaces it when the protocol changes or legacy layout files are detected.
+
+Rebuild the pinned launcher when `src/Stackroot.Launcher` changes, then run `pack-release.ps1`.
 
 ### Run (debug)
 ```bash

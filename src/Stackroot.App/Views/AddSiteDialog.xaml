@@ -119,6 +119,21 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="Domain aliases (optional)" />
+                <TextBox MinHeight="72"
+                         Padding="10,6"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas"
+                         Text="{Binding DomainAliasesText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,4,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="One alias per line (e.g. sameapp.test or *.app.test). Wildcard aliases work in nginx; literal names are added to hosts and HTTPS."
+                           TextWrapping="Wrap" />
+
+                <TextBlock Margin="0,12,0,6"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
                            Text="Backend (PHP)" />
                 <ComboBox Padding="8,4"
                           ItemsSource="{Binding PhpVersions}"

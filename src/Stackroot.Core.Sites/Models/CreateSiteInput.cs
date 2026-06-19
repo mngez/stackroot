@@ -5,6 +5,7 @@ public sealed class CreateSiteInput
     public string Name { get; init; } = string.Empty;
     public string Domain { get; init; } = string.Empty;
     public string? DomainSuffix { get; init; }
+    public List<string>? DomainAliases { get; init; }
     public string Template { get; init; } = SiteTemplateIds.Static;
     public string? PhpVersionId { get; init; }
     public string? NodeVersionId { get; init; }

@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Validate tag matches project version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(?<version>.+)$') {
+            throw "Expected tag like v0.2.1, got: $tag"
+          }
+
+          $expected = $Matches.version
+          $project = [xml](Get-Content src/Stackroot.App/Stackroot.App.csproj -Raw)
+          $version = $project.Project.PropertyGroup.Version |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -First 1
+
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw 'Version missing in Stackroot.App.csproj'
+          }
+
+          if ($version -ne $expected) {
+            throw "Tag version '$expected' does not match Stackroot.App.csproj version '$version'"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build pinned launcher
+        shell: pwsh
+        run: ./scripts/build-pinned-launcher.ps1
+
+      - name: Pack installer
+        shell: pwsh
+        run: ./scripts/pack-release.ps1
+
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: release/Stackroot-Setup-${{ steps.version.outputs.version }}.exe
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/pack-release.ps1 -PublishOnly

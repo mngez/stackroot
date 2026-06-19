@@ -41,7 +41,6 @@ public sealed class ServiceManager
         ServiceId.Redis,
         ServiceId.Memcached,
         ServiceId.Imagemagick,
-        ServiceId.Gdlibs,
         ServiceId.Mysql,
         ServiceId.Mariadb,
         ServiceId.Postgresql,
@@ -357,7 +356,7 @@ public sealed class ServiceManager
         return serviceId switch
         {
             ServiceId.Nginx => StartNginxCoreAsync(cancellationToken),
-            ServiceId.Imagemagick or ServiceId.Gdlibs => Task.FromResult(StartLibraryService(serviceId)),
+            ServiceId.Imagemagick => Task.FromResult(StartLibraryService(serviceId)),
             _ => StartProcessServiceAsync(serviceId, cancellationToken)
         };
     }

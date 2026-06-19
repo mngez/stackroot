@@ -12,7 +12,6 @@ public static class ServicePackageMapper
             ServiceId.Redis => PackageType.Redis,
             ServiceId.Memcached => PackageType.Memcached,
             ServiceId.Imagemagick => PackageType.Imagemagick,
-            ServiceId.Gdlibs => PackageType.Gdlibs,
             ServiceId.Mysql => PackageType.Mysql,
             ServiceId.Mariadb => PackageType.Mariadb,
             ServiceId.Postgresql => PackageType.Postgresql,

@@ -1,5 +1,6 @@
 param(
     [switch]$Publish,
+    [switch]$PublishOnly,
     [string]$ReleaseNotes
 )
 
@@ -61,47 +62,102 @@ function Convert-ToNsisFileVersion([string]$Value) {
     return ($normalized | Select-Object -First 4) -join "."
 }
 
-$PublishDir = & (Join-Path $PSScriptRoot "publish-installer.ps1") | Select-Object -Last 1
-
 $Version = Get-ProjectProperty "Version"
 if (-not $Version) { throw "Version missing in Stackroot.App.csproj" }
-$FileVersion = Convert-ToNsisFileVersion $Version
-
-if (-not (Test-Path (Join-Path $PublishDir "Stackroot.exe"))) {
-    throw "Published app missing: $(Join-Path $PublishDir 'Stackroot.exe')"
-}
-
-$Publisher = Get-ProjectProperty "Company"
-if ([string]::IsNullOrWhiteSpace($Publisher)) { $Publisher = "mngez" }
-
-New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
-
-$Makensis = & (Join-Path $PSScriptRoot "ensure-nsis.ps1") -RepoRoot $Root
-$NsisDir = Split-Path -Parent $Makensis
-$PublishDirNsis = ($PublishDir -replace '\\', '/')
-$ReleaseDirNsis = ($ReleaseDir -replace '\\', '/')
-$IconPathNsis = ($IconPath -replace '\\', '/')
-
-$NsisArgs = @(
-    "/V2",
-    "/DNSISDIR=$NsisDir",
-    "/DPRODUCT_VERSION=$Version",
-    "/DPRODUCT_FILE_VERSION=$FileVersion",
-    "/DPRODUCT_PUBLISHER=$Publisher",
-    "/DPUBLISH_DIR=$PublishDirNsis",
-    "/DRELEASE_DIR=$ReleaseDirNsis",
-    "/DICON_PATH=$IconPathNsis",
-    $NsiScript
-)
-
-& $Makensis @NsisArgs
-if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
 
 $SetupName = "Stackroot-Setup-$Version.exe"
 $SetupPath = Join-Path $ReleaseDir $SetupName
-if (-not (Test-Path $SetupPath)) { throw "Installer not created: $SetupPath" }
 
-Write-Host "Pack: $SetupPath"
+if ($PublishOnly) {
+    if (-not $Publish) { $Publish = $true }
+    if (-not (Test-Path $SetupPath)) {
+        throw "Installer not found for publish-only: $SetupPath"
+    }
+
+    Write-Host "Publish only: $SetupPath"
+} else {
+    $StageDir = & (Join-Path $PSScriptRoot "publish-installer.ps1") | Select-Object -Last 1
+    $FileVersion = Convert-ToNsisFileVersion $Version
+
+    $AppPayloadDir = Join-Path $StageDir "app/$Version"
+    if (-not (Test-Path (Join-Path $AppPayloadDir "Stackroot.dll"))) {
+        throw "Published app payload missing: $(Join-Path $AppPayloadDir 'Stackroot.dll')"
+    }
+
+    if (-not (Test-Path (Join-Path $StageDir "Stackroot.exe"))) {
+        throw "Launcher missing: $(Join-Path $StageDir 'Stackroot.exe')"
+    }
+
+    $Publisher = Get-ProjectProperty "Company"
+    if ([string]::IsNullOrWhiteSpace($Publisher)) { $Publisher = "mngez" }
+
+    New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
+
+    $DotNetPrereqScript = Join-Path $Root "installer/dotnet-prereq.ps1"
+    . $DotNetPrereqScript
+    if ([string]::IsNullOrWhiteSpace($DotNetDesktopInstallerFileName)) {
+        throw "DotNetDesktopInstallerFileName missing in $DotNetPrereqScript"
+    }
+
+    & (Join-Path $PSScriptRoot "ensure-dotnet-prerequisite.ps1") | Out-Null
+
+    $DotNetBundlePath = Join-Path $Root "installer/prerequisites/$DotNetDesktopInstallerFileName"
+    if (-not (Test-Path -LiteralPath $DotNetBundlePath) -or (Get-Item -LiteralPath $DotNetBundlePath).Length -eq 0) {
+        throw "Bundled .NET prerequisite missing or empty: $DotNetBundlePath"
+    }
+
+    $VcRedistPrereqScript = Join-Path $Root "installer/vc-redist-prereq.ps1"
+    . $VcRedistPrereqScript
+    if ([string]::IsNullOrWhiteSpace($VcRedistInstallerFileName)) {
+        throw "VcRedistInstallerFileName missing in $VcRedistPrereqScript"
+    }
+
+    & (Join-Path $PSScriptRoot "ensure-vc-redist-prerequisite.ps1") | Out-Null
+
+    $VcRedistBundlePath = Join-Path $Root "installer/prerequisites/$VcRedistInstallerFileName"
+    if (-not (Test-Path -LiteralPath $VcRedistBundlePath) -or (Get-Item -LiteralPath $VcRedistBundlePath).Length -eq 0) {
+        throw "Bundled Visual C++ Redistributable missing or empty: $VcRedistBundlePath"
+    }
+
+    $LauncherVersionFile = Join-Path $Root "installer/pinned/launcher.version"
+    $LauncherProtocolVersion = "2"
+    if (Test-Path -LiteralPath $LauncherVersionFile) {
+        $LauncherProtocolVersion = (Get-Content -LiteralPath $LauncherVersionFile -Raw).Trim()
+    }
+    if ([string]::IsNullOrWhiteSpace($LauncherProtocolVersion)) {
+        throw "launcher.version is empty: $LauncherVersionFile"
+    }
+
+    $Makensis = & (Join-Path $PSScriptRoot "ensure-nsis.ps1") -RepoRoot $Root
+    $NsisDir = Split-Path -Parent $Makensis
+    $StageDirNsis = ($StageDir -replace '\\', '/')
+    $InstallerDirNsis = ((Join-Path $Root "installer") -replace '\\', '/')
+    $ReleaseDirNsis = ($ReleaseDir -replace '\\', '/')
+    $IconPathNsis = ($IconPath -replace '\\', '/')
+
+    $NsisArgs = @(
+        "/V2",
+        "/DNSISDIR=$NsisDir",
+        "/DPRODUCT_VERSION=$Version",
+        "/DPRODUCT_FILE_VERSION=$FileVersion",
+        "/DPRODUCT_PUBLISHER=$Publisher",
+        "/DSTAGE_DIR=$StageDirNsis",
+        "/DINSTALLER_DIR=$InstallerDirNsis",
+        "/DRELEASE_DIR=$ReleaseDirNsis",
+        "/DDOTNET_DESKTOP_INSTALLER=$DotNetDesktopInstallerFileName",
+        "/DVC_REDIST_INSTALLER=$VcRedistInstallerFileName",
+        "/DLAUNCHER_PROTOCOL_VERSION=$LauncherProtocolVersion",
+        "/DICON_PATH=$IconPathNsis",
+        $NsiScript
+    )
+
+    & $Makensis @NsisArgs
+    if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
+
+    if (-not (Test-Path $SetupPath)) { throw "Installer not created: $SetupPath" }
+
+    Write-Host "Pack: $SetupPath"
+}
 
 if (-not $Publish) { return }
 

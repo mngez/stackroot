@@ -4,6 +4,7 @@ public sealed class UpdateSiteInput
 {
     public string? Name { get; init; }
     public string? Domain { get; init; }
+    public List<string>? DomainAliases { get; init; }
     public string? Template { get; init; }
     public string? PhpVersionId { get; init; }
     public string? NodeVersionId { get; init; }

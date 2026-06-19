@@ -54,16 +54,6 @@ public static class SettingsDefaults
         },
         new()
         {
-            Id = ServiceId.Gdlibs,
-            Name = "GD Libraries",
-            Category = ServiceCategory.Optional,
-            Description = "Graphics libraries for PHP GD extension",
-            DefaultPort = 0,
-            PackageId = "gd-libs-8.4",
-            Runtime = ServiceRuntime.Library
-        },
-        new()
-        {
             Id = ServiceId.Mysql,
             Name = "MySQL",
             Category = ServiceCategory.Database,

@@ -54,7 +54,7 @@ public sealed class DashboardServiceRowViewModel : ViewModelBase
     {
         IsBusy = false;
         IsRunning = true;
-        StatusText = ServiceKey is "imagemagick" or "gdlibs" ? "Ready" : "Running";
+        StatusText = ServiceKey is "imagemagick" ? "Ready" : "Running";
         StatusColor = "#8FD6B6";
         Message = null;
     }

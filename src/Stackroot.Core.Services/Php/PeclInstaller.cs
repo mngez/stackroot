@@ -237,21 +237,32 @@ public sealed class PeclInstaller
         CancellationToken cancellationToken)
     {
         var root = PhpExtensionPolicy.ResolvePackageRoot(runner.InstallPath);
-        var extDir = Path.Combine(root, "ext").Replace('\\', '/');
+        var extDir = Path.Combine(root, "ext");
+        var extDirUnix = extDir.Replace('\\', '/');
         var args = new List<string>
         {
             "-n",
-            "-d", $"extension_dir={extDir}",
-            "-d", "extension=openssl",
-            "-d", "extension=zip",
-            PiePharPath
+            "-d", $"extension_dir={extDirUnix}",
         };
+
+        AddPieRunnerExtension(args, extDir, "openssl");
+        AddPieRunnerExtension(args, extDir, "zip");
+
+        if (!IsPieRunnerExtensionLoaded(runner.Executable, extDir, "openssl")
+            || !IsPieRunnerExtensionLoaded(runner.Executable, extDir, "zip"))
+        {
+            throw new InvalidOperationException(
+                "PIE requires openssl and zip PHP extensions, but they are missing from this PHP install. " +
+                "Reinstall PHP from the PHP page, or install the extension via a direct PECL build when available.");
+        }
+
+        args.Add(PiePharPath);
         args.AddRange(pieArgs);
 
         var psi = new ProcessStartInfo
         {
             FileName = runner.Executable,
-            WorkingDirectory = Path.GetDirectoryName(runner.Executable)!,
+            WorkingDirectory = root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -265,6 +276,8 @@ public sealed class PeclInstaller
 
         psi.Environment["PHPRC"] = targetPhpRc;
         psi.Environment["COMPOSER_CACHE_DIR"] = Path.Combine(_paths.RuntimeRoot, ".cache", "composer");
+        var machinePath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        psi.Environment["PATH"] = root + Path.PathSeparator + machinePath;
 
         using var process = new Process { StartInfo = psi };
         process.Start();
@@ -272,6 +285,76 @@ public sealed class PeclInstaller
         var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
         return new PieRunResult(process.ExitCode, stdout, stderr);
+    }
+
+    private static void AddPieRunnerExtension(List<string> args, string extDir, string extensionId)
+    {
+        var dllPath = ResolveExtensionDllPath(extDir, extensionId);
+        if (dllPath is null)
+        {
+            return;
+        }
+
+        args.Add("-d");
+        args.Add($"extension={dllPath.Replace('\\', '/')}");
+    }
+
+    private static bool IsPieRunnerExtensionLoaded(string phpExecutable, string extDir, string extensionId)
+    {
+        var extDirUnix = extDir.Replace('\\', '/');
+        var args = new List<string>
+        {
+            "-n",
+            "-d", $"extension_dir={extDirUnix}"
+        };
+
+        AddPieRunnerExtension(args, extDir, extensionId);
+
+        args.Add("-r");
+        args.Add($"exit(extension_loaded('{extensionId}') ? 0 : 1);");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = phpExecutable,
+            WorkingDirectory = Path.GetDirectoryName(phpExecutable)!,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        foreach (var arg in args)
+        {
+            psi.ArgumentList.Add(arg);
+        }
+
+        using var process = Process.Start(psi);
+        if (process is null)
+        {
+            return false;
+        }
+
+        process.WaitForExit();
+        return process.ExitCode == 0;
+    }
+
+    private static string? ResolveExtensionDllPath(string extDir, string extensionId)
+    {
+        if (!Directory.Exists(extDir))
+        {
+            return null;
+        }
+
+        foreach (var name in new[] { $"php_{extensionId}.dll", $"{extensionId}.dll" })
+        {
+            var path = Path.Combine(extDir, name);
+            if (File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        return null;
     }
 
     private async Task DownloadFileAsync(string url, string destination, CancellationToken cancellationToken)

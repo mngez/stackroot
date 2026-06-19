@@ -814,7 +814,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private static void ApplyDashboardServiceStatus(DashboardServiceRowViewModel service, bool isRunning)
     {
         var statusText = isRunning
-            ? service.ServiceKey is "imagemagick" or "gdlibs" ? "Ready" : "Running"
+            ? service.ServiceKey is "imagemagick" ? "Ready" : "Running"
             : "Stopped";
         var statusColor = isRunning ? "#8FD6B6" : "#91A0B5";
 

@@ -72,7 +72,7 @@ public sealed class SiteNginxVhostWriter
             {
                 sb.AppendLine("server {");
                 sb.AppendLine($"    listen {httpPort};");
-                sb.AppendLine($"    server_name {site.Domain};");
+                sb.AppendLine($"    server_name {SiteDomainNames.FormatNginxServerName(site)};");
                 sb.AppendLine($"    return 301 https://$host:{sslPort}$request_uri;");
                 sb.AppendLine("}");
                 sb.AppendLine();
@@ -104,7 +104,7 @@ public sealed class SiteNginxVhostWriter
     {
         sb.AppendLine("server {");
         sb.AppendLine(ssl ? $"    listen {listenPort} ssl;" : $"    listen {listenPort};");
-        sb.AppendLine($"    server_name {site.Domain};");
+        sb.AppendLine($"    server_name {SiteDomainNames.FormatNginxServerName(site)};");
         if (ssl)
         {
             sb.AppendLine("    ssl_certificate      ssl/dev.crt;");

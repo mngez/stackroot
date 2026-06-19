@@ -51,8 +51,16 @@ scratch/
 # Portable NSIS toolchain (local only)
 resources/tools/nsis/
 
-# PIE phar (downloaded by ensure-pie.ps1 during pack/dev bootstrap)
+# Downloaded at build time by scripts/ensure-pie.ps1
 resources/packages/pie.phar
 
+# Offline .NET prerequisite (downloaded when packing releases)
+installer/prerequisites/*.exe
+
+# Pinned launcher — binary is rebuilt locally; protocol file stays in git
+installer/pinned/Stackroot.exe
+installer/pinned/_build/
+installer/pinned/_probe*/
+installer/pinned/*.pdb
 # Local log files
 *.log

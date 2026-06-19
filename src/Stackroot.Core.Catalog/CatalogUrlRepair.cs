@@ -50,12 +50,12 @@ public static class CatalogUrlRepair
             return changed;
         }
 
-        var repairedPackages = catalog.Packages
-            .Select(RepairPackageEntry)
+        var removedLegacy = catalog.Packages
+            .Where(package => !package.Id.Equals("gd-libs-8.4", StringComparison.OrdinalIgnoreCase))
             .ToList();
-        if (repairedPackages.Where((entry, index) => !Equals(entry, catalog.Packages[index])).Any())
+        if (removedLegacy.Count != catalog.Packages.Count)
         {
-            catalog = catalog with { Packages = repairedPackages };
+            catalog = catalog with { Packages = removedLegacy };
             changed = true;
         }
 
@@ -77,21 +77,5 @@ public static class CatalogUrlRepair
         var store = new PackageCatalogStore(resourcesRoot);
         store.Save(catalog);
         return true;
-    }
-
-    private static PackageEntry RepairPackageEntry(PackageEntry package)
-    {
-        if (!package.Id.Equals("gd-libs-8.4", StringComparison.OrdinalIgnoreCase))
-        {
-            return package;
-        }
-
-        var remoteUrl = package.Remote?.Url ?? string.Empty;
-        if (!remoteUrl.Contains("php-8.4", StringComparison.OrdinalIgnoreCase))
-        {
-            return package;
-        }
-
-        return package with { Remote = null };
     }
 }

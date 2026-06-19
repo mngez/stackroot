@@ -91,7 +91,6 @@ public sealed class NginxWebStackRebuilder
         CancellationToken cancellationToken = default,
         bool forceNginxRestart = false)
     {
-        _appDomainConfigWriter.Write();
         var php = await _serviceManager.EnsureStackPhpCgiAsync(cancellationToken).ConfigureAwait(false);
         if (!php.Success)
         {
@@ -124,6 +123,7 @@ public sealed class NginxWebStackRebuilder
 
         NginxRuntime.setupNginxRuntime(_paths, installed.InstallPath);
         await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+        _appDomainConfigWriter.Write();
 
         if (forceRestart)
         {

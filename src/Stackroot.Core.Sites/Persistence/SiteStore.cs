@@ -92,11 +92,20 @@ public sealed class SiteStore
         return site is null ? null : CloneSite(site);
     }
 
-    public Site? GetByDomain(string domain) =>
-        Load().Sites
-            .Where(s => string.Equals(s.Domain, domain?.Trim(), StringComparison.OrdinalIgnoreCase))
+    public Site? GetByDomain(string domain)
+    {
+        if (string.IsNullOrWhiteSpace(domain))
+        {
+            return null;
+        }
+
+        var normalized = domain.Trim();
+        return Load().Sites
+            .Where(site => SiteDomainNames.GetServerNames(site)
+                .Any(name => string.Equals(name, normalized, StringComparison.OrdinalIgnoreCase)))
             .Select(CloneSite)
             .FirstOrDefault();
+    }
 
     public Site Create(CreateSiteInput input)
     {
@@ -105,7 +114,10 @@ public sealed class SiteStore
 
         var registry = Load();
         var domain = SitePaths.BuildDomain(input.Domain, input.DomainSuffix);
-        if (registry.Sites.Any(s => string.Equals(s.Domain, domain, StringComparison.OrdinalIgnoreCase)))
+        ValidateDomainAliases(domain, input.DomainAliases);
+        if (registry.Sites.Any(site => SiteDomainNames.SharesBoundName(
+                new Site { Id = string.Empty, Domain = domain, DomainAliases = input.DomainAliases },
+                site)))
         {
             throw new InvalidOperationException($"Site already exists: {domain}");
         }
@@ -119,6 +131,7 @@ public sealed class SiteStore
             Id = BuildSiteId(domain),
             Name = string.IsNullOrWhiteSpace(input.Name) ? domain : input.Name.Trim(),
             Domain = domain,
+            DomainAliases = SiteDomainNames.NormalizeAliases(domain, input.DomainAliases),
             Template = template.Id,
             PhpVersionId = string.IsNullOrWhiteSpace(input.PhpVersionId) ? null : input.PhpVersionId.Trim(),
             NodeVersionId = string.IsNullOrWhiteSpace(input.NodeVersionId) ? null : input.NodeVersionId.Trim(),
@@ -152,13 +165,21 @@ public sealed class SiteStore
 
         var current = registry.Sites[index];
         var updatedDomain = string.IsNullOrWhiteSpace(patch.Domain) ? current.Domain : patch.Domain.Trim();
+        var updatedAliases = patch.DomainAliases is null
+            ? current.DomainAliases
+            : SiteDomainNames.NormalizeAliases(updatedDomain, patch.DomainAliases);
+        ValidateDomainAliases(updatedDomain, updatedAliases);
         var templateChanged = !string.IsNullOrWhiteSpace(patch.Template) &&
                               !string.Equals(current.Template, patch.Template, StringComparison.OrdinalIgnoreCase);
         var template = SiteTemplates.Resolve(templateChanged ? patch.Template : current.Template);
 
-        var duplicateDomain = registry.Sites.Any(site =>
-            !string.Equals(site.Id, current.Id, StringComparison.Ordinal) &&
-            string.Equals(site.Domain, updatedDomain, StringComparison.OrdinalIgnoreCase));
+        var candidate = new Site
+        {
+            Id = current.Id,
+            Domain = updatedDomain,
+            DomainAliases = updatedAliases
+        };
+        var duplicateDomain = registry.Sites.Any(site => SiteDomainNames.SharesBoundName(candidate, site));
         if (duplicateDomain)
         {
             throw new InvalidOperationException($"Site already exists: {updatedDomain}");
@@ -174,6 +195,7 @@ public sealed class SiteStore
             Id = current.Id,
             Name = string.IsNullOrWhiteSpace(patch.Name) ? current.Name : patch.Name.Trim(),
             Domain = updatedDomain,
+            DomainAliases = updatedAliases,
             Template = templateChanged ? template.Id : current.Template,
             PhpVersionId = patch.PhpVersionId is null ? current.PhpVersionId : patch.PhpVersionId.Trim(),
             NodeVersionId = patch.NodeVersionId is null ? current.NodeVersionId : (patch.NodeVersionId.Trim() is { Length: > 0 } nv ? nv : null),
@@ -240,6 +262,7 @@ public sealed class SiteStore
             Id = string.IsNullOrWhiteSpace(site.Id) ? BuildSiteId(domain) : site.Id.Trim(),
             Name = site.Name?.Trim() ?? domain,
             Domain = domain,
+            DomainAliases = SiteDomainNames.NormalizeAliases(domain, site.DomainAliases),
             Template = template.Id,
             PhpVersionId = string.IsNullOrWhiteSpace(site.PhpVersionId) ? null : site.PhpVersionId.Trim(),
             NodeVersionId = string.IsNullOrWhiteSpace(site.NodeVersionId) ? null : site.NodeVersionId.Trim(),
@@ -284,6 +307,15 @@ public sealed class SiteStore
         if (string.IsNullOrWhiteSpace(input.Domain))
         {
             throw new InvalidOperationException("Domain is required.");
+        }
+    }
+
+    private static void ValidateDomainAliases(string primaryDomain, IEnumerable<string>? aliases)
+    {
+        var error = SiteDomainNames.ValidateAliases(primaryDomain, aliases);
+        if (error is not null)
+        {
+            throw new InvalidOperationException(error);
         }
     }
 

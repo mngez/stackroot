@@ -1,3 +1,4 @@
+using Stackroot.Core.Nginx;
 using Stackroot.Core.Sites.Models;
 using Stackroot.Core.Sites.Commands;
 using Stackroot.Core.Sites.Installers;
@@ -6,7 +7,6 @@ using Stackroot.Core.Sites.Nginx;
 using Stackroot.Core.Sites.Persistence;
 using Stackroot.Core.Windows;
 using Stackroot.Core.Abstractions;
-using Stackroot.Core.Nginx;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Sites;
 using Stackroot.Core.Databases;
@@ -148,13 +148,6 @@ public sealed class SiteManager
             SiteProvisioner.ScaffoldFiles(site);
         }
 
-        if (previous is not null &&
-            !string.Equals(previous.Domain, site.Domain, StringComparison.OrdinalIgnoreCase) &&
-            AutoHosts)
-        {
-            _hostsFileEditor.RemoveHost(previous.Domain);
-        }
-
         _ = EnsureDevSslForCurrentDomains();
         SyncSiteRuntime(site);
         return site;
@@ -168,7 +161,7 @@ public sealed class SiteManager
             _vhostWriter.Remove(removed);
             if (AutoHosts)
             {
-                _hostsFileEditor.RemoveHost(removed.Domain);
+                SyncManagedHosts();
             }
 
             _databaseManager?.UnlinkSite(id);
@@ -214,22 +207,7 @@ public sealed class SiteManager
         var sites = registry.Sites.ToList();
 
         // Collect all hosts before the loop to batch-write once
-        var hostEntries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (AutoHosts)
-        {
-            var appDomain = _settingsStore.Load().General.AppDomain;
-            if (!string.IsNullOrWhiteSpace(appDomain))
-                hostEntries[appDomain] = "127.0.0.1";
-        }
-
-        foreach (var site in sites)
-        {
-            SyncSiteRuntime(site, syncHosts: false, sslPaths);
-            if (AutoHosts && site.Enabled && !string.IsNullOrWhiteSpace(site.Domain))
-            {
-                hostEntries[site.Domain] = "127.0.0.1";
-            }
-        }
+        var hostEntries = BuildHostEntries(sites);
 
         // Batch-write all hosts entries ONCE
         if (AutoHosts)
@@ -252,6 +230,12 @@ public sealed class SiteManager
         {
             foreach (var file in Directory.EnumerateFiles(_vhostWriter.NginxSitesEnabledDirectory, "*.conf"))
             {
+                var fileName = Path.GetFileName(file);
+                if (NginxSitesEnabledReservedFiles.IsReserved(fileName))
+                {
+                    continue;
+                }
+
                 var id = Path.GetFileNameWithoutExtension(file);
                 if (!liveIds.Contains(id))
                 {
@@ -309,11 +293,7 @@ public sealed class SiteManager
                 sslEnabled);
             if (AutoHosts && syncHosts)
             {
-                var ok = _hostsFileEditor.UpsertHost(site.Domain);
-                if (!ok)
-                {
-                    _diagnostics?.LogUserError("Hosts", $"Failed to add {site.Domain}: {_hostsFileEditor.LastError}");
-                }
+                SyncManagedHosts();
             }
         }
         else
@@ -321,9 +301,43 @@ public sealed class SiteManager
             _vhostWriter.Remove(site);
             if (AutoHosts && syncHosts)
             {
-                _hostsFileEditor.RemoveHost(site.Domain);
+                SyncManagedHosts();
             }
         }
+    }
+
+    private void SyncManagedHosts()
+    {
+        var hostEntries = BuildHostEntries(_store.List());
+        if (!_hostsFileEditor.SyncHosts(hostEntries))
+        {
+            _diagnostics?.LogUserError("Hosts", $"Failed to sync hosts: {_hostsFileEditor.LastError}");
+        }
+    }
+
+    private Dictionary<string, string> BuildHostEntries(IEnumerable<SiteModel> sites)
+    {
+        var hostEntries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!AutoHosts)
+        {
+            return hostEntries;
+        }
+
+        var appDomain = _settingsStore.Load().General.AppDomain;
+        if (!string.IsNullOrWhiteSpace(appDomain))
+        {
+            hostEntries[appDomain] = "127.0.0.1";
+        }
+
+        foreach (var site in sites.Where(static site => site.Enabled))
+        {
+            foreach (var host in SiteDomainNames.GetHostsEligibleNames(site))
+            {
+                hostEntries[host] = "127.0.0.1";
+            }
+        }
+
+        return hostEntries;
     }
 
     private int ResolveNginxHttpPort()
@@ -394,8 +408,9 @@ public sealed class SiteManager
         var settings = _settingsStore.Load();
         var domains = _store.List()
             .Where(static site => site.Enabled)
-            .Select(static site => site.Domain)
+            .SelectMany(SiteDomainNames.GetSslSanNames)
             .Where(static domain => !string.IsNullOrWhiteSpace(domain))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var appDomain = settings.General.AppDomain;

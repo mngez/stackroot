@@ -23,6 +23,7 @@ public sealed class Site
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Domain { get; set; } = string.Empty;
+    public List<string>? DomainAliases { get; set; }
     public string Template { get; set; } = SiteTemplateIds.Static;
     public string? PhpVersionId { get; set; }
     public string? NodeVersionId { get; set; }

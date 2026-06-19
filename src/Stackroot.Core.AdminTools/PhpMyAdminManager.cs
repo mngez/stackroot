@@ -13,6 +13,7 @@ namespace Stackroot.Core.AdminTools;
 public sealed class PhpMyAdminManager
 {
     public const string NginxConfFileName = "stackroot-phpmyadmin.conf";
+    public const string PathLocationsFileName = "stackroot-phpmyadmin.locations";
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private readonly StackrootPaths _paths;
     private readonly SettingsStore _settingsStore;
@@ -38,7 +39,20 @@ public sealed class PhpMyAdminManager
         _jobManager = jobManager;
     }
 
-    public string? GetPathModeNginxLocations() => _pathModeNginxLocations;
+    public string? GetPathModeNginxLocations()
+    {
+        var path = PathLocationsFilePath();
+        if (File.Exists(path))
+        {
+            var fromDisk = File.ReadAllText(path);
+            if (!string.IsNullOrWhiteSpace(fromDisk))
+            {
+                return fromDisk;
+            }
+        }
+
+        return _pathModeNginxLocations;
+    }
 
     public PhpMyAdminStatus GetStatus()
     {
@@ -434,11 +448,12 @@ public sealed class PhpMyAdminManager
         {
             var pathSegment = string.IsNullOrWhiteSpace(pma.Path) ? "phpmyadmin" : pma.Path.Trim('/');
             var appHtmlRoot = AdminToolPathLinker.LinkPathTool(_paths, root, pathSegment);
-            _pathModeNginxLocations = BuildPathModeNginxLocations(pma, appHtmlRoot, fcgiHost, fcgiPort, phpRc, phpVersionId);
+            PersistPathModeNginxLocations(BuildPathModeNginxLocations(pma, appHtmlRoot, fcgiHost, fcgiPort, phpRc, phpVersionId));
             RemoveNginxConfig();
             return;
         }
 
+        RemovePathModeNginxLocations();
         _pathModeNginxLocations = null;
         var sb = new StringBuilder();
         sb.AppendLine($"# phpMyAdmin — {serverName}");
@@ -554,7 +569,26 @@ public sealed class PhpMyAdminManager
         }
     }
 
-    private void ClearPathModeNginxLocations() => _pathModeNginxLocations = null;
+    private void ClearPathModeNginxLocations()
+    {
+        RemovePathModeNginxLocations();
+        _pathModeNginxLocations = null;
+    }
+
+    private string PathLocationsFilePath() =>
+        Path.Combine(NginxRuntime.nginxPrefix(_paths), "conf", "sites-enabled", PathLocationsFileName);
+
+    private void PersistPathModeNginxLocations(string locations) =>
+        File.WriteAllText(PathLocationsFilePath(), locations, Utf8NoBom);
+
+    private void RemovePathModeNginxLocations()
+    {
+        var path = PathLocationsFilePath();
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
 
     private RequiresPhp PhpRequirementForPackage(string packageId) =>
         AdminToolPhpResolver.RequirementForPhpMyAdmin(_catalogStore, packageId);
