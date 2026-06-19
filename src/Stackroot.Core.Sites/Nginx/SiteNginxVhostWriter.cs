@@ -33,11 +33,12 @@ public sealed class SiteNginxVhostWriter
         int httpPort = 80,
         string? phpFastCgiEndpoint = null,
         string? phpRcDirectory = null,
-        int? httpsPort = null)
+        int? httpsPort = null,
+        bool sslEnabled = false)
     {
         ArgumentNullException.ThrowIfNull(site);
         Directory.CreateDirectory(NginxSitesEnabledDirectory);
-        var config = BuildConfig(site, httpPort, phpFastCgiEndpoint ?? _phpFastCgiEndpoint, phpRcDirectory, httpsPort);
+        var config = BuildConfig(site, httpPort, phpFastCgiEndpoint ?? _phpFastCgiEndpoint, phpRcDirectory, httpsPort, sslEnabled);
         File.WriteAllText(GetConfigPath(site), config);
     }
 
@@ -55,7 +56,8 @@ public sealed class SiteNginxVhostWriter
         int httpPort = 80,
         string? phpFastCgiEndpoint = null,
         string? phpRcDirectory = null,
-        int? httpsPort = null)
+        int? httpsPort = null,
+        bool sslEnabled = false)
     {
         ArgumentNullException.ThrowIfNull(site);
         var fastCgi = string.IsNullOrWhiteSpace(phpFastCgiEndpoint) ? _phpFastCgiEndpoint : phpFastCgiEndpoint.Trim();
@@ -64,15 +66,26 @@ public sealed class SiteNginxVhostWriter
         var sb = new StringBuilder();
         sb.AppendLine($"# stackroot site: {site.Name} ({site.Id})");
 
-        if (site.ForceHttps == true && httpsPort is int sslPort and > 0)
+        if (sslEnabled && httpsPort is int sslPort and > 0)
         {
-            sb.AppendLine("server {");
-            sb.AppendLine($"    listen {httpPort};");
-            sb.AppendLine($"    server_name {site.Domain};");
-            sb.AppendLine($"    return 301 https://$host:{sslPort}$request_uri;");
-            sb.AppendLine("}");
-            sb.AppendLine();
+            if (site.ForceHttps == true)
+            {
+                sb.AppendLine("server {");
+                sb.AppendLine($"    listen {httpPort};");
+                sb.AppendLine($"    server_name {site.Domain};");
+                sb.AppendLine($"    return 301 https://$host:{sslPort}$request_uri;");
+                sb.AppendLine("}");
+                sb.AppendLine();
+            }
+
             AppendServerBlock(sb, site, sslPort, normalizedRoot, fastCgi, phpRc, ssl: true);
+
+            if (site.ForceHttps != true)
+            {
+                sb.AppendLine();
+                AppendServerBlock(sb, site, httpPort, normalizedRoot, fastCgi, phpRc, ssl: false);
+            }
+
             return sb.ToString();
         }
 

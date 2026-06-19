@@ -22,6 +22,7 @@ using Stackroot.Core.Sites.Persistence;
 using Stackroot.Core.Supervisor;
 using Stackroot.Core.Windows;
 using Stackroot.App.Scheduling;
+using Stackroot.App.Services.SslTrust;
 using Stackroot.App.ViewModels;
 using Stackroot.App.Views;
 using Stackroot.App.Views.Pages;
@@ -116,13 +117,6 @@ public static class StackrootBootstrap
 
         services.AddSingleton<BackgroundWorkQueue>();
         services.AddSingleton<DeferredStartupCoordinator>();
-        services.AddSingleton<ServiceManager>(provider => new ServiceManager(
-            provider.GetRequiredService<StackrootPaths>(),
-            provider.GetRequiredService<InstallRegistryStore>(),
-            provider.GetRequiredService<SettingsStore>(),
-            provider.GetRequiredService<IProcessJobManager>(),
-            provider.GetRequiredService<IDiagnosticsReporter>(),
-            provider.GetRequiredService<PackageCatalogStore>()));
         services.AddSingleton<PhpConfigWriter>();
         services.AddSingleton<PhpExtensionsManifestStore>();
         services.AddSingleton<PhpExtensionManager>();
@@ -193,6 +187,27 @@ public static class StackrootBootstrap
             provider.GetRequiredService<DatabaseManager>(),
             provider.GetRequiredService<SiteInstallerRegistry>(),
             provider.GetRequiredService<IDiagnosticsReporter>()));
+        services.AddSingleton<NginxWebStackCoordinator>(provider =>
+        {
+            var siteManager = provider.GetRequiredService<SiteManager>();
+            return new NginxWebStackCoordinator(
+                provider.GetRequiredService<StackrootPaths>(),
+                provider.GetRequiredService<SettingsStore>(),
+                _ =>
+                {
+                    siteManager.RegenerateAll();
+                    return Task.CompletedTask;
+                },
+                provider.GetRequiredService<IDiagnosticsReporter>());
+        });
+        services.AddSingleton<ServiceManager>(provider => new ServiceManager(
+            provider.GetRequiredService<StackrootPaths>(),
+            provider.GetRequiredService<InstallRegistryStore>(),
+            provider.GetRequiredService<SettingsStore>(),
+            provider.GetRequiredService<IProcessJobManager>(),
+            provider.GetRequiredService<IDiagnosticsReporter>(),
+            provider.GetRequiredService<PackageCatalogStore>(),
+            provider.GetRequiredService<NginxWebStackCoordinator>()));
         services.AddSingleton(_ => SiteTemplates.List());
     }
 
@@ -316,8 +331,10 @@ public static class StackrootBootstrap
 
                 using (diagnostics.BeginAction("Startup", "Regenerate nginx vhosts for all sites"))
                 {
+                    var webStackCoordinator = services.GetRequiredService<NginxWebStackCoordinator>();
+                    await webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
                     NginxWebStackRebuilder.MigrateLegacySiteVhosts(paths);
-                    siteManager.RegenerateAll();
+                    services.GetRequiredService<SslTrustPromptCoordinator>().ScheduleCheck();
                 }
 
                 var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
@@ -522,7 +539,6 @@ public static class StackrootBootstrap
         }
 
         NginxRuntime.setupNginxRuntime(paths, installedNginx.InstallPath);
-        NginxRuntime.writeNginxConfig(paths, nginxSettings);
     }
 
     private static void EnsureBootstrapResourcesSeeded(string repoRoot, string resourcesRoot)

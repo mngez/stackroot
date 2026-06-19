@@ -1,4 +1,7 @@
-param([switch]$Publish)
+param(
+    [switch]$Publish,
+    [string]$ReleaseNotes
+)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
@@ -102,15 +105,27 @@ Write-Host "Pack: $SetupPath"
 
 if (-not $Publish) { return }
 
+. (Join-Path $PSScriptRoot "load-dotenv.ps1") -RepoRoot $Root
+
 $Tag = "v$Version"
 $Repo = Resolve-GitHubRepo
 $Title = "Stackroot $Version"
 $NotesPath = Join-Path $Root "release-notes/$Version.md"
-$Notes = if (Test-Path $NotesPath) { Get-Content $NotesPath -Raw } else { "Windows installer (NSIS)." }
+$Notes = if (-not [string]::IsNullOrWhiteSpace($ReleaseNotes)) {
+    $ReleaseNotes
+} elseif (Test-Path $NotesPath) {
+    Get-Content $NotesPath -Raw
+} else {
+    "Windows installer (NSIS)."
+}
 
 if (Get-Command gh -ErrorAction SilentlyContinue) {
-    gh auth status --hostname github.com *> $null
-    $ghAuthenticated = $LASTEXITCODE -eq 0
+    if ($env:GH_TOKEN) {
+        $ghAuthenticated = $true
+    } else {
+        gh auth status --hostname github.com *> $null
+        $ghAuthenticated = $LASTEXITCODE -eq 0
+    }
 } else {
     $ghAuthenticated = $false
 }

@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Helpers;
 using Stackroot.App.Services;
+using Stackroot.App.Services.AppUpdate;
+using Stackroot.App.Services.SslTrust;
 using Stackroot.App.ViewModels;
 using Stackroot.App.Views;
 using Stackroot.App.Views.Pages;
@@ -219,6 +221,9 @@ public partial class App : System.Windows.Application
         var deferredStartup = _services.GetRequiredService<DeferredStartupCoordinator>();
         deferredStartup.Completed -= OnDeferredStartupCompleted;
         deferredStartup.Completed += OnDeferredStartupCompleted;
+
+        _services.GetRequiredService<AppUpdateCoordinator>().Start();
+        _services.GetRequiredService<SslTrustPromptCoordinator>().Start();
 
         _ = _services.GetRequiredService<SessionActivityCoordinator>().BeginSessionAsync();
     }
@@ -462,6 +467,13 @@ public partial class App : System.Windows.Application
         services.AddSingleton<SessionActivityTrayViewModel>();
         services.AddSingleton<InstallProgressTracker>();
         services.AddSingleton<DownloadTrayViewModel>();
+        services.AddSingleton<GitHubAppReleaseClient>();
+        services.AddSingleton<AppUpdateStateStore>();
+        services.AddSingleton<AppUpdateViewModel>();
+        services.AddSingleton<AppUpdateCoordinator>();
+        services.AddSingleton<SslTrustStateStore>();
+        services.AddSingleton<SslTrustPromptViewModel>();
+        services.AddSingleton<SslTrustPromptCoordinator>();
         services.AddSingleton<ProcessArgvResolver>();
         services.AddSingleton<IGlobalProcessArgvResolver>(provider =>
             provider.GetRequiredService<ProcessArgvResolver>());

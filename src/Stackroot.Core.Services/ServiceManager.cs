@@ -19,6 +19,7 @@ public sealed class ServiceManager
     private readonly IProcessJobManager _jobManager;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly PackageCatalogStore _catalog;
+    private readonly NginxWebStackCoordinator? _webStackCoordinator;
     private readonly Dictionary<ServiceId, ServiceInfo> _services = [];
     private readonly Dictionary<ServiceId, string> _lastErrors = [];
     private readonly HashSet<ServiceId> _starting = [];
@@ -54,7 +55,8 @@ public sealed class ServiceManager
         SettingsStore? settingsStore = null,
         IProcessJobManager? jobManager = null,
         IDiagnosticsReporter? diagnostics = null,
-        PackageCatalogStore? catalog = null)
+        PackageCatalogStore? catalog = null,
+        NginxWebStackCoordinator? webStackCoordinator = null)
     {
         _paths = paths;
         _registry = registry ?? new InstallRegistryStore(paths.DataRoot);
@@ -62,6 +64,7 @@ public sealed class ServiceManager
         _jobManager = jobManager ?? new ProcessJobManager();
         _diagnostics = diagnostics ?? NoOpDiagnosticsReporter.Instance;
         _catalog = catalog ?? new PackageCatalogStore(_paths.ResourcesRoot);
+        _webStackCoordinator = webStackCoordinator;
     }
 
     private PackageCatalogStore Catalog => _catalog;
@@ -883,23 +886,41 @@ public sealed class ServiceManager
         }
 
         NginxRuntime.setupNginxRuntime(_paths, installed.InstallPath);
-        NginxRuntime.writeNginxConfig(_paths, serviceSettings);
+        ReportStartProgress(ServiceId.Nginx, "Preparing HTTPS certificates and nginx config…");
+        if (_webStackCoordinator is not null)
+        {
+            await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            NginxRuntime.writeNginxConfig(_paths, serviceSettings);
+        }
 
         var siteStore = new SiteStore(_paths.DataRoot, _settingsStore);
         _ = siteStore.List();
+        ReportStartProgress(ServiceId.Nginx, "Starting PHP FastCGI listeners…");
         var php = await EnsureStackPhpCgiAsync(cancellationToken);
         if (!php.Success)
         {
             return Fail(ToServiceKey(ServiceId.Nginx), definition.Name, php.Message ?? "Failed to start php-cgi listeners", serviceSettings.Port);
         }
 
-        var reloadResult = await NginxControl.reloadOrRestartNginx(
+        ReportStartProgress(ServiceId.Nginx, "Starting nginx…");
+        var reloadResult = await NginxControl.ReloadOrStartWithSslRepairAsync(
             _paths,
             installed.InstallPath,
             _jobManager,
             serviceSettings.Host,
             serviceSettings.Port,
-            cancellationToken);
+            _webStackCoordinator,
+            onSslRepair: () =>
+            {
+                _diagnostics.LogActivity(
+                    "ServiceManager",
+                    "nginx config references missing HTTPS certificates — regenerating SSL material and retrying.");
+                ReportStartProgress(ServiceId.Nginx, "Repairing HTTPS certificates…");
+            },
+            cancellationToken).ConfigureAwait(false);
 
         if (!reloadResult.Ok)
         {
@@ -1186,7 +1207,7 @@ public sealed class ServiceManager
             Host = "127.0.0.1",
             Port = defaultPort,
             SslPort = defaultSslPort,
-            SslEnabled = id == ServiceId.Nginx ? false : null,
+            SslEnabled = id == ServiceId.Nginx ? true : null,
             AutoStart = false,
             PackageId = packageId
         };
@@ -1702,6 +1723,11 @@ public sealed class ServiceManager
 
     private void SupervisionTick()
     {
+        if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+        {
+            return;
+        }
+
         var settings = _settingsStore.Load();
         foreach (var definition in SettingsDefaults.ServiceDefinitions)
         {
@@ -1763,6 +1789,11 @@ public sealed class ServiceManager
             {
                 try
                 {
+                    if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+                    {
+                        return;
+                    }
+
                     var info = await StartAndWaitAsync(definition.Id, id, CancellationToken.None)
                         .ConfigureAwait(false);
                     if (info.PortOpen == true)
@@ -1778,5 +1809,38 @@ public sealed class ServiceManager
                 }
             });
         }
+    }
+
+    private void ReportStartProgress(ServiceId serviceId, string message)
+    {
+        if (!IsStarting(serviceId))
+        {
+            return;
+        }
+
+        var definition = SettingsDefaults.ServiceDefinitions.First(d => d.Id == serviceId);
+        var settings = _settingsStore.Load();
+        var serviceSettings = GetServiceSettings(
+            settings,
+            serviceId,
+            definition.DefaultPort,
+            definition.DefaultSslPort,
+            definition.PackageId);
+
+        var info = new ServiceInfo
+        {
+            Id = ToServiceKey(serviceId),
+            Name = definition.Name,
+            Status = ServiceStatus.Starting,
+            Port = serviceSettings.Port,
+            SslPort = serviceSettings.SslPort,
+            PortOpen = false,
+            Installed = true,
+            Enabled = serviceSettings.Enabled,
+            Message = message
+        };
+
+        _services[serviceId] = info;
+        NotifyLiveStatusChanged(info.Id, info);
     }
 }

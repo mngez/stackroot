@@ -13,10 +13,20 @@ public sealed class SessionActivityService : ViewModelBase
     public SessionActivityService()
     {
         Items = [];
-        Items.CollectionChanged += (_, _) => RaisePropertyChanged(nameof(HasItems));
+        Items.CollectionChanged += (_, _) =>
+        {
+            RaisePropertyChanged(nameof(HasItems));
+            RaisePropertyChanged(nameof(ActiveCount));
+            RaisePropertyChanged(nameof(HasActiveOperations));
+        };
     }
 
+    public event EventHandler? ActivityChanged;
+
     public ObservableCollection<SessionActivityEntryViewModel> Items { get; }
+
+    /// <summary>True while the activity popup is open (unread counter is frozen).</summary>
+    public bool IsTrayOpen { get; set; }
 
     public int UnreadCount
     {
@@ -30,7 +40,11 @@ public sealed class SessionActivityService : ViewModelBase
         }
     }
 
-    public bool ShowBadge => UnreadCount > 0;
+    public int ActiveCount => Items.Count(item => item.Tone == SessionActivityTone.Progress);
+
+    public bool HasActiveOperations => ActiveCount > 0;
+
+    public bool ShowBadge => UnreadCount > 0 || HasActiveOperations;
 
     public bool HasItems => Items.Count > 0;
 
@@ -42,14 +56,19 @@ public sealed class SessionActivityService : ViewModelBase
             var entry = CreateEntry(message, SessionActivityTone.Progress, id);
             Items.Insert(0, entry);
             TrimItems();
-            UnreadCount++;
+            NotifyActivityChanged();
         });
         return id;
     }
 
     public void Complete(Guid id, string message, SessionActivityTone tone = SessionActivityTone.Success)
     {
-        RunOnUi(() => UpdateEntry(id, message, tone));
+        RunOnUi(() =>
+        {
+            UpdateEntry(id, message, tone);
+            BumpUnread();
+            NotifyActivityChanged();
+        });
     }
 
     public void Fail(Guid id, string message) => Complete(id, message, SessionActivityTone.Error);
@@ -63,7 +82,8 @@ public sealed class SessionActivityService : ViewModelBase
         {
             Items.Insert(0, CreateEntry(message, tone));
             TrimItems();
-            UnreadCount++;
+            BumpUnread();
+            NotifyActivityChanged();
         });
     }
 
@@ -93,17 +113,30 @@ public sealed class SessionActivityService : ViewModelBase
         {
             Items.Clear();
             UnreadCount = 0;
+            NotifyActivityChanged();
         });
     }
 
-    private SessionActivityEntryViewModel CreateEntry(string message, SessionActivityTone tone, Guid? id = null) =>
-        new()
+    private SessionActivityEntryViewModel CreateEntry(string message, SessionActivityTone tone, Guid? id = null)
+    {
+        var entry = new SessionActivityEntryViewModel
         {
             Id = id ?? Guid.NewGuid(),
             Timestamp = DateTimeOffset.Now,
             Message = message,
             Tone = tone
         };
+        entry.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(SessionActivityEntryViewModel.Tone))
+            {
+                RaisePropertyChanged(nameof(ActiveCount));
+                RaisePropertyChanged(nameof(HasActiveOperations));
+                RaisePropertyChanged(nameof(ShowBadge));
+            }
+        };
+        return entry;
+    }
 
     private void UpdateEntry(Guid id, string message, SessionActivityTone tone)
     {
@@ -118,6 +151,22 @@ public sealed class SessionActivityService : ViewModelBase
 
         entry.Message = message;
         entry.Tone = tone;
+    }
+
+    private void BumpUnread()
+    {
+        if (!IsTrayOpen)
+        {
+            UnreadCount++;
+        }
+    }
+
+    private void NotifyActivityChanged()
+    {
+        RaisePropertyChanged(nameof(ActiveCount));
+        RaisePropertyChanged(nameof(HasActiveOperations));
+        RaisePropertyChanged(nameof(ShowBadge));
+        ActivityChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void TrimItems()

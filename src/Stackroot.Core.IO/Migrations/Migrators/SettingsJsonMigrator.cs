@@ -32,6 +32,9 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 2:
                 RemoveObsoleteServices(obj);
                 break;
+            case 3:
+                EnableNginxSsl(obj);
+                break;
         }
     }
 
@@ -63,6 +66,25 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         JsonMigrationHelper.WriteJson(path, obj);
         report.Record(DocumentId, path, fromVersion, TargetSchemaVersion);
         return true;
+    }
+
+    private static void EnableNginxSsl(JsonObject root)
+    {
+        if (root["services"] is not JsonObject services)
+        {
+            return;
+        }
+
+        if (services["nginx"] is not JsonObject nginx)
+        {
+            return;
+        }
+
+        nginx["sslEnabled"] = true;
+        if (nginx["sslPort"] is null)
+        {
+            nginx["sslPort"] = 443;
+        }
     }
 
     private static bool RemoveObsoleteServices(JsonObject root)

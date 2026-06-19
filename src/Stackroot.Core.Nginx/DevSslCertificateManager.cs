@@ -22,12 +22,16 @@ public static class DevSslCertificateManager
     private const string DevKey = "dev.key";
     private const string CaCert = "stackroot-ca.crt";
     private const string CaKey = "stackroot-ca.key";
-    private const string CaSerial = "stackroot-ca.srl";
     private const string Manifest = "dev-domains.json";
-    private const string CaName = "Stackroot Local CA";
+    private const int ServerRenewalLeadDays = 30;
+    private const int CaRenewalLeadDays = 365;
 
-    public static DevSslPaths? EnsureDevSslCertificate(StackrootPaths paths, IEnumerable<string> domains)
+    public static DevSslPaths? EnsureDevSslCertificate(
+        StackrootPaths paths,
+        IEnumerable<string> domains)
     {
+        MigrateMisplacedSslMaterial(paths);
+
         var uniqueDomains = domains
             .Where(static d => !string.IsNullOrWhiteSpace(d))
             .Select(static d => d.Trim().ToLowerInvariant())
@@ -46,42 +50,158 @@ public static class DevSslCertificateManager
         var certAbs = Path.Combine(sslDir, DevCert);
         var keyAbs = Path.Combine(sslDir, DevKey);
         var caAbs = Path.Combine(sslDir, CaCert);
+        var caKeyAbs = Path.Combine(sslDir, CaKey);
         var manifestAbs = Path.Combine(sslDir, Manifest);
         var fingerprint = DomainFingerprint(uniqueDomains);
 
-        if (TryReadManifest(manifestAbs, out var manifest) &&
+        var hasMaterial = File.Exists(certAbs) && File.Exists(keyAbs);
+        var manifestMatches = TryReadManifest(manifestAbs, out var manifest) &&
             string.Equals(manifest?.Fingerprint, fingerprint, StringComparison.OrdinalIgnoreCase) &&
-            manifest?.CaSigned != false &&
-            File.Exists(certAbs) &&
-            File.Exists(keyAbs))
+            manifest?.CaSigned != false;
+
+        if (manifestMatches && hasMaterial && !NeedsRenewal(certAbs, caAbs))
         {
-            return Existing(confDir);
+            return TryGetExisting(paths);
         }
 
-        var openSsl = FindOpenSsl();
-        if (openSsl is null)
+        var renewalDomains = manifest?.Domains is { Count: > 0 } manifestDomains
+            ? manifestDomains
+            : uniqueDomains;
+
+        if (manifestMatches &&
+            File.Exists(caAbs) &&
+            File.Exists(caKeyAbs) &&
+            !IsCertificateExpiringSoon(caAbs, CaRenewalLeadDays) &&
+            IsCertificateExpiringSoon(certAbs, ServerRenewalLeadDays) &&
+            DevSslDotNetCertificateGenerator.TryRenewServerCertificate(sslDir, renewalDomains))
         {
-            return Existing(confDir);
+            WriteManifest(manifestAbs, fingerprint, renewalDomains, generator: manifest?.Generator ?? "dotnet");
+            return TryGetExisting(paths);
         }
 
-        if (!EnsureLocalCa(openSsl, sslDir))
+        if (DevSslDotNetCertificateGenerator.TryGenerate(sslDir, uniqueDomains))
         {
-            return Existing(confDir);
+            WriteManifest(manifestAbs, fingerprint, uniqueDomains, generator: "dotnet");
+            return TryGetExisting(paths);
         }
 
-        if (!SignDevCertificate(openSsl, sslDir, uniqueDomains))
+        return TryGetExisting(paths);
+    }
+
+    public static bool CertificatesExist(StackrootPaths paths)
+    {
+        var existing = TryGetExisting(paths);
+        if (existing is null)
         {
-            return Existing(confDir);
+            return false;
         }
 
+        return !IsCertificateExpiringSoon(existing.CertAbs, leadDays: 0);
+    }
+
+    public static bool IsLocalCaTrusted(StackrootPaths paths)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return true;
+        }
+
+        var thumbprint = GetLocalCaThumbprint(paths);
+        return !string.IsNullOrWhiteSpace(thumbprint) && IsTrustedInWindows(thumbprint);
+    }
+
+    public static string? GetLocalCaThumbprint(StackrootPaths paths)
+    {
+        var confDir = Path.Combine(NginxRuntime.nginxPrefix(paths), "conf");
+        var caPath = Path.Combine(confDir, "ssl", CaCert);
+        if (!File.Exists(caPath))
+        {
+            return null;
+        }
+
+        return ReadThumbprint(caPath);
+    }
+
+    public static bool ShouldPromptForLocalCaTrust(StackrootPaths paths)
+        => CertificatesExist(paths) && !IsLocalCaTrusted(paths);
+
+    public static DevSslPaths? TryGetExisting(StackrootPaths paths)
+    {
+        MigrateMisplacedSslMaterial(paths);
+        var confDir = Path.Combine(NginxRuntime.nginxPrefix(paths), "conf");
+        return Existing(confDir);
+    }
+
+    private static void MigrateMisplacedSslMaterial(StackrootPaths paths)
+    {
+        var correctSslDir = Path.Combine(NginxRuntime.nginxPrefix(paths), "conf", "ssl");
+        var legacySslDir = Path.Combine(paths.ConfigRoot, "config", "nginx", "conf", "ssl");
+        if (!Directory.Exists(legacySslDir))
+        {
+            return;
+        }
+
+        var legacyCert = Path.Combine(legacySslDir, DevCert);
+        var correctCert = Path.Combine(correctSslDir, DevCert);
+        if (!File.Exists(legacyCert) || File.Exists(correctCert))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(correctSslDir);
+        foreach (var file in Directory.EnumerateFiles(legacySslDir))
+        {
+            var destination = Path.Combine(correctSslDir, Path.GetFileName(file));
+            if (!File.Exists(destination))
+            {
+                File.Copy(file, destination);
+            }
+        }
+    }
+
+    private static bool NeedsRenewal(string serverCertPath, string caCertPath)
+    {
+        if (!File.Exists(serverCertPath))
+        {
+            return true;
+        }
+
+        if (IsCertificateExpiringSoon(serverCertPath, ServerRenewalLeadDays))
+        {
+            return true;
+        }
+
+        return File.Exists(caCertPath) && IsCertificateExpiringSoon(caCertPath, CaRenewalLeadDays);
+    }
+
+    private static bool IsCertificateExpiringSoon(string certPath, int leadDays)
+    {
+        if (!File.Exists(certPath))
+        {
+            return true;
+        }
+
+        try
+        {
+            using var cert = new X509Certificate2(certPath);
+            return DateTime.UtcNow.AddDays(leadDays) >= cert.NotAfter;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private static void WriteManifest(string manifestAbs, string fingerprint, IReadOnlyList<string> domains, string generator)
+    {
         var payload = new DevSslManifest
         {
             Fingerprint = fingerprint,
-            Domains = uniqueDomains,
-            CaSigned = true
+            Domains = domains.ToList(),
+            CaSigned = true,
+            Generator = generator
         };
         File.WriteAllText(manifestAbs, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
-        return Existing(confDir);
     }
 
     public static DevSslTrustResult TrustDevSslCertificate(StackrootPaths paths)
@@ -131,147 +251,6 @@ public static class DevSslCertificateManager
             certAbs,
             keyAbs,
             File.Exists(caAbs) ? caAbs : null);
-    }
-
-    private static string? FindOpenSsl()
-    {
-        var candidates = new[]
-        {
-            "openssl",
-            @"C:\Program Files\Git\usr\bin\openssl.exe"
-        };
-
-        foreach (var candidate in candidates)
-        {
-            var result = RunProcess(candidate, ["version"]);
-            if (result.ExitCode == 0)
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool EnsureLocalCa(string openSsl, string sslDir)
-    {
-        var caCert = Path.Combine(sslDir, CaCert);
-        var caKey = Path.Combine(sslDir, CaKey);
-        if (File.Exists(caCert) && File.Exists(caKey))
-        {
-            return true;
-        }
-
-        var configPath = Path.Combine(sslDir, "ca-openssl.cnf");
-        File.WriteAllText(configPath, $$"""
-[req]
-distinguished_name = req_distinguished_name
-x509_extensions = v3_ca
-prompt = no
-
-[req_distinguished_name]
-CN = {{CaName}}
-O = Stackroot
-OU = Local Development
-
-[v3_ca]
-basicConstraints = critical, CA:TRUE
-keyUsage = critical, keyCertSign, cRLSign
-subjectKeyIdentifier = hash
-""", Encoding.UTF8);
-
-        if (RunProcess(openSsl, ["genrsa", "-out", caKey, "4096"]).ExitCode != 0)
-        {
-            return false;
-        }
-
-        return RunProcess(openSsl,
-            [
-                "req",
-                "-x509",
-                "-new",
-                "-nodes",
-                "-key",
-                caKey,
-                "-sha256",
-                "-days",
-                "8250",
-                "-out",
-                caCert,
-                "-config",
-                configPath,
-                "-extensions",
-                "v3_ca"
-            ]).ExitCode == 0;
-    }
-
-    private static bool SignDevCertificate(string openSsl, string sslDir, IReadOnlyList<string> domains)
-    {
-        var certAbs = Path.Combine(sslDir, DevCert);
-        var keyAbs = Path.Combine(sslDir, DevKey);
-        var caCert = Path.Combine(sslDir, CaCert);
-        var caKey = Path.Combine(sslDir, CaKey);
-        var csrPath = Path.Combine(sslDir, "dev.csr");
-        var reqConfig = Path.Combine(sslDir, "openssl.cnf");
-        var extConfig = Path.Combine(sslDir, "v3.ext");
-        var caSerial = Path.Combine(sslDir, CaSerial);
-
-        var san = domains
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(static d => $"DNS:{d}")
-            .Concat(["DNS:localhost", "IP:127.0.0.1"]);
-
-        File.WriteAllText(reqConfig, """
-[req]
-distinguished_name = req_distinguished_name
-prompt = no
-
-[req_distinguished_name]
-CN = Stackroot Dev
-""", Encoding.UTF8);
-
-        File.WriteAllText(extConfig, $$"""
-[v3_req]
-subjectAltName = {{string.Join(",", san)}}
-""", Encoding.UTF8);
-
-        if (RunProcess(openSsl, ["genrsa", "-out", keyAbs, "2048"]).ExitCode != 0)
-        {
-            return false;
-        }
-
-        if (RunProcess(openSsl, ["req", "-new", "-key", keyAbs, "-out", csrPath, "-config", reqConfig]).ExitCode != 0)
-        {
-            return false;
-        }
-
-        var signArgs = new List<string>
-        {
-            "x509",
-            "-req",
-            "-days",
-            "825",
-            "-sha256",
-            "-in",
-            csrPath,
-            "-CA",
-            caCert,
-            "-CAkey",
-            caKey,
-            "-out",
-            certAbs,
-            "-extensions",
-            "v3_req",
-            "-extfile",
-            extConfig
-        };
-        signArgs.AddRange(File.Exists(caSerial)
-            ? ["-CAserial", caSerial]
-            : ["-CAcreateserial"]);
-
-        return RunProcess(openSsl, signArgs).ExitCode == 0 &&
-               File.Exists(certAbs) &&
-               File.Exists(keyAbs);
     }
 
     private static string DomainFingerprint(IReadOnlyList<string> domains)
@@ -380,5 +359,6 @@ subjectAltName = {{string.Join(",", san)}}
         public string? Fingerprint { get; init; }
         public List<string>? Domains { get; init; }
         public bool? CaSigned { get; init; }
+        public string? Generator { get; init; }
     }
 }

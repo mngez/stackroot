@@ -247,8 +247,16 @@ public sealed class DatabaseManager
         return results;
     }
 
-    public string RestoreBackup(string backupPath, string? targetDatabaseName = null)
+    public string RestoreBackup(
+        string backupPath,
+        string? targetDatabaseName = null,
+        bool replaceExistingDatabase = false)
     {
+        if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+        {
+            throw new InvalidOperationException("Stackroot is closing — restore was cancelled.");
+        }
+
         if (string.IsNullOrWhiteSpace(backupPath) || !File.Exists(backupPath))
         {
             throw new FileNotFoundException("Backup file was not found.", backupPath);
@@ -263,27 +271,56 @@ public sealed class DatabaseManager
         }
 
         var engine = parsedEngine ?? ResolveEngine(null);
+        var settings = _settingsStore.Load();
         var registry = _registryStore.Load();
-        if (!registry.Databases.Any(db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase)))
+        var existsInRegistry = registry.Databases.Any(
+            db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase));
+
+        if (replaceExistingDatabase)
         {
-            Create(databaseName, engine);
+            ResetDatabaseOnServer(settings, engine, databaseName);
+        }
+        else if (!existsInRegistry)
+        {
+            CreateOnServer(settings, engine, databaseName);
         }
 
-        var settings = _settingsStore.Load();
         ImportToServer(settings, engine, databaseName, backupPath);
 
         var now = DateTimeOffset.UtcNow.ToString("O");
-        registry = _registryStore.Load();
-        var record = registry.Databases.First(db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase));
-        registry.Databases.RemoveAll(db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase));
-        registry.Databases.Add(record with
+        if (!existsInRegistry)
         {
-            UpdatedAt = now,
-            LastBackupAt = record.LastBackupAt ?? now
-        });
+            registry.Databases.Add(new DatabaseRecord
+            {
+                Name = databaseName,
+                Engine = engine,
+                CreatedAt = now,
+                UpdatedAt = now,
+                LastBackupAt = now
+            });
+        }
+        else
+        {
+            var record = registry.Databases.First(
+                db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase));
+            registry.Databases.RemoveAll(
+                db => string.Equals(db.Name, databaseName, StringComparison.OrdinalIgnoreCase));
+            registry.Databases.Add(record with
+            {
+                UpdatedAt = now,
+                LastBackupAt = record.LastBackupAt ?? now
+            });
+        }
+
         _registryStore.Save(registry);
 
         return databaseName;
+    }
+
+    private void ResetDatabaseOnServer(AppSettings settings, SqlEngine engine, string name)
+    {
+        DropOnServer(settings, engine, name);
+        CreateOnServer(settings, engine, name);
     }
 
     private static void ParseBackupFileName(string fileName, out string? databaseName, out SqlEngine? engine)

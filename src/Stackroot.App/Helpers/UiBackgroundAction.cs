@@ -1,3 +1,4 @@
+using Stackroot.App.Services;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Observability;
 
@@ -23,6 +24,19 @@ public static class UiBackgroundAction
         setBusy(true);
         setStatus?.Invoke(busyMessage ?? action);
 
+        BackgroundOperationTracker.BackgroundOperationLease? backgroundOperation;
+        try
+        {
+            backgroundOperation = BackgroundOperationTracker.Enter(action);
+        }
+        catch (InvalidOperationException ex)
+        {
+            setBusy(false);
+            onError?.Invoke(ex);
+            return new UiActionResult<T>(false, default);
+        }
+
+        using (backgroundOperation)
         try
         {
             var value = await diagnostics.RunUserActionAsync(

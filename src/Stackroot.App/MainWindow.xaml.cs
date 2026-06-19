@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -233,6 +234,32 @@ public partial class MainWindow : Window
         }
 
         _viewModel.ShowShutdownOverlay("Closing services...");
+    }
+
+    public async Task QuitForUpdateInstallerAsync(string installerPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(installerPath);
+        if (_quitting)
+        {
+            return;
+        }
+
+        BeginQuit();
+        ShowShutdownOverlayIfNeeded();
+        _viewModel.ShowShutdownOverlay("Closing Stackroot before update…");
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+
+        try
+        {
+            await Task.Run(() => _shutdown.ShutdownAsync(TimeSpan.FromSeconds(15))).ConfigureAwait(true);
+        }
+        catch
+        {
+            // OnExit performs a second best-effort pass.
+        }
+
+        Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
+        System.Windows.Application.Current.Shutdown();
     }
 
     private async Task ShutdownAndQuitAsync()

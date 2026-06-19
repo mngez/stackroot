@@ -223,7 +223,7 @@ public static class SettingsDefaults
                 Host = "127.0.0.1",
                 Port = definition.DefaultPort,
                 SslPort = definition.DefaultSslPort,
-                SslEnabled = definition.Id == ServiceId.Nginx ? false : null,
+                SslEnabled = definition.Id == ServiceId.Nginx ? true : null,
                 AutoStart = false,
                 Supervise = definition.Id is ServiceId.Mysql or ServiceId.Redis or ServiceId.Postgresql or ServiceId.Mongodb or ServiceId.Memcached,
                 PackageId = definition.PackageId

@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title="Restore backup — pick database"
-        Width="400" Height="220"
+        Width="440" Height="280"
+        MinHeight="280"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource StackrootWindowBrush}"
@@ -12,6 +13,8 @@
         windows:WindowsTheme.EnableDarkTitleBar="True">
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -28,7 +31,13 @@
                   ItemsSource="{Binding Databases}"
                   SelectedItem="{Binding SelectedDatabase}" />
 
-        <StackPanel Grid.Row="3" Margin="0,16,0,0"
+        <CheckBox Grid.Row="3"
+                  Margin="0,14,0,0"
+                  Content="Replace database (drop and recreate before restore)"
+                  IsChecked="{Binding ReplaceDatabaseBeforeRestore}"
+                  ToolTip="Off: import into the existing database. On: wipe the target database first, then restore." />
+
+        <StackPanel Grid.Row="5" Margin="0,16,0,0"
                     Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" MinWidth="80" Padding="10,6"
                     Command="{Binding CancelCommand}" />

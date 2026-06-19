@@ -41,7 +41,7 @@ public sealed class ServiceSettingsDialogViewModel : ViewModelBase
         _host = settings.Host;
         _port = settings.Port;
         _sslPort = settings.SslPort ?? definition.DefaultSslPort;
-        _sslEnabled = settings.SslEnabled ?? false;
+        _sslEnabled = settings.SslEnabled ?? (definition.Id == ServiceId.Nginx);
         _activePackageLabel = activePackageLabel ?? "—";
 
         SaveCommand = new RelayCommand(_ => SaveHostAndPorts());

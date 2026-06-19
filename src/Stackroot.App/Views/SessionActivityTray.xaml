@@ -5,29 +5,51 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
     <Grid Width="36" Height="36">
+        <Ellipse x:Name="PulseRing"
+                 Width="36"
+                 Height="36"
+                 Stroke="{StaticResource StackrootAccentBrush}"
+                 StrokeThickness="2"
+                 Opacity="0"
+                 IsHitTestVisible="False" />
+
         <Button x:Name="TrayButton"
                 Width="36"
                 Height="36"
                 Padding="0"
                 Style="{StaticResource StackrootIconButtonStyle}"
-                ToolTip="Activity log"
+                ToolTip="{Binding TrayToolTip}"
                 Command="{Binding ToggleCommand}"
                 PreviewMouseLeftButtonDown="TrayButton_PreviewMouseLeftButtonDown">
             <Grid Width="28" Height="28">
-                <TextBlock HorizontalAlignment="Center"
+                <TextBlock x:Name="BellIcon"
+                           HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            FontFamily="{StaticResource StackrootIconFont}"
                            FontSize="14"
                            Text="&#xE946;" />
-                <Border MinWidth="14"
-                        Height="14"
-                        Padding="3,0"
+                <Border x:Name="BadgeBorder"
+                        MinWidth="16"
+                        Height="16"
+                        Padding="4,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
-                        Margin="0,-2,-2,0"
-                        Background="{StaticResource StackrootAccentBrush}"
-                        CornerRadius="7"
+                        Margin="0,-3,-4,0"
+                        CornerRadius="8"
                         Visibility="{Binding ShowBadge, Converter={StaticResource BoolToVis}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{StaticResource StackrootAccentBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowActiveBadge}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource StackrootWarnBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Border.RenderTransform>
+                        <ScaleTransform x:Name="BadgeScale" CenterX="8" CenterY="8" />
+                    </Border.RenderTransform>
                     <TextBlock FontSize="9"
                                FontWeight="Bold"
                                Foreground="#062113"
@@ -98,6 +120,30 @@
                             BorderBrush="{StaticResource StackrootBorderBrush}"
                             BorderThickness="0,1,0,0" />
 
+                    <Border DockPanel.Dock="Bottom"
+                            Padding="12,10"
+                            Background="#131D2A"
+                            BorderBrush="{StaticResource StackrootBorderBrush}"
+                            BorderThickness="0,1,0,0"
+                            CornerRadius="0,0,10,10"
+                            Visibility="{Binding ShowActiveFooter, Converter={StaticResource BoolToVis}}">
+                        <DockPanel LastChildFill="True">
+                            <ProgressBar DockPanel.Dock="Left"
+                                         Width="48"
+                                         Height="4"
+                                         Margin="0,0,10,0"
+                                         VerticalAlignment="Center"
+                                         IsIndeterminate="True"
+                                         Foreground="{StaticResource StackrootWarnBrush}"
+                                         Background="#223047"
+                                         BorderThickness="0" />
+                            <TextBlock VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource StackrootWarnBrush}"
+                                       Text="{Binding ActiveFooterLabel}" />
+                        </DockPanel>
+                    </Border>
+
                     <TextBlock DockPanel.Dock="Top"
                                Margin="12,12"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -125,6 +171,9 @@
                                                 <ProgressBar Margin="0,8,0,0"
                                                              Height="3"
                                                              IsIndeterminate="True"
+                                                             Foreground="{StaticResource StackrootWarnBrush}"
+                                                             Background="#223047"
+                                                             BorderThickness="0"
                                                              Visibility="{Binding IsProgress, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>
                                         </DockPanel>

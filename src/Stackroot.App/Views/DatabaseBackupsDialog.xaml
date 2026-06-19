@@ -156,8 +156,6 @@
 
                    TextWrapping="Wrap" />
 
-
-
         <DockPanel Grid.Row="4"
 
                    Margin="0,14,0,0"

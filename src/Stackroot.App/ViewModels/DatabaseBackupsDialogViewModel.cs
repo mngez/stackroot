@@ -347,37 +347,27 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
 
         var backup = SelectedBackup.Info;
 
-        var targetName = backup.DatabaseName ?? _databaseNameFilter;
-
-        // If showing all backups (no filter), let user pick the target database
-        if (string.IsNullOrWhiteSpace(_databaseNameFilter))
+        var choice = PickRestoreTarget(backup.DatabaseName ?? _databaseNameFilter);
+        if (choice is null)
         {
-            targetName = PickTargetDatabase(backup.DatabaseName);
-            if (string.IsNullOrWhiteSpace(targetName))
-            {
-                return; // user cancelled
-            }
+            return;
         }
+
+        var targetName = choice.DatabaseName;
 
         if (string.IsNullOrWhiteSpace(targetName))
-
         {
-
             StatusMessage = "Could not determine the target database name.";
-
             return;
-
         }
 
-
-
         var result = await _activity.RunBackgroundAsync<string>(
-
             "Databases",
-
             $"Restore database '{targetName}'",
-
-            () => Task.Run(() => _databaseManager.RestoreBackup(backup.FullPath, targetName)),
+            () => Task.Run(() => _databaseManager.RestoreBackup(
+                backup.FullPath,
+                targetName,
+                choice.ReplaceExistingDatabase)),
 
             value => IsBusy = value,
 
@@ -453,7 +443,7 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
             : "No backup files found yet.";
     }
 
-    private string? PickTargetDatabase(string? suggestedName)
+    private RestoreTargetChoice? PickRestoreTarget(string? suggestedName)
     {
         var databases = _databaseManager.List();
         if (databases.Count == 0)
@@ -462,15 +452,12 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
             return null;
         }
 
-        if (databases.Count == 1)
-        {
-            return databases[0].Name;
-        }
-
         var options = databases.Select(db => db.Name).ToList();
-        var initial = suggestedName is not null && options.Contains(suggestedName, StringComparer.OrdinalIgnoreCase)
-            ? suggestedName
-            : options[0];
+        var initial = !string.IsNullOrWhiteSpace(_databaseNameFilter)
+            ? _databaseNameFilter
+            : suggestedName is not null && options.Contains(suggestedName, StringComparer.OrdinalIgnoreCase)
+                ? suggestedName
+                : options[0];
 
         var dialogVm = new PickDatabaseForRestoreDialogViewModel(options, initial);
         var owner = System.Windows.Application.Current?.MainWindow;
@@ -483,9 +470,17 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
         dialogVm.RequestClose += (_, _) => dialog.Close();
         dialog.ShowDialog();
 
-        return dialogVm.SelectedDatabase;
+        if (!dialogVm.IsConfirmed || string.IsNullOrWhiteSpace(dialogVm.SelectedDatabase))
+        {
+            return null;
+        }
+
+        return new RestoreTargetChoice(
+            dialogVm.SelectedDatabase,
+            dialogVm.ReplaceDatabaseBeforeRestore);
     }
 
+    private sealed record RestoreTargetChoice(string DatabaseName, bool ReplaceExistingDatabase);
 }
 
 public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
@@ -493,14 +488,24 @@ public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
     public ObservableCollection<string> Databases { get; } = [];
 
     private string? _selectedDatabase;
+    private bool _replaceDatabaseBeforeRestore;
+
     public string? SelectedDatabase
     {
         get => _selectedDatabase;
         set => SetProperty(ref _selectedDatabase, value);
     }
 
+    public bool ReplaceDatabaseBeforeRestore
+    {
+        get => _replaceDatabaseBeforeRestore;
+        set => SetProperty(ref _replaceDatabaseBeforeRestore, value);
+    }
+
     public RelayCommand RestoreCommand { get; }
     public RelayCommand CancelCommand { get; }
+
+    public bool IsConfirmed { get; private set; }
 
     public event EventHandler? RequestClose;
 
@@ -511,17 +516,32 @@ public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
 
         SelectedDatabase = initialSelection;
 
-        RestoreCommand = new RelayCommand(_ =>
-        {
-            if (!string.IsNullOrWhiteSpace(SelectedDatabase))
-                RequestClose?.Invoke(this, EventArgs.Empty);
-        });
+        RestoreCommand = new RelayCommand(_ => ConfirmRestore(), _ => !string.IsNullOrWhiteSpace(SelectedDatabase));
+        CancelCommand = new RelayCommand(_ => CancelRestore());
+    }
 
-        CancelCommand = new RelayCommand(_ =>
+    public void CancelRestore()
+    {
+        AbortRestore();
+        RequestClose?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Marks the dialog as cancelled without requesting another close (e.g. when the window X is clicked).</summary>
+    public void AbortRestore()
+    {
+        IsConfirmed = false;
+        SelectedDatabase = null;
+    }
+
+    private void ConfirmRestore()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedDatabase))
         {
-            SelectedDatabase = null;
-            RequestClose?.Invoke(this, EventArgs.Empty);
-        });
+            return;
+        }
+
+        IsConfirmed = true;
+        RequestClose?.Invoke(this, EventArgs.Empty);
     }
 }
 

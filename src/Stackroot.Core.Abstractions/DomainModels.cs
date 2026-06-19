@@ -3,7 +3,7 @@ namespace Stackroot.Core.Abstractions;
 public enum PackageType
 {
     Php, Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb,
-    Nvm, Node, Phpmyadmin, Phpredisadmin, Composer, Pnpm, Vite, Git, Python, Sqlite, Notepadpp, Mailpit, Laravel, WpCli, Mongosh, MongodbTools
+    Nvm, Node, Phpmyadmin, Phpredisadmin, Composer, Pnpm, Vite, Git, Openssl, Python, Sqlite, Notepadpp, Mailpit, Laravel, WpCli, Mongosh, MongodbTools
 }
 
 public enum PlatformType

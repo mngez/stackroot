@@ -20,7 +20,11 @@ public sealed class StackrootShutdownCoordinator
     /// Set to true when shutdown begins. Volatile read allows other components
     /// (e.g. background timers) to avoid work during shutdown.
     /// </summary>
-    public static bool IsShuttingDown { get; private set; }
+    public static bool IsShuttingDown
+    {
+        get => ApplicationShutdownState.IsShuttingDown;
+        private set => ApplicationShutdownState.IsShuttingDown = value;
+    }
 
     private readonly ServiceManager _serviceManager;
     private readonly GlobalProcessManager _globalProcessManager;
@@ -56,10 +60,41 @@ public sealed class StackrootShutdownCoordinator
             return;
         }
 
+        BackgroundOperationTracker.RequestShutdown();
+        ApplicationShutdownState.ShutdownRequested = true;
+        _deferredStartup.Cancel();
+
+        try
+        {
+            await BackgroundOperationTracker.WaitForCompletionAsync(
+                TimeSpan.FromMinutes(3),
+                cancellationToken,
+                active =>
+                {
+                    if (active > 0)
+                    {
+                        _shellViewModel.ShowShutdownOverlay(
+                            active == 1
+                                ? "Waiting for a background task to finish…"
+                                : $"Waiting for {active} background tasks to finish…");
+                    }
+                }).ConfigureAwait(false);
+
+            if (BackgroundOperationTracker.ActiveOperations > 0)
+            {
+                _diagnostics.LogUserError(
+                    "Shutdown",
+                    $"Continuing shutdown while {BackgroundOperationTracker.ActiveOperations} background task(s) are still running.");
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+
         IsShuttingDown = true;
 
         using var scope = _diagnostics.BeginAction("Shutdown", "Stop managed processes");
-        _deferredStartup.Cancel();
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(timeout);

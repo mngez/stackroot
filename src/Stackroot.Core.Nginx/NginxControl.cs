@@ -26,6 +26,71 @@ public static class NginxControl
         return ReloadOrStartNginxAsync(paths, nginxInstallPath, jobManager, host, listenPort, cancellationToken);
     }
 
+    public static Task<NginxReloadResult> ReloadOrStartWithSslRepairAsync(
+        StackrootPaths paths,
+        string nginxInstallPath,
+        IProcessJobManager jobManager,
+        string? host,
+        int? listenPort,
+        NginxWebStackCoordinator? coordinator,
+        Action? onSslRepair = null,
+        CancellationToken cancellationToken = default)
+    {
+        return WithSslRepairRetryAsync(
+            ct => ReloadOrStartNginxAsync(paths, nginxInstallPath, jobManager, host, listenPort, ct),
+            coordinator,
+            onSslRepair,
+            cancellationToken);
+    }
+
+    public static Task<NginxReloadResult> ReloadWithSslRepairAsync(
+        StackrootPaths paths,
+        string nginxInstallPath,
+        IProcessJobManager jobManager,
+        string? host,
+        int? listenPort,
+        NginxWebStackCoordinator? coordinator,
+        Action? onSslRepair = null,
+        CancellationToken cancellationToken = default)
+    {
+        return WithSslRepairRetryAsync(
+            ct => ReloadNginxAsync(paths, nginxInstallPath, jobManager, host, listenPort, ct),
+            coordinator,
+            onSslRepair,
+            cancellationToken);
+    }
+
+    public static bool LooksLikeSslCertificateConfigError(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
+        }
+
+        return message.Contains("ssl_certificate", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("BIO_new_file", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("cannot load certificate", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("dev.crt", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("dev.key", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<NginxReloadResult> WithSslRepairRetryAsync(
+        Func<CancellationToken, Task<NginxReloadResult>> reload,
+        NginxWebStackCoordinator? coordinator,
+        Action? onSslRepair,
+        CancellationToken cancellationToken)
+    {
+        var result = await reload(cancellationToken).ConfigureAwait(false);
+        if (result.Ok || coordinator is null || !LooksLikeSslCertificateConfigError(result.Message))
+        {
+            return result;
+        }
+
+        onSslRepair?.Invoke();
+        await coordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+        return await reload(cancellationToken).ConfigureAwait(false);
+    }
+
     public static void StopNginx(string prefix, string binPath, IProcessJobManager jobManager)
     {
         if (!File.Exists(binPath))

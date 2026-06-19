@@ -1,4 +1,5 @@
 using System.IO;
+using Stackroot.App.Services.SslTrust;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.AdminTools;
 using Stackroot.Core.Catalog;
@@ -22,6 +23,8 @@ public sealed class NginxWebStackRebuilder
     private readonly StackrootPaths _paths;
     private readonly IProcessJobManager _jobManager;
     private readonly ServiceManager _serviceManager;
+    private readonly NginxWebStackCoordinator _webStackCoordinator;
+    private readonly SslTrustPromptCoordinator? _sslTrustPrompt;
 
     public NginxWebStackRebuilder(
         SiteManager siteManager,
@@ -33,7 +36,9 @@ public sealed class NginxWebStackRebuilder
         InstallRegistryStore registryStore,
         StackrootPaths paths,
         IProcessJobManager jobManager,
-        ServiceManager serviceManager)
+        ServiceManager serviceManager,
+        NginxWebStackCoordinator webStackCoordinator,
+        SslTrustPromptCoordinator? sslTrustPrompt = null)
     {
         _siteManager = siteManager;
         _appDomainConfigWriter = appDomainConfigWriter;
@@ -45,6 +50,8 @@ public sealed class NginxWebStackRebuilder
         _paths = paths;
         _jobManager = jobManager;
         _serviceManager = serviceManager;
+        _webStackCoordinator = webStackCoordinator;
+        _sslTrustPrompt = sslTrustPrompt;
     }
 
     public async Task<string> RebuildAsync(CancellationToken cancellationToken = default)
@@ -55,6 +62,7 @@ public sealed class NginxWebStackRebuilder
         await ApplyAdminToolSafelyAsync(() => _phpRedisAdminManager.ApplyAsync(cancellationToken));
         await _mailpitManager.ApplyAsync(cancellationToken);
         await FinalizeAndReloadAsync(cancellationToken);
+        _sslTrustPrompt?.ScheduleCheck();
         return "Web configs rebuilt — nginx, sites, admin tools, and hosts.";
     }
 
@@ -115,7 +123,7 @@ public sealed class NginxWebStackRebuilder
         }
 
         NginxRuntime.setupNginxRuntime(_paths, installed.InstallPath);
-        NginxRuntime.writeNginxConfig(_paths, nginxSettings);
+        await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
 
         if (forceRestart)
         {
@@ -126,13 +134,14 @@ public sealed class NginxWebStackRebuilder
                 nginxSettings.Port);
         }
 
-        var reloadResult = await NginxControl.ReloadNginxAsync(
+        var reloadResult = await NginxControl.ReloadWithSslRepairAsync(
             _paths,
             installed.InstallPath,
             _jobManager,
             nginxSettings.Host,
             nginxSettings.Port,
-            cancellationToken);
+            _webStackCoordinator,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (!reloadResult.Ok)
         {

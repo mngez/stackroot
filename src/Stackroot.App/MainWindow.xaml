@@ -10,6 +10,9 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource StackrootWindowBrush}">
     <Grid>
+        <Grid.Resources>
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250" />
             <ColumnDefinition Width="*" />
@@ -153,6 +156,8 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -170,8 +175,86 @@
                     </StackPanel>
                 </Border>
 
+                <Border Grid.Row="1"
+                        Margin="16,8,16,0"
+                        Padding="12,10"
+                        Background="#1A6A5A20"
+                        BorderBrush="#3A9A7A40"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{Binding SslTrustPrompt.ShowBanner, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    VerticalAlignment="Center">
+                            <TextBlock Foreground="#F5D78E"
+                                       Text="{Binding SslTrustPrompt.BannerText}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       FontSize="12"
+                                       Text="{Binding SslTrustPrompt.StatusText}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1"
+                                    Margin="12,0,0,0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Button MinWidth="120"
+                                    Margin="0,0,8,0"
+                                    Content="Trust certificate"
+                                    Command="{Binding SslTrustPrompt.TrustCertificateCommand}" />
+                            <Button MinWidth="72"
+                                    Content="Later"
+                                    Command="{Binding SslTrustPrompt.DismissCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="2"
+                        Margin="16,8,16,0"
+                        Padding="12,10"
+                        Background="#1A4A6A90"
+                        BorderBrush="#3A6A90"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{Binding AppUpdate.ShowBanner, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    VerticalAlignment="Center">
+                            <TextBlock Foreground="{StaticResource StackrootAccentTextBrush}"
+                                       Text="{Binding AppUpdate.BannerText}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       FontSize="12"
+                                       Text="{Binding AppUpdate.StatusText}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1"
+                                    Margin="12,0,0,0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Button MinWidth="100"
+                                    Margin="0,0,8,0"
+                                    Content="Update now"
+                                    Command="{Binding AppUpdate.ApplyUpdateCommand}" />
+                            <Button MinWidth="72"
+                                    Content="Later"
+                                    Command="{Binding AppUpdate.DismissUpdateCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
                 <ScrollViewer x:Name="MainContentScrollViewer"
-                              Grid.Row="1"
+                              Grid.Row="3"
                               HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
                     <ContentControl Content="{Binding CurrentPage}" />

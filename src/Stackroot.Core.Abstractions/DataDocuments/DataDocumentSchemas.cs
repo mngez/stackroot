@@ -6,7 +6,7 @@ namespace Stackroot.Core.Abstractions.DataDocuments;
 /// </summary>
 public static class DataDocumentSchemas
 {
-    public const int Settings = 2;
+    public const int Settings = 3;
     public const int Sites = 1;
     public const int Processes = 1;
     public const int Databases = 1;

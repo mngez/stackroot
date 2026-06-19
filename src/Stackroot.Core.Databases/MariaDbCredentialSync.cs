@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Text;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
 
@@ -8,6 +9,7 @@ namespace Stackroot.Core.Databases;
 public static class MariaDbCredentialSync
 {
     private const int SqlTimeoutMs = 8000;
+    private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     public static Action<string>? ActivityLog { get; set; }
 
@@ -650,6 +652,9 @@ public static class MariaDbCredentialSync
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                StandardInputEncoding = Utf8NoBom,
+                StandardOutputEncoding = Utf8NoBom,
+                StandardErrorEncoding = Utf8NoBom,
                 UseShellExecute = false,
                 CreateNoWindow = true
             }
@@ -683,23 +688,39 @@ public static class MariaDbCredentialSync
                 return false;
             }
 
-            using (var input = process.StandardInput)
-            using (var backup = File.OpenRead(backupPath))
-            using (var reader = new StreamReader(backup))
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
+
+            try
             {
-                string? line;
-                while ((line = reader.ReadLine()) is not null)
+                var stdin = process.StandardInput.BaseStream;
+                stdin.Write("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;"u8);
+                stdin.Write("\n"u8);
+
+                using (var backup = File.OpenRead(backupPath))
+                using (var reader = new StreamReader(backup, Utf8NoBom, detectEncodingFromByteOrderMarks: true))
                 {
-                    // Skip GTID_PURGED to avoid conflicts when restoring to the same server
-                    if (!line.Contains("GTID_PURGED", StringComparison.OrdinalIgnoreCase))
+                    string? line;
+                    while ((line = reader.ReadLine()) is not null)
                     {
-                        input.WriteLine(line);
+                        if (line.Contains("GTID_PURGED", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        var bytes = Utf8NoBom.GetBytes(line);
+                        stdin.Write(bytes);
+                        stdin.Write("\n"u8);
                     }
                 }
+
+                process.StandardInput.Close();
+            }
+            catch (IOException)
+            {
+                // mysql may close stdin early on SQL errors; stderr below has the real message.
             }
 
-            var stdout = process.StandardOutput.ReadToEnd();
-            var stderr = process.StandardError.ReadToEnd();
             if (!process.WaitForExit(120_000))
             {
                 TryKill(process);
@@ -707,12 +728,20 @@ public static class MariaDbCredentialSync
                 return false;
             }
 
+            var stdout = stdoutTask.GetAwaiter().GetResult();
+            var stderr = stderrTask.GetAwaiter().GetResult();
+
             if (process.ExitCode == 0)
             {
                 return true;
             }
 
             error = string.IsNullOrWhiteSpace(stderr) ? stdout : stderr;
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "mysql import failed.";
+            }
+
             return false;
         }
         catch (Exception ex)
@@ -779,6 +808,7 @@ public static class MariaDbCredentialSync
         }
 
         process.StartInfo.ArgumentList.Add("--single-transaction");
+        process.StartInfo.ArgumentList.Add("--add-drop-table");
         process.StartInfo.ArgumentList.Add("--set-gtid-purged=OFF");
         process.StartInfo.ArgumentList.Add("--quick");
         process.StartInfo.ArgumentList.Add("--routines");

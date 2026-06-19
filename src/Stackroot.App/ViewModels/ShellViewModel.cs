@@ -20,12 +20,20 @@ public sealed class ShellViewModel : ViewModelBase
     private string _shutdownMessage = "Closing services...";
     private string _overlayTitle = "Stackroot";
 
-    public ShellViewModel(IServiceProvider services, DownloadTrayViewModel downloadTray, SessionActivityTrayViewModel activityTray, IDiagnosticsReporter diagnostics)
+    public ShellViewModel(
+        IServiceProvider services,
+        DownloadTrayViewModel downloadTray,
+        SessionActivityTrayViewModel activityTray,
+        AppUpdateViewModel appUpdate,
+        SslTrustPromptViewModel sslTrustPrompt,
+        IDiagnosticsReporter diagnostics)
     {
         _services = services;
         _diagnostics = diagnostics;
         ActivityTray = activityTray;
         DownloadTray = downloadTray;
+        AppUpdate = appUpdate;
+        SslTrustPrompt = sslTrustPrompt;
         _pageFactories = new Dictionary<string, Func<System.Windows.Controls.UserControl>>(StringComparer.OrdinalIgnoreCase)
         {
             ["dashboard"] = () => services.GetRequiredService<DashboardPage>(),
@@ -112,6 +120,10 @@ public sealed class ShellViewModel : ViewModelBase
     public DownloadTrayViewModel DownloadTray { get; }
 
     public SessionActivityTrayViewModel ActivityTray { get; }
+
+    public AppUpdateViewModel AppUpdate { get; }
+
+    public SslTrustPromptViewModel SslTrustPrompt { get; }
 
     public string SelectedRoute
     {

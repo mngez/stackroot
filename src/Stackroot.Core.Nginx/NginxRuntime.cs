@@ -118,10 +118,10 @@ public static class NginxRuntime
         confBuilder.AppendLine("}");
         var conf = confBuilder.ToString();
 
-        if (settings.SslEnabled == true)
+        if (settings.SslEnabled != false)
         {
-            var crtPath = Path.Combine(confDir, "ssl", "stackroot.crt");
-            var keyPath = Path.Combine(confDir, "ssl", "stackroot.key");
+            var crtPath = Path.Combine(confDir, "ssl", "dev.crt");
+            var keyPath = Path.Combine(confDir, "ssl", "dev.key");
             if (File.Exists(crtPath) && File.Exists(keyPath))
             {
                 var sslBlock = $@"
@@ -130,8 +130,8 @@ public static class NginxRuntime
         listen       [::]:{httpsPort} ssl;
         server_name  {host} localhost;
 
-        ssl_certificate      ssl/stackroot.crt;
-        ssl_certificate_key  ssl/stackroot.key;
+        ssl_certificate      ssl/dev.crt;
+        ssl_certificate_key  ssl/dev.key;
 
         location / {{
             root   html;

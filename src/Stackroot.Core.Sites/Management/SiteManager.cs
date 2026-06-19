@@ -198,7 +198,14 @@ public sealed class SiteManager
 
     public void RegenerateAll()
     {
-        _ = EnsureDevSslForCurrentDomains();
+        var sslPaths = BuildDevSslCertificates();
+        if (ResolveNginxSslEnabled() && sslPaths is null)
+        {
+            _diagnostics?.LogUserError(
+                "SSL",
+                "HTTPS is enabled but dev certificates could not be created. Sites will use HTTP until certificates are available.");
+        }
+
         if (!_store.TryLoad(out var registry, out _))
         {
             return;
@@ -217,7 +224,7 @@ public sealed class SiteManager
 
         foreach (var site in sites)
         {
-            SyncSiteRuntime(site, syncHosts: false);
+            SyncSiteRuntime(site, syncHosts: false, sslPaths);
             if (AutoHosts && site.Enabled && !string.IsNullOrWhiteSpace(site.Domain))
             {
                 hostEntries[site.Domain] = "127.0.0.1";
@@ -263,7 +270,7 @@ public sealed class SiteManager
     public DevSslTrustResult TrustDevSslCertificate()
     {
         _ = EnsureDevSslForCurrentDomains();
-        return DevSslCertificateManager.TrustDevSslCertificate(ResolvePaths());
+        return DevSslCertificateManager.TrustDevSslCertificate(_paths);
     }
 
     public SitesDashboard GetDashboard()
@@ -284,14 +291,22 @@ public sealed class SiteManager
         };
     }
 
-    private void SyncSiteRuntime(SiteModel site, bool syncHosts = true)
+    private void SyncSiteRuntime(SiteModel site, bool syncHosts = true, DevSslPaths? sslPaths = null)
     {
         if (site.Enabled)
         {
             var settings = _settingsStore.Load();
             var fastCgi = SitePhpFastCgiEndpoint.Resolve(settings, _registryStore, site.PhpVersionId);
             var phpRc = SitePhpFastCgiEndpoint.ResolvePhpRcPath(_paths, settings, site.PhpVersionId);
-            _vhostWriter.Write(site, ResolveNginxHttpPort(), fastCgi, phpRc, ResolveNginxHttpsPort());
+            sslPaths ??= DevSslCertificateManager.TryGetExisting(_paths);
+            var sslEnabled = ResolveNginxSslEnabled() && sslPaths is not null;
+            _vhostWriter.Write(
+                site,
+                ResolveNginxHttpPort(),
+                fastCgi,
+                phpRc,
+                ResolveNginxHttpsPort(),
+                sslEnabled);
             if (AutoHosts && syncHosts)
             {
                 var ok = _hostsFileEditor.UpsertHost(site.Domain);
@@ -333,6 +348,17 @@ public sealed class SiteManager
         return 443;
     }
 
+    private bool ResolveNginxSslEnabled()
+    {
+        var settings = _settingsStore.Load();
+        if (settings.Services.TryGetValue(ServiceId.Nginx, out var nginx))
+        {
+            return nginx.SslEnabled != false;
+        }
+
+        return true;
+    }
+
     private static bool IsCustomPathSite(SiteModel site) =>
         string.Equals(site.PathMode, "custom", StringComparison.OrdinalIgnoreCase);
 
@@ -363,7 +389,7 @@ public sealed class SiteManager
 
     private bool AutoHosts => _settingsStore.Load().Sites.AutoHosts;
 
-    private DevSslPaths? EnsureDevSslForCurrentDomains()
+    private DevSslPaths? BuildDevSslCertificates()
     {
         var settings = _settingsStore.Load();
         var domains = _store.List()
@@ -379,26 +405,19 @@ public sealed class SiteManager
             domains.Add(appDomain);
         }
 
-        return DevSslCertificateManager.EnsureDevSslCertificate(ResolvePaths(), domains);
-    }
-
-    private StackrootPaths ResolvePaths()
-    {
-        var configRoot = Path.GetDirectoryName(_vhostWriter.NginxSitesEnabledDirectory)
-            ?? throw new InvalidOperationException("Unable to resolve nginx config directory.");
-        var nginxPrefix = Path.GetDirectoryName(configRoot)
-            ?? throw new InvalidOperationException("Unable to resolve nginx prefix.");
-        var appDataRoot = Path.GetDirectoryName(nginxPrefix)
-            ?? throw new InvalidOperationException("Unable to resolve Stackroot data root.");
-
-        return new StackrootPaths
+        if (domains.Count == 0)
         {
-            DataRoot = appDataRoot,
-            RuntimeRoot = Path.Combine(appDataRoot, "runtime"),
-            ResourcesRoot = Path.Combine(appDataRoot, "resources"),
-            SitesRoot = Path.Combine(appDataRoot, "sites"),
-            ConfigRoot = Path.Combine(appDataRoot, "config"),
-            LogsRoot = Path.Combine(appDataRoot, "logs")
-        };
+            if (ResolveNginxSslEnabled() && !DevSslCertificateManager.CertificatesExist(_paths))
+            {
+                return DevSslCertificateManager.EnsureDevSslCertificate(_paths, ["localhost"]);
+            }
+
+            return DevSslCertificateManager.TryGetExisting(_paths);
+        }
+
+        return DevSslCertificateManager.EnsureDevSslCertificate(_paths, domains);
     }
+
+    private DevSslPaths? EnsureDevSslForCurrentDomains()
+        => BuildDevSslCertificates();
 }
