@@ -8,9 +8,11 @@ using Stackroot.App.Helpers;
 using Stackroot.App.Services;
 using Stackroot.App.Views;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
 using Stackroot.Core.Catalog;
 using Stackroot.Core.Databases;
 using Stackroot.Core.Databases.Models;
+using Stackroot.Core.IO;
 using Stackroot.Core.Node;
 using Stackroot.Core.Services;
 using Stackroot.Core.Sites.Commands;
@@ -496,7 +498,14 @@ public sealed class SiteManageViewModel : ViewModelBase
         try
         {
             var json = File.ReadAllText(path);
-            _customCommands = System.Text.Json.JsonSerializer.Deserialize<List<SiteCustomCommand>>(json) ?? [];
+            var document = System.Text.Json.JsonSerializer.Deserialize<CustomCommandsDocument>(json, JsonSerializerConfig.Default);
+            _customCommands = document?.Commands?.Select(entry => new SiteCustomCommand
+            {
+                Id = entry.Id,
+                Label = entry.Label,
+                Command = entry.Command,
+                Runtime = entry.Runtime
+            }).ToList() ?? [];
         }
         catch { _customCommands = []; }
     }
@@ -507,7 +516,18 @@ public sealed class SiteManageViewModel : ViewModelBase
         var path = CustomCommandsPath;
         var dir = Path.GetDirectoryName(path);
         if (dir is not null) Directory.CreateDirectory(dir);
-        var json = System.Text.Json.JsonSerializer.Serialize(_customCommands);
+        var document = new CustomCommandsDocument
+        {
+            SchemaVersion = DataDocumentSchemas.SiteCustomCommands,
+            Commands = _customCommands.Select(command => new CustomCommandEntry
+            {
+                Id = command.Id,
+                Label = command.Label,
+                Command = command.Command,
+                Runtime = command.Runtime
+            }).ToList()
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
         File.WriteAllText(path, json);
     }
 
@@ -1704,8 +1724,8 @@ die('Admin user not found.');
         try
         {
             var json = File.ReadAllText(path);
-            var creds = System.Text.Json.JsonSerializer.Deserialize<StackrootWpCredentials>(json);
-            _postInstallPassword = creds?.Password ?? "";
+            var document = System.Text.Json.JsonSerializer.Deserialize<WpCredentialsDocument>(json, JsonSerializerConfig.Default);
+            _postInstallPassword = document?.Password ?? "";
         }
         catch { _postInstallPassword = ""; }
     }
@@ -1738,7 +1758,13 @@ die('Admin user not found.');
 
                 var dir = Path.GetDirectoryName(CredentialsPath);
                 if (dir is not null) Directory.CreateDirectory(dir);
-                var credsJson = System.Text.Json.JsonSerializer.Serialize(new { Password = newPassword });
+                var document = new WpCredentialsDocument
+                {
+                    SchemaVersion = DataDocumentSchemas.SiteWpCredentials,
+                    Password = newPassword,
+                    StorageFormat = "plain"
+                };
+                var credsJson = System.Text.Json.JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
                 File.WriteAllText(CredentialsPath, credsJson);
             }
         }

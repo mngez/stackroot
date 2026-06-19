@@ -1,6 +1,8 @@
-using System.Diagnostics;
 using System.IO;
-using System.Timers;
+using System.Text.Json;
+using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
+using Stackroot.Core.IO;
 
 namespace Stackroot.App.Scheduling;
 
@@ -13,12 +15,12 @@ public sealed class TaskSchedulerService : IDisposable
 
     public event EventHandler? TaskExecuted;
 
-    public TaskSchedulerService()
+    public TaskSchedulerService(StackrootPaths paths)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        _storePath = Path.Combine(appData, "Stackroot", "scheduled-tasks.json");
+        ArgumentNullException.ThrowIfNull(paths);
+        _storePath = StackrootPathResolver.ScheduledTasksPath(paths.DataRoot);
 
-        Load(); // Load immediately, don't wait for Start()
+        Load();
 
         _timer = new System.Timers.Timer(30_000);
         _timer.Elapsed += OnTick;
@@ -65,7 +67,7 @@ public sealed class TaskSchedulerService : IDisposable
         return Task.Run(() => ExecuteTask(task));
     }
 
-    private void OnTick(object? sender, ElapsedEventArgs e)
+    private void OnTick(object? sender, System.Timers.ElapsedEventArgs e)
     {
         List<ScheduledTaskModel> snapshot;
         lock (_lock) snapshot = _tasks.Where(t => t.IsEnabled).ToList();
@@ -90,7 +92,7 @@ public sealed class TaskSchedulerService : IDisposable
 
         try
         {
-            var psi = new ProcessStartInfo
+            var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 Arguments = $"/c \"{task.Command}\"",
@@ -103,7 +105,7 @@ public sealed class TaskSchedulerService : IDisposable
                 RedirectStandardError = true
             };
 
-            var process = Process.Start(psi);
+            var process = System.Diagnostics.Process.Start(psi);
             if (process is null)
             {
                 task.LastError = "Failed to start process.";
@@ -114,7 +116,6 @@ public sealed class TaskSchedulerService : IDisposable
             var stderr = process.StandardError.ReadToEnd();
             process.WaitForExit(60_000);
 
-            // Write log file if capture is enabled
             if (logPath is not null)
             {
                 var dir = Path.GetDirectoryName(logPath);
@@ -144,13 +145,22 @@ public sealed class TaskSchedulerService : IDisposable
     {
         try
         {
-            if (File.Exists(_storePath))
+            if (!File.Exists(_storePath))
             {
-                var json = File.ReadAllText(_storePath);
-                lock (_lock) _tasks = System.Text.Json.JsonSerializer.Deserialize<List<ScheduledTaskModel>>(json) ?? [];
+                return;
+            }
+
+            var json = File.ReadAllText(_storePath);
+            var document = JsonSerializer.Deserialize<ScheduledTasksDocument>(json, JsonSerializerConfig.Default);
+            lock (_lock)
+            {
+                _tasks = document?.Tasks?.Select(ToModel).ToList() ?? [];
             }
         }
-        catch { lock (_lock) _tasks = []; }
+        catch
+        {
+            lock (_lock) _tasks = [];
+        }
     }
 
     private void Save()
@@ -159,12 +169,50 @@ public sealed class TaskSchedulerService : IDisposable
         {
             var dir = Path.GetDirectoryName(_storePath);
             if (dir is not null) Directory.CreateDirectory(dir);
-            string json;
-            lock (_lock) json = System.Text.Json.JsonSerializer.Serialize(_tasks);
+
+            ScheduledTasksDocument document;
+            lock (_lock)
+            {
+                document = new ScheduledTasksDocument
+                {
+                    SchemaVersion = DataDocumentSchemas.ScheduledTasks,
+                    Tasks = _tasks.Select(ToEntry).ToList()
+                };
+            }
+
+            var json = JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
             File.WriteAllText(_storePath, json);
         }
         catch { }
     }
+
+    private static ScheduledTaskModel ToModel(ScheduledTaskEntry entry) => new()
+    {
+        Id = entry.Id,
+        Label = entry.Label,
+        Command = entry.Command,
+        WorkingDirectory = entry.WorkingDirectory,
+        CronExpression = entry.CronExpression,
+        CaptureLog = entry.CaptureLog,
+        IsEnabled = entry.IsEnabled,
+        LastRunAt = entry.LastRunAt,
+        LastLogPath = entry.LastLogPath,
+        LastError = entry.LastError
+    };
+
+    private static ScheduledTaskEntry ToEntry(ScheduledTaskModel model) => new()
+    {
+        Id = model.Id,
+        Label = model.Label,
+        Command = model.Command,
+        WorkingDirectory = model.WorkingDirectory,
+        CronExpression = model.CronExpression,
+        CaptureLog = model.CaptureLog,
+        IsEnabled = model.IsEnabled,
+        LastRunAt = model.LastRunAt,
+        LastLogPath = model.LastLogPath,
+        LastError = model.LastError
+    };
 
     public void Dispose()
     {

@@ -52,6 +52,14 @@ public static class StackrootPathResolver
 
     public static string DownloadsPath(string dataRoot) => Path.Combine(dataRoot, "downloads");
 
+    public static string DownloadsRegistryPath(string cacheRoot) => Path.Combine(cacheRoot, "downloads.json");
+
+    public static string ScheduledTasksPath(string dataRoot) => Path.Combine(dataRoot, "scheduled-tasks.json");
+
+    public static string SiteWpCredentialsPath(string siteDataDir) => Path.Combine(siteDataDir, "wp-credentials.json");
+
+    public static string SiteCustomCommandsPath(string siteDataDir) => Path.Combine(siteDataDir, "custom-commands.json");
+
     public static string InstalledMarkerPath(string dataRoot) => FirstRunState.InstalledMarkerPath(dataRoot);
 
     private static string OrDefault(string? value, string fallback)

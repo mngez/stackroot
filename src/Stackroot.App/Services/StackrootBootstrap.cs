@@ -5,6 +5,7 @@ using Stackroot.Core.Catalog;
 using Stackroot.Core.AdminTools;
 using Stackroot.Core.Databases;
 using Stackroot.Core.IO;
+using Stackroot.Core.IO.Migrations;
 using Stackroot.Core.IO.Storage;
 using Stackroot.Core.Node;
 using Stackroot.Core.Nginx;
@@ -201,9 +202,20 @@ public static class StackrootBootstrap
         var diagnostics = services.GetRequiredService<IDiagnosticsReporter>();
         using var startupScope = diagnostics.BeginAction("Startup", "Background startup tasks");
 
+        var paths = services.GetRequiredService<StackrootPaths>();
+        var migrationReport = DataMigrationRunner.Run(paths);
+        if (migrationReport.HasChanges)
+        {
+            foreach (var change in migrationReport.Changes)
+            {
+                diagnostics.LogActivity(
+                    "DataMigration",
+                    $"{change.DocumentId} v{change.FromVersion}→v{change.ToVersion}: {change.Path}");
+            }
+        }
+
         var binManager = services.GetRequiredService<StackrootBinManager>();
         var logInventory = services.GetRequiredService<LogInventoryService>();
-        var paths = services.GetRequiredService<StackrootPaths>();
         var installer = services.GetRequiredService<PackageInstaller>();
         var settingsStore = services.GetRequiredService<SettingsStore>();
         var settings = settingsStore.Load();

@@ -1,9 +1,12 @@
 using System.IO.Compression;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
 using Stackroot.Core.Catalog;
 using Stackroot.Core.Databases;
+using Stackroot.Core.IO;
 using Stackroot.Core.Settings;
 using SiteModel = Stackroot.Core.Sites.Models.Site;
 
@@ -140,7 +143,14 @@ public sealed class WordPressSiteInstaller : ISiteInstaller
         // Save credentials in app data (NOT in site directory)
         var siteDataDir = Path.Combine(_sitesDataRoot, site.Id);
         Directory.CreateDirectory(siteDataDir);
-        var credsJson = System.Text.Json.JsonSerializer.Serialize(new { Password = wp.AdminPassword, Engine = engine.ToString().ToLowerInvariant() });
+        var document = new WpCredentialsDocument
+        {
+            SchemaVersion = DataDocumentSchemas.SiteWpCredentials,
+            Password = wp.AdminPassword,
+            Engine = engine.ToString().ToLowerInvariant(),
+            StorageFormat = "plain"
+        };
+        var credsJson = JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
         File.WriteAllText(Path.Combine(siteDataDir, "wp-credentials.json"), credsJson);
 
         var url = "http://" + site.Domain;

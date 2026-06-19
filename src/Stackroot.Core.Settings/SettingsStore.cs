@@ -30,6 +30,11 @@ public sealed class SettingsStore
             }
         }
 
+        return LoadCore(allowRepair: true);
+    }
+
+    private AppSettings LoadCore(bool allowRepair)
+    {
         var defaults = SettingsDefaults.CreateDefaultSettings();
         if (!File.Exists(Path))
         {
@@ -42,7 +47,16 @@ public sealed class SettingsStore
 
         try
         {
-            var stored = _jsonStore.Read<AppSettings>(Path);
+            var raw = File.ReadAllText(Path);
+            var json = SettingsJsonSanitizer.Repair(raw, out var repaired);
+            if (repaired)
+            {
+                var backupPath = $"{Path}.pre-repair-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.bak";
+                File.Copy(Path, backupPath, overwrite: false);
+                File.WriteAllText(Path, json);
+            }
+
+            var stored = JsonSerializer.Deserialize<AppSettings>(json, JsonSerializerConfig.Default);
             if (stored is null)
             {
                 throw new InvalidDataException($"Settings file is empty or invalid: {Path}");
@@ -58,6 +72,11 @@ public sealed class SettingsStore
         }
         catch (Exception ex)
         {
+            if (allowRepair && SettingsJsonSanitizer.TryPersistRepairs(Path))
+            {
+                return LoadCore(allowRepair: false);
+            }
+
             var backupPath = TryBackupUnreadableFile(Path);
             var backupMessage = string.IsNullOrWhiteSpace(backupPath)
                 ? string.Empty

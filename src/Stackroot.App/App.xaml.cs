@@ -15,6 +15,7 @@ using Stackroot.App.Windows;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Databases;
 using Stackroot.Core.IO;
+using Stackroot.Core.IO.Migrations;
 using Stackroot.Core.Observability;
 using Stackroot.Core.Services;
 using Stackroot.Core.Windows;
@@ -76,10 +77,10 @@ public partial class App : System.Windows.Application
 
         try
         {
-            var dataRoot = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Stackroot");
-            _isFirstRun = FirstRunState.IsFirstRun(dataRoot);
+            var paths = StackrootPathResolver.Resolve();
+            DataMigrationRunner.Run(paths);
+
+            _isFirstRun = FirstRunState.IsFirstRun(paths.DataRoot);
 
             if (_isFirstRun)
             {
