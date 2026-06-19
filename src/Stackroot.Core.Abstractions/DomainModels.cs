@@ -2,7 +2,7 @@ namespace Stackroot.Core.Abstractions;
 
 public enum PackageType
 {
-    Php, Nginx, Apache, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb,
+    Php, Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb,
     Nvm, Node, Phpmyadmin, Phpredisadmin, Composer, Pnpm, Vite, Git, Python, Sqlite, Notepadpp, Mailpit, Laravel, WpCli, Mongosh, MongodbTools
 }
 
@@ -47,7 +47,7 @@ public enum InstallPhase
 
 public enum ServiceId
 {
-    Nginx, Apache, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb, Mailpit
+    Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb, Mailpit
 }
 
 public enum PreferredEditor
@@ -58,11 +58,6 @@ public enum PreferredEditor
 public enum CloseBehavior
 {
     Ask, Quit, Background
-}
-
-public enum WebServer
-{
-    Nginx, Apache
 }
 
 public enum ServiceRuntime
@@ -229,7 +224,6 @@ public record class GeneralSettings
 {
     public string? WwwPath { get; set; }
     public string? AppDomain { get; set; }
-    public WebServer WebServer { get; set; } = WebServer.Nginx;
     public PreferredEditor? PreferredEditor { get; set; }
     public string? CustomEditorPath { get; set; }
     public CloseBehavior? CloseBehavior { get; set; }

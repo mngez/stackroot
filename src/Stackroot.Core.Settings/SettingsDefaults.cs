@@ -24,17 +24,6 @@ public static class SettingsDefaults
         },
         new()
         {
-            Id = ServiceId.Apache,
-            Name = "Apache",
-            Category = ServiceCategory.Web,
-            Description = "Web server - HTTP/HTTPS with .htaccess support",
-            DefaultPort = 80,
-            DefaultSslPort = 443,
-            PackageId = "apache-2.4.63",
-            Executable = "bin/httpd.exe"
-        },
-        new()
-        {
             Id = ServiceId.Redis,
             Name = "Redis",
             Category = ServiceCategory.Cache,

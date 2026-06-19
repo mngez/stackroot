@@ -9,7 +9,6 @@ public static class ServicePackageMapper
         return serviceId switch
         {
             ServiceId.Nginx => PackageType.Nginx,
-            ServiceId.Apache => PackageType.Apache,
             ServiceId.Redis => PackageType.Redis,
             ServiceId.Memcached => PackageType.Memcached,
             ServiceId.Imagemagick => PackageType.Imagemagick,
