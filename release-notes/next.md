@@ -12,8 +12,3 @@ Working draft for the next version. When you ship, copy this content to `release
 4. Tag `v{Version}` and push — CI validates the tag against the csproj version and publishes the Setup exe.
 
 `next.md` is only a scratch pad. **`pack-release.ps1` does not read this file.**
-
-### Site custom commands
-
-- **No ⋮ on command buttons** — Laravel/site dashboard custom commands no longer show a per-command overflow menu (reverts the 0.2.3 change for this row only).
-- **Ctrl+right-click to remove** — removal is back on the command button itself, without a confirm dialog, as before 0.2.3.

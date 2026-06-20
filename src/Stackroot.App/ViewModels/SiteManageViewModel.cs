@@ -459,6 +459,27 @@ public sealed class SiteManageViewModel : ViewModelBase
         ShowAddCommandInput = false;
     }
 
+    private void ConfirmRemoveCustomCommand(string id)
+    {
+        var cmd = _customCommands.FirstOrDefault(c => c.Id == id);
+        if (cmd is null)
+        {
+            return;
+        }
+
+        if (!ConfirmDialog.Show(
+                Application.Current?.MainWindow,
+                "Remove custom command?",
+                $"Remove \"{cmd.Label}\" from this site?",
+                "Remove",
+                isDanger: true))
+        {
+            return;
+        }
+
+        RemoveCustomCommand(id);
+    }
+
     private void RemoveCustomCommand(string id)
     {
         _customCommands.RemoveAll(c => c.Id == id);
@@ -490,7 +511,7 @@ public sealed class SiteManageViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(ShowCustomCommandStatus));
             };
             vm.RunCommand = new RelayCommand(_ => vm.Execute());
-            vm.RemoveCommand = new RelayCommand(_ => RemoveCustomCommand(cmdId));
+            vm.RemoveCommand = new RelayCommand(_ => ConfirmRemoveCustomCommand(cmdId));
             vm.ViewLogCommand = new RelayCommand(_ => vm.OpenLog(), _ => vm.HasLog);
             CustomCommandItems.Add(vm);
         }
