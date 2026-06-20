@@ -123,7 +123,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync());
         AddCustomCommandCommand = new RelayCommand(_ => AddCustomCommand());
         ShowAddCommandCommand = new RelayCommand(_ => ShowAddCommandInput = !ShowAddCommandInput);
-        RemoveCustomCommandCommand = new RelayCommand(id => ConfirmRemoveCustomCommand(id as string ?? ""));
+        RemoveCustomCommandCommand = new RelayCommand(id => RemoveCustomCommand(id as string ?? ""));
         DismissCustomStatusCommand = new RelayCommand(item =>
         {
             if (item is SiteCustomCommandViewModel vm)
@@ -459,27 +459,6 @@ public sealed class SiteManageViewModel : ViewModelBase
         ShowAddCommandInput = false;
     }
 
-    private void ConfirmRemoveCustomCommand(string id)
-    {
-        var cmd = _customCommands.FirstOrDefault(c => c.Id == id);
-        if (cmd is null)
-        {
-            return;
-        }
-
-        if (!ConfirmDialog.Show(
-                Application.Current?.MainWindow,
-                "Remove custom command?",
-                $"Remove \"{cmd.Label}\" from this site?",
-                "Remove",
-                isDanger: true))
-        {
-            return;
-        }
-
-        RemoveCustomCommand(id);
-    }
-
     private void RemoveCustomCommand(string id)
     {
         _customCommands.RemoveAll(c => c.Id == id);
@@ -511,6 +490,7 @@ public sealed class SiteManageViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(ShowCustomCommandStatus));
             };
             vm.RunCommand = new RelayCommand(_ => vm.Execute());
+            vm.RemoveCommand = new RelayCommand(_ => RemoveCustomCommand(cmdId));
             vm.ViewLogCommand = new RelayCommand(_ => vm.OpenLog(), _ => vm.HasLog);
             CustomCommandItems.Add(vm);
         }
@@ -2024,6 +2004,7 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     internal string? _logPath;
 
     public RelayCommand RunCommand { get; set; } = new(_ => { });
+    public RelayCommand RemoveCommand { get; set; } = new(_ => { });
     public RelayCommand ViewLogCommand { get; set; } = new(_ => { });
 
     public void Execute()

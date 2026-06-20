@@ -12,6 +12,15 @@ public partial class SiteManagePage : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
+    private void OnCustomCommandRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control && sender is System.Windows.Controls.Button btn && btn.DataContext is SiteCustomCommandViewModel cmd)
+        {
+            cmd.RemoveCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
     private void OnCustomCommandViewLogClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is not System.Windows.Controls.Button { DataContext: SiteCustomCommandViewModel cmd })

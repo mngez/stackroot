@@ -370,18 +370,12 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Margin="4,0,0,0" Orientation="Horizontal">
-                                                <Button Padding="10,6"
-                                                        Content="{Binding DisplayLabel}"
-                                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                                        Command="{Binding RunCommand}" />
-                                                <controls:OverflowMenuButton Margin="2,0,0,0"
-                                                                             DangerLabel="Remove"
-                                                                             DangerCommand="{Binding DataContext.RemoveCustomCommandCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                             DangerCommandParameter="{Binding Id}"
-                                                                             ButtonWidth="28"
-                                                                             ButtonHeight="34" />
-                                            </StackPanel>
+                                            <Button Margin="4,0,0,0" Padding="10,6"
+                                                    Content="{Binding DisplayLabel}"
+                                                    ToolTip="Ctrl+Click to remove"
+                                                    Style="{StaticResource StackrootPrimaryButtonStyle}"
+                                                    Command="{Binding RunCommand}"
+                                                    MouseRightButtonDown="OnCustomCommandRightClick" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
