@@ -1,8 +1,12 @@
 using System.Collections.ObjectModel;
 
+using System.Windows;
+
 using System.Windows.Forms;
 
 using Stackroot.App.Commands;
+
+using Stackroot.App.Views;
 
 using Stackroot.Core.Sites;
 
@@ -593,6 +597,16 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
     private void RemoveProxy(DevProxyRowViewModel proxy)
 
     {
+
+        if (!ConfirmDialog.Show(
+                System.Windows.Application.Current?.MainWindow,
+                "Remove dev proxy?",
+                $"Remove \"{proxy.Name}\" from this site?",
+                "Remove",
+                isDanger: true))
+        {
+            return;
+        }
 
         DevProxies.Remove(proxy);
 

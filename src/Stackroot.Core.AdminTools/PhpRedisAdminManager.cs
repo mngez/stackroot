@@ -359,6 +359,7 @@ public sealed class PhpRedisAdminManager
         sb.AppendLine("        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;");
         sb.AppendLine("        include        fastcgi_params;");
         sb.AppendLine($"        fastcgi_param  PHPRC \"{phpRc}\";");
+        NginxStabilityDirectives.AppendFastCgiLocation(sb);
         sb.AppendLine("    }");
         sb.AppendLine("}");
 
@@ -397,6 +398,7 @@ public sealed class PhpRedisAdminManager
         sb.AppendLine("        include        fastcgi_params;");
         sb.AppendLine($"        fastcgi_param  SCRIPT_FILENAME $document_root/{pathSegment}/$1;");
         sb.AppendLine($"        fastcgi_param  PHPRC \"{phpRc}\";");
+        NginxStabilityDirectives.AppendFastCgiLocation(sb);
         sb.AppendLine("    }");
         sb.AppendLine();
         return sb.ToString();
@@ -437,6 +439,7 @@ public sealed class PhpRedisAdminManager
         sb.AppendLine("        include        fastcgi_params;");
         sb.AppendLine($"        fastcgi_param  SCRIPT_FILENAME {root}/$1;");
         sb.AppendLine($"        fastcgi_param  PHPRC \"{phpRc}\";");
+        NginxStabilityDirectives.AppendFastCgiLocation(sb);
         sb.AppendLine("    }");
         sb.AppendLine("}");
 

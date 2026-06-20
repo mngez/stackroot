@@ -123,7 +123,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync());
         AddCustomCommandCommand = new RelayCommand(_ => AddCustomCommand());
         ShowAddCommandCommand = new RelayCommand(_ => ShowAddCommandInput = !ShowAddCommandInput);
-        RemoveCustomCommandCommand = new RelayCommand(id => RemoveCustomCommand(id as string ?? ""));
+        RemoveCustomCommandCommand = new RelayCommand(id => ConfirmRemoveCustomCommand(id as string ?? ""));
         DismissCustomStatusCommand = new RelayCommand(item =>
         {
             if (item is SiteCustomCommandViewModel vm)
@@ -459,6 +459,27 @@ public sealed class SiteManageViewModel : ViewModelBase
         ShowAddCommandInput = false;
     }
 
+    private void ConfirmRemoveCustomCommand(string id)
+    {
+        var cmd = _customCommands.FirstOrDefault(c => c.Id == id);
+        if (cmd is null)
+        {
+            return;
+        }
+
+        if (!ConfirmDialog.Show(
+                Application.Current?.MainWindow,
+                "Remove custom command?",
+                $"Remove \"{cmd.Label}\" from this site?",
+                "Remove",
+                isDanger: true))
+        {
+            return;
+        }
+
+        RemoveCustomCommand(id);
+    }
+
     private void RemoveCustomCommand(string id)
     {
         _customCommands.RemoveAll(c => c.Id == id);
@@ -479,6 +500,8 @@ public sealed class SiteManageViewModel : ViewModelBase
                 Command = cmd.Command,
                 SitePath = Site?.Path ?? ""
             };
+            vm.RunCommandAsync = () => RunCustomCommandAsync(cmd.Id, cmd.Command);
+            vm.OpenLogAction = openExternal => OpenCustomCommandLog(vm, openExternal);
             vm.OnStatusChanged = (msg, logPath) =>
             {
                 vm.Status = msg;
@@ -488,7 +511,6 @@ public sealed class SiteManageViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(ShowCustomCommandStatus));
             };
             vm.RunCommand = new RelayCommand(_ => vm.Execute());
-            vm.RemoveCommand = new RelayCommand(_ => RemoveCustomCommand(cmdId));
             vm.ViewLogCommand = new RelayCommand(_ => vm.OpenLog(), _ => vm.HasLog);
             CustomCommandItems.Add(vm);
         }
@@ -985,7 +1007,29 @@ public sealed class SiteManageViewModel : ViewModelBase
         }
     }
 
-    private void OpenCommandLog()
+    private async Task<SiteCommandResult> RunCustomCommandAsync(string commandId, string commandLine)
+    {
+        if (Site is null)
+        {
+            throw new InvalidOperationException("Site is not loaded.");
+        }
+
+        return await Task.Run(() => _siteManager.RunCustomCommand(SiteId, commandId, commandLine))
+            .ConfigureAwait(false);
+    }
+
+    private void OpenCustomCommandLog(SiteCustomCommandViewModel vm, bool openInExternalEditor)
+    {
+        if (string.IsNullOrWhiteSpace(vm._logPath) || !File.Exists(vm._logPath))
+        {
+            vm.OnStatusChanged?.Invoke($"{vm.Label}: No log file yet", null);
+            return;
+        }
+
+        StackrootLogViewer.Open(vm._logPath, $"Log — {vm.Label}", openInExternalEditor, _settingsStore);
+    }
+
+    public void OpenCommandLog(bool openInExternalEditor = false)
     {
         if (string.IsNullOrWhiteSpace(_lastCommandLogPath) || !File.Exists(_lastCommandLogPath))
         {
@@ -995,17 +1039,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         var title = string.IsNullOrWhiteSpace(_lastCommandLabel)
             ? $"Log — {Path.GetFileName(_lastCommandLogPath)}"
             : $"Log — {_lastCommandLabel}";
-        var dialogVm = new FileLogDialogViewModel(_lastCommandLogPath, title);
-        var owner = Application.Current?.MainWindow;
-        var dialog = new SiteProcessLogDialog
-        {
-            DataContext = dialogVm,
-            Owner = owner
-        };
-
-        dialogVm.RequestClose += (_, _) => dialog.Close();
-        dialog.Closed += (_, _) => dialogVm.Dispose();
-        dialog.Show();
+        StackrootLogViewer.Open(_lastCommandLogPath, title, openInExternalEditor, _settingsStore);
     }
 
     private void ClearCommandStatus()
@@ -1656,14 +1690,24 @@ public sealed class SiteManageViewModel : ViewModelBase
             var result = await _siteManager.InstallSiteAsync(Site, options, msg =>
             {
                 _diagnostics.LogActivity("Installer", msg.Text);
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    InstallStatus = msg.Text);
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    InstallStatus = msg.Text;
+                    if (msg.Kind is InstallerMessageKind.Info
+                        or InstallerMessageKind.Progress
+                        or InstallerMessageKind.Success
+                        or InstallerMessageKind.Warning)
+                    {
+                        _activity.UpdateProgress(activityId, "Sites", msg.Text);
+                    }
+                });
             }, System.Threading.CancellationToken.None);
 
             if (!result.Success)
             {
-                _activity.Fail(activityId, "Sites", "Installation failed");
-                InstallStatus = "Installation failed. Check the logs for details.";
+                var detail = result.PostInstallTips?.FirstOrDefault();
+                _activity.Fail(activityId, "Sites", detail ?? "Installation failed");
+                InstallStatus = detail ?? "Installation failed. Check the logs for details.";
                 return;
             }
 
@@ -1939,6 +1983,8 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     public string Label { get; set; } = string.Empty;
     public string Command { get; set; } = string.Empty;
     public string SitePath { get; set; } = string.Empty;
+    public Func<Task<SiteCommandResult>>? RunCommandAsync { get; set; }
+    public Action<bool>? OpenLogAction { get; set; }
     public Action<string, string?>? OnStatusChanged { get; set; }
 
     private bool _isRunning;
@@ -1978,44 +2024,36 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     internal string? _logPath;
 
     public RelayCommand RunCommand { get; set; } = new(_ => { });
-    public RelayCommand RemoveCommand { get; set; } = new(_ => { });
     public RelayCommand ViewLogCommand { get; set; } = new(_ => { });
 
     public void Execute()
     {
         if (IsRunning) { Stop(); return; }
+        if (RunCommandAsync is null)
+        {
+            OnStatusChanged?.Invoke($"{Label}: ❌ Command runner unavailable", null);
+            return;
+        }
 
         IsRunning = true;
         _logPath = null;
         OnStatusChanged?.Invoke($"{Label}: ⏳ Running…", null);
 
-        Task.Run(() =>
+        _ = Task.Run(async () =>
         {
             try
             {
-                var logFile = Path.Combine(Path.GetTempPath(), $"stackroot-cmd-{Guid.NewGuid():N}.log");
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"{Command}\" > \"{logFile}\" 2>&1",
-                    WorkingDirectory = SitePath,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                var process = System.Diagnostics.Process.Start(psi)!;
-                System.Windows.Application.Current.Dispatcher.Invoke(() => _currentProcess = process);
-                process.WaitForExit();
+                var result = await RunCommandAsync().ConfigureAwait(false);
 
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    _logPath = logFile;
+                    _logPath = result.LogPath;
                     _currentProcess = null;
                     IsRunning = false;
-                    var msg = process.ExitCode == 0
+                    var msg = result.ExitCode == 0
                         ? $"{Label}: ✅ Completed"
-                        : $"{Label}: ❌ Failed (code {process.ExitCode})";
-                    OnStatusChanged?.Invoke(msg, logFile);
+                        : $"{Label}: ❌ Failed (code {result.ExitCode})";
+                    OnStatusChanged?.Invoke(msg, result.LogPath);
                 });
             }
             catch (Exception ex)
@@ -2040,25 +2078,17 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
         OnStatusChanged?.Invoke($"{Label}: ⏹ Stopped", null);
     }
 
-    public void OpenLog()
+    public void OpenLog(bool openInExternalEditor = false)
     {
+        if (OpenLogAction is not null)
+        {
+            OpenLogAction(openInExternalEditor);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_logPath) || !File.Exists(_logPath))
         {
             OnStatusChanged?.Invoke($"{Label}: No log file yet", null);
-            return;
-        }
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "notepad.exe",
-                Arguments = _logPath,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            OnStatusChanged?.Invoke($"{Label}: Cannot open log — {ex.Message}", null);
         }
     }
 }

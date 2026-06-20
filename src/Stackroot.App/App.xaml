@@ -164,6 +164,17 @@
             </Setter>
         </Style>
 
+        <Style x:Key="StackrootDangerContextMenuButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource StackrootContextMenuButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="StackrootInlinePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
             <Setter Property="Padding" Value="10,2" />
             <Setter Property="MinHeight" Value="24" />

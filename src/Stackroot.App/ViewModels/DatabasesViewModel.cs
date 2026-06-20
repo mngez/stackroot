@@ -361,6 +361,16 @@ public sealed class DatabasesViewModel : ViewModelBase
             return;
         }
 
+        if (!ConfirmDialog.Show(
+                Application.Current?.MainWindow,
+                "Delete database?",
+                $"Delete database '{name}'? This cannot be undone.",
+                "Delete",
+                isDanger: true))
+        {
+            return;
+        }
+
         // Ask about associated backups
         var backups = _databaseManager.ListBackups(name);
         if (backups.Count > 0)

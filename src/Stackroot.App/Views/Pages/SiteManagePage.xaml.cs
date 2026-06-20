@@ -12,12 +12,24 @@ public partial class SiteManagePage : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
-    private void OnCustomCommandRightClick(object sender, MouseButtonEventArgs e)
+    private void OnCustomCommandViewLogClick(object sender, MouseButtonEventArgs e)
     {
-        if (Keyboard.Modifiers == ModifierKeys.Control && sender is System.Windows.Controls.Button btn && btn.DataContext is SiteCustomCommandViewModel cmd)
+        if (sender is not System.Windows.Controls.Button { DataContext: SiteCustomCommandViewModel cmd })
         {
-            cmd.RemoveCommand.Execute(null);
-            e.Handled = true;
+            return;
         }
+
+        cmd.OpenLog(Keyboard.Modifiers == ModifierKeys.Control);
+        e.Handled = true;
+    }
+
+    private void OnQuickActionViewLogClick(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is SiteManageViewModel vm)
+        {
+            vm.OpenCommandLog(Keyboard.Modifiers == ModifierKeys.Control);
+        }
+
+        e.Handled = true;
     }
 }

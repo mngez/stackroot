@@ -203,6 +203,7 @@ public static class NginxControl
 
         if (masterAlive && portOpen)
         {
+            ServiceProcessPriority.Apply(pid!.Value);
             var reload = RunManagedUtility(binPath, ["-p", prefix, "-s", "reload"], prefix, jobManager);
             return reload.ExitCode == 0
                 ? new NginxReloadResult(true, false, Pid: pid)
@@ -267,6 +268,7 @@ public static class NginxControl
         }
 
         jobManager.AssignProcess(process.Id);
+        ServiceProcessPriority.Apply(process);
         return process;
     }
 
@@ -298,6 +300,7 @@ public static class NginxControl
         }
 
         jobManager.AssignProcess(process.Id);
+        ServiceProcessPriority.Apply(process);
         return process;
     }
 

@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using Stackroot.App.Commands;
+using Stackroot.App.Views;
 using Stackroot.Core.Catalog;
 
 namespace Stackroot.App.ViewModels;
@@ -75,6 +77,16 @@ public sealed class DownloadsViewModel : ViewModelBase
     private void Remove(DownloadRowViewModel? row)
     {
         if (row is null || string.IsNullOrWhiteSpace(row.FileName))
+        {
+            return;
+        }
+
+        if (!ConfirmDialog.Show(
+                Application.Current?.MainWindow,
+                "Remove cached download?",
+                $"Remove {row.FileName} from the download cache?",
+                "Remove",
+                isDanger: true))
         {
             return;
         }

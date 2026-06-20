@@ -1,0 +1,26 @@
+<UserControl x:Class="Stackroot.App.Views.Controls.OverflowMenuButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             Focusable="False"
+             HorizontalAlignment="Left"
+             VerticalAlignment="Center">
+    <Button x:Name="TriggerButton"
+            Width="{Binding ButtonWidth, ElementName=Root}"
+            Height="{Binding ButtonHeight, ElementName=Root}"
+            Padding="0"
+            Style="{StaticResource StackrootIconButtonStyle}"
+            ToolTip="{Binding ToolTipText, ElementName=Root}"
+            Click="OnOpenMenuClick">
+        <Button.ContextMenu>
+            <ContextMenu>
+                <Button x:Name="DangerActionButton"
+                        Style="{StaticResource StackrootDangerContextMenuButtonStyle}"
+                        Click="OnDangerMenuClick" />
+            </ContextMenu>
+        </Button.ContextMenu>
+        <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                   FontSize="16"
+                   Text="&#xE712;" />
+    </Button>
+</UserControl>

@@ -267,42 +267,47 @@ public sealed class LaravelInstaller
         {
             PackageId = entry.Id,
             Phase = InstallPhase.Downloading,
-            Percent = 25,
+            Percent = 20,
             Message = $"Installing {installerSpec} via Composer..."
         });
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = phpExePath,
-            Arguments =
-                $"\"{pharPath}\" global require {installerSpec} --no-interaction --no-ansi --no-progress --with-all-dependencies",
-            WorkingDirectory = installPath,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        foreach (System.Collections.DictionaryEntry envEntry in Environment.GetEnvironmentVariables())
-        {
-            if (envEntry.Key is string key && envEntry.Value is string value)
+        var exitCode = await RunComposerGlobalRequireAsync(
+            phpExePath,
+            pharPath,
+            installPath,
+            installerSpec,
+            psi =>
             {
-                psi.Environment[key] = value;
-            }
-        }
+                foreach (System.Collections.DictionaryEntry envEntry in Environment.GetEnvironmentVariables())
+                {
+                    if (envEntry.Key is string key && envEntry.Value is string value)
+                    {
+                        psi.Environment[key] = value;
+                    }
+                }
 
-        psi.Environment["COMPOSER_HOME"] = composerHome;
-        psi.Environment["COMPOSER_BIN_DIR"] = binDir;
-        PrependPath(psi.Environment, runtimeBinDirectory);
+                psi.Environment["COMPOSER_HOME"] = composerHome;
+                psi.Environment["COMPOSER_BIN_DIR"] = binDir;
+                psi.Environment["COMPOSER_NO_INTERACTION"] = "1";
+                psi.Environment["COMPOSER_DISABLE_XDEBUG"] = "1";
+                psi.Environment["COMPOSER_ALLOW_SUPERUSER"] = "1";
+                PrependPath(psi.Environment, runtimeBinDirectory);
+            },
+            line =>
+            {
+                onProgress?.Invoke(new InstallProgress
+                {
+                    PackageId = entry.Id,
+                    Phase = InstallPhase.Downloading,
+                    Percent = 25,
+                    Message = line
+                });
+            },
+            cancellationToken).ConfigureAwait(false);
 
-        using var process = new Process { StartInfo = psi };
-        process.Start();
-        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-        if (process.ExitCode != 0)
+        if (exitCode != 0)
         {
-            throw new InvalidOperationException(string.Join(Environment.NewLine, new[] { error, output }.Where(static line => !string.IsNullOrWhiteSpace(line))));
+            throw new InvalidOperationException("Composer failed to install laravel/installer. Check that PHP zip and openssl extensions are enabled.");
         }
 
         var laravelBat = Path.Combine(binDir, "laravel.bat");
@@ -352,5 +357,61 @@ public sealed class LaravelInstaller
         environment["PATH"] = string.IsNullOrWhiteSpace(currentPath)
             ? directory
             : $"{directory};{currentPath}";
+    }
+
+    private static async Task<int> RunComposerGlobalRequireAsync(
+        string phpExePath,
+        string pharPath,
+        string workingDirectory,
+        string installerSpec,
+        Action<ProcessStartInfo> configure,
+        Action<string> onLine,
+        CancellationToken cancellationToken)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = phpExePath,
+            Arguments =
+                $"\"{pharPath}\" global require {installerSpec} --no-interaction --no-ansi --with-all-dependencies",
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+        configure(psi);
+
+        using var process = new Process { StartInfo = psi };
+        process.Start();
+
+        var stdoutTask = PumpComposerLinesAsync(process.StandardOutput, onLine, cancellationToken);
+        var stderrTask = PumpComposerLinesAsync(process.StandardError, onLine, cancellationToken);
+
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
+        return process.ExitCode;
+    }
+
+    private static async Task PumpComposerLinesAsync(
+        StreamReader reader,
+        Action<string> onLine,
+        CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            if (line is null)
+            {
+                break;
+            }
+
+            var trimmed = line.Trim();
+            if (trimmed.Length > 0)
+            {
+                onLine(trimmed);
+            }
+        }
     }
 }

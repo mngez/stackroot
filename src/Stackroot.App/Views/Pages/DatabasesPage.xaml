@@ -169,13 +169,12 @@
                                             VerticalAlignment="Center"
                                             Command="{Binding DataContext.BackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Name}" />
-                                    <Button Content="Delete"
-                                            Padding="8,3"
-                                            MinHeight="26"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource StackrootStopButtonStyle}"
-                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding Name}" />
+                                    <controls:OverflowMenuButton Margin="0,0,0,0"
+                                                                 DangerLabel="Delete"
+                                                                 DangerCommand="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                 DangerCommandParameter="{Binding Name}"
+                                                                 ButtonWidth="30"
+                                                                 ButtonHeight="26" />
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

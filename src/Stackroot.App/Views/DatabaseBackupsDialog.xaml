@@ -5,6 +5,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
+        xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
 
         Title="{Binding Title}"
 
@@ -131,12 +132,11 @@
                 <DataGridTemplateColumn Header="" Width="70">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="Delete"
-                                    Padding="6,2"
-                                    MinHeight="26"
-                                    Style="{StaticResource StackrootStopButtonStyle}"
-                                    Command="{Binding DataContext.DeleteBackupCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}" />
+                            <controls:OverflowMenuButton DangerLabel="Delete"
+                                                         DangerCommand="{Binding DataContext.DeleteBackupCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                         DangerCommandParameter="{Binding}"
+                                                         ButtonWidth="30"
+                                                         ButtonHeight="26" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
              mc:Ignorable="d"
              d:DesignHeight="640"
              d:DesignWidth="1000">
@@ -419,19 +420,14 @@
                                                             Content="Manage"
                                                             Command="{Binding ManageCommand}" />
 
-                                                    <Button Margin="0,0,6,0"
-                                                            Style="{StaticResource StackrootInlineStopButtonStyle}"
-                                                            Content="Delete"
-                                                            Command="{Binding DeleteCommand}"
-                                                            Visibility="{Binding SiteIsDisabled, Converter={StaticResource BoolToVis}}" />
-
                                                     <Button Style="{StaticResource StackrootInlineStopButtonStyle}"
                                                             Content="{Binding ToggleButtonLabel}"
                                                             Command="{Binding ToggleEnabledCommand}"
                                                             IsEnabled="{Binding IsNotToggling}"
                                                             Visibility="{Binding SiteIsEnabled, Converter={StaticResource BoolToVis}}" />
 
-                                                    <Button Content="{Binding ToggleButtonLabel}"
+                                                    <Button Margin="0,0,6,0"
+                                                            Content="{Binding ToggleButtonLabel}"
                                                             Command="{Binding ToggleEnabledCommand}"
                                                             IsEnabled="{Binding IsNotToggling}">
                                                         <Button.Style>
@@ -446,6 +442,12 @@
                                                             </Style>
                                                         </Button.Style>
                                                     </Button>
+
+                                                    <controls:OverflowMenuButton DangerLabel="Delete"
+                                                                                 DangerCommand="{Binding DeleteCommand}"
+                                                                                 ButtonWidth="30"
+                                                                                 ButtonHeight="26"
+                                                                                 Visibility="{Binding SiteIsDisabled, Converter={StaticResource BoolToVis}}" />
                                                 </StackPanel>
                                             </Grid>
                                         </Border>

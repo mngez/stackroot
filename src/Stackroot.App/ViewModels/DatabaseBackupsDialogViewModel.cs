@@ -2,11 +2,15 @@ using System.Collections.ObjectModel;
 
 using System.IO;
 
+using System.Windows;
+
 using Stackroot.App.Commands;
 
 using Stackroot.App.Helpers;
 
 using Stackroot.App.Services;
+
+using Stackroot.App.Views;
 
 using Stackroot.Core.Databases;
 
@@ -430,6 +434,16 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
     private void DeleteBackup(DatabaseBackupRowViewModel? row)
     {
         if (row is null) return;
+
+        if (!ConfirmDialog.Show(
+                Application.Current?.MainWindow,
+                "Delete backup?",
+                $"Delete backup file \"{row.FileName}\"? This cannot be undone.",
+                "Delete",
+                isDanger: true))
+        {
+            return;
+        }
 
         try { File.Delete(row.Info.FullPath); } catch { }
 

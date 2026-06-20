@@ -55,6 +55,7 @@ internal static class ServiceProcessTools
             throw;
         }
 
+        ServiceProcessPriority.Apply(process);
         return process;
     }
 

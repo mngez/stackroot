@@ -1,7 +1,8 @@
 <UserControl x:Class="Stackroot.App.Views.Pages.DownloadsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:helpers="clr-namespace:Stackroot.App.Helpers">
+             xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls">
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -91,12 +92,11 @@
                     <DataGridTemplateColumn Header="Action" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Remove"
-                                        Padding="6,2"
-                                        MinHeight="22"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}" />
+                                <controls:OverflowMenuButton DangerLabel="Remove"
+                                                             DangerCommand="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                             DangerCommandParameter="{Binding}"
+                                                             ButtonWidth="30"
+                                                             ButtonHeight="24" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

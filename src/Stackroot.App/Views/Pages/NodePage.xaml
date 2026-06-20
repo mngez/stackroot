@@ -123,10 +123,10 @@
                                 Content="{Binding UpdateNvmLabel}"
                                 Command="{Binding UpdateNvmCommand}"
                                 Visibility="{Binding CanUpdateNvm, Converter={StaticResource BoolToVis}}" />
-                        <Button MinWidth="88"
-                                Style="{StaticResource StackrootInlineButtonStyle}"
-                                Content="Remove nvm"
-                                Command="{Binding UninstallNvmCommand}" />
+                        <controls:OverflowMenuButton DangerLabel="Remove nvm"
+                                                     DangerCommand="{Binding UninstallNvmCommand}"
+                                                     ButtonWidth="30"
+                                                     ButtonHeight="28" />
                     </StackPanel>
                 </DockPanel>
             </StackPanel>
@@ -292,12 +292,11 @@
                                             Command="{Binding DataContext.ActivateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Version}"
                                             Visibility="{Binding ShowActivateButton, Converter={StaticResource BoolToVis}}" />
-                                    <Button MinWidth="88"
-                                            Style="{StaticResource StackrootInlineButtonStyle}"
-                                            Content="{Binding UninstallButtonLabel}"
-                                            IsEnabled="{Binding CanInteract}"
-                                            Command="{Binding DataContext.UninstallNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding Version}" />
+                                    <controls:OverflowMenuButton DangerLabel="Remove"
+                                                                 DangerCommand="{Binding DataContext.UninstallNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                 DangerCommandParameter="{Binding Version}"
+                                                                 ButtonWidth="30"
+                                                                 ButtonHeight="28" />
                                 </StackPanel>
                             </Grid>
                         </Border>

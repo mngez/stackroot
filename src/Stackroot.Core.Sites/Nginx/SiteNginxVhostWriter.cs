@@ -1,4 +1,5 @@
 using System.Text;
+using Stackroot.Core.Nginx;
 using Stackroot.Core.Sites.Models;
 
 namespace Stackroot.Core.Sites.Nginx;
@@ -113,7 +114,7 @@ public sealed class SiteNginxVhostWriter
 
         sb.AppendLine($"    root {normalizedRoot};");
         sb.AppendLine("    index index.php index.html index.htm;");
-        sb.AppendLine("    client_max_body_size 64m;");
+        sb.AppendLine("    client_max_body_size 128m;");
         sb.AppendLine();
         sb.AppendLine("    location / {");
         sb.AppendLine($"        {BuildMainTryFiles(site)}");
@@ -141,6 +142,7 @@ public sealed class SiteNginxVhostWriter
                 sb.AppendLine("        proxy_set_header Connection \"upgrade\";");
             }
 
+            NginxStabilityDirectives.AppendProxyLocation(sb);
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -156,6 +158,7 @@ public sealed class SiteNginxVhostWriter
         }
 
         sb.AppendLine($"        fastcgi_pass {fastCgi};");
+        NginxStabilityDirectives.AppendFastCgiLocation(sb);
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }

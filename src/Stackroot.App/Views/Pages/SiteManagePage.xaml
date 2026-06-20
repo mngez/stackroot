@@ -1,7 +1,8 @@
 <UserControl x:Class="Stackroot.App.Views.Pages.SiteManagePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:helpers="clr-namespace:Stackroot.App.Helpers">
+             xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
+             xmlns:controls="clr-namespace:Stackroot.App.Views.Controls">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
@@ -335,7 +336,8 @@
                                                 </Button>
                                                 <Button DockPanel.Dock="Right" Margin="8,0,0,0" Padding="8,4"
                                                         FontSize="12" Content="View log"
-                                                        Command="{Binding ViewLogCommand}"
+                                                        ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
+                                                        PreviewMouseLeftButtonDown="OnCustomCommandViewLogClick"
                                                         Visibility="{Binding HasLog, Converter={StaticResource BoolToVis}}" />
                                                 <TextBlock VerticalAlignment="Center"
                                                            Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -368,12 +370,18 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Margin="4,0,0,0" Padding="10,6"
-                                                    Content="{Binding DisplayLabel}"
-                                                    ToolTip="Ctrl+Click to remove"
-                                                    Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                                    Command="{Binding RunCommand}"
-                                                    MouseRightButtonDown="OnCustomCommandRightClick" />
+                                            <StackPanel Margin="4,0,0,0" Orientation="Horizontal">
+                                                <Button Padding="10,6"
+                                                        Content="{Binding DisplayLabel}"
+                                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                                                        Command="{Binding RunCommand}" />
+                                                <controls:OverflowMenuButton Margin="2,0,0,0"
+                                                                             DangerLabel="Remove"
+                                                                             DangerCommand="{Binding DataContext.RemoveCustomCommandCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                             DangerCommandParameter="{Binding Id}"
+                                                                             ButtonWidth="28"
+                                                                             ButtonHeight="34" />
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -530,7 +538,8 @@
                                         Padding="8,4"
                                         FontSize="12"
                                         Content="View log"
-                                        Command="{Binding ViewCommandLogCommand}"
+                                        ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
+                                        PreviewMouseLeftButtonDown="OnQuickActionViewLogClick"
                                         Visibility="{Binding ShowCommandLogButton, Converter={StaticResource BoolToVis}}" />
                                 <TextBlock VerticalAlignment="Center"
                                            Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -944,12 +953,12 @@
                                                         Padding="8,3"
                                                         Command="{Binding DataContext.EditProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}" />
-                                                <Button Content="Remove"
-                                                        Width="64"
-                                                        Height="32"
-                                                        Padding="8,3"
-                                                        Command="{Binding DataContext.RemoveProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}" />
+                                                <controls:OverflowMenuButton Margin="0,0,0,0"
+                                                                             DangerLabel="Remove"
+                                                                             DangerCommand="{Binding DataContext.RemoveProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                             DangerCommandParameter="{Binding}"
+                                                                             ButtonWidth="30"
+                                                                             ButtonHeight="32" />
                                             </WrapPanel>
                                         </Grid>
                                     </Border>

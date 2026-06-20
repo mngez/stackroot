@@ -69,7 +69,11 @@ public sealed class PhpConfigWriter
             ["upload_max_filesize"] = phpVersion.UploadMaxFilesize,
             ["post_max_size"] = phpVersion.PostMaxSize,
             ["extension_dir"] = extensionDir.Replace('\\', '/'),
-            ["cgi.fix_pathinfo"] = "1"
+            ["cgi.fix_pathinfo"] = "1",
+            ["max_input_time"] = "600",
+            ["default_socket_timeout"] = "300",
+            ["realpath_cache_size"] = "4096K",
+            ["realpath_cache_ttl"] = "600"
         };
 
         if (profile == PhpConfigProfile.PhpMyAdmin)
@@ -362,10 +366,10 @@ public sealed class PhpConfigWriter
 
         return new PhpVersionSettings
         {
-            MemoryLimit = settings.Php.MemoryLimit ?? "256M",
-            MaxExecutionTime = settings.Php.MaxExecutionTime ?? "120",
-            UploadMaxFilesize = settings.Php.UploadMaxFilesize ?? "64M",
-            PostMaxSize = settings.Php.PostMaxSize ?? "64M",
+            MemoryLimit = settings.Php.MemoryLimit ?? "-1",
+            MaxExecutionTime = settings.Php.MaxExecutionTime ?? "0",
+            UploadMaxFilesize = settings.Php.UploadMaxFilesize ?? "128M",
+            PostMaxSize = settings.Php.PostMaxSize ?? "128M",
             DisplayErrors = true,
             HideWarnings = false,
             HideDeprecated = true,

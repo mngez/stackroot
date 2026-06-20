@@ -1509,7 +1509,7 @@ public sealed class ServiceManager
         return serviceId switch
         {
             ServiceId.Redis => ["--bind", settings.Host, "--port", settings.Port.ToString()],
-            ServiceId.Memcached => ["-p", settings.Port.ToString(), "-l", settings.Host, "-m", "64"],
+            ServiceId.Memcached => ["-p", settings.Port.ToString(), "-l", settings.Host],
             ServiceId.Postgresql => ["-D", Path.Combine(paths.DataRoot, "data", "postgresql")],
             ServiceId.Mongodb => ["--port", settings.Port.ToString(), "--bind_ip", settings.Host],
             ServiceId.Mysql or ServiceId.Mariadb => ["--port", settings.Port.ToString(), "--bind-address", settings.Host],

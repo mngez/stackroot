@@ -64,6 +64,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
             ?? throw new InvalidOperationException(
                 "PHP is required to install Laravel. Install a PHP version from Services first.");
 
+        onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Preparing Composer…" });
         var composer = await _composerManager.ResolveRunInfoAsync(phpExe, cancel).ConfigureAwait(false);
 
         var laravelConfig = options.Laravel;
@@ -82,8 +83,8 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
                 "Delete these files manually or create a fresh site.");
         }
 
-        onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Downloading Laravel via Composer (this may take a minute)…" });
-        await RunProcessAsync(
+        onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Downloading Laravel via Composer (this may take a few minutes)…" });
+        await SiteInstallerProcessRunner.RunAsync(
             composer.FileName,
             [.. composerArgs],
             site.Path,
@@ -94,7 +95,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
 
         if (!File.Exists(Path.Combine(site.Path, "artisan")))
         {
-            return new SiteInstallResult { Success = false };
+            return Fail("Composer finished but artisan was not found. Check that PHP zip/openssl extensions are enabled and try again.");
         }
 
         onMessage(new InstallerMessage { Kind = InstallerMessageKind.Success, Text = "Laravel files installed." });
@@ -105,7 +106,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
             var kitPackage = "laravel/" + laravelConfig.StarterKit;
             onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = $"Installing {laravelConfig.StarterKit} starter kit…" });
 
-            await RunProcessAsync(
+            await SiteInstallerProcessRunner.RunAsync(
                 composer.FileName,
                 [.. composer.PrefixArguments, "require", kitPackage, "--dev", "--no-interaction", "--no-ansi"],
                 site.Path,
@@ -114,7 +115,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
 
             onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = $"Scaffolding {laravelConfig.StarterKit} with {laravelConfig.Stack}…" });
 
-            await RunProcessAsync(
+            await SiteInstallerProcessRunner.RunAsync(
                 phpExe,
                 ["artisan", laravelConfig.StarterKit + ":install", laravelConfig.Stack, "--no-interaction", "--no-ansi"],
                 site.Path,
@@ -151,7 +152,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
 
         // 3. Generate app key
         onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Generating application key…" });
-        await RunProcessAsync(
+        await SiteInstallerProcessRunner.RunAsync(
             phpExe,
             ["artisan", "key:generate", "--no-interaction", "--no-ansi"],
             site.Path,
@@ -167,10 +168,10 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
             if (npmPath is not null)
             {
                 onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Running npm install…" });
-                await RunProcessAsync(npmPath, ["install"], site.Path, onMessage, cancel).ConfigureAwait(false);
+                await SiteInstallerProcessRunner.RunAsync(npmPath, ["install"], site.Path, onMessage, cancel).ConfigureAwait(false);
 
                 onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Running npm run build…" });
-                await RunProcessAsync(npmPath, ["run", "build"], site.Path, onMessage, cancel).ConfigureAwait(false);
+                await SiteInstallerProcessRunner.RunAsync(npmPath, ["run", "build"], site.Path, onMessage, cancel).ConfigureAwait(false);
 
                 onMessage(new InstallerMessage { Kind = InstallerMessageKind.Success, Text = "Frontend assets built." });
             }
@@ -184,7 +185,7 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
         if (laravelConfig?.RunMigrations is true)
         {
             onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Running database migrations…" });
-            await RunProcessAsync(
+            await SiteInstallerProcessRunner.RunAsync(
                 phpExe,
                 ["artisan", "migrate", "--force", "--no-interaction", "--no-ansi"],
                 site.Path,
@@ -213,50 +214,6 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
     }
 
     // ---- helpers ----
-
-    private static async Task RunProcessAsync(
-        string fileName,
-        IReadOnlyList<string> args,
-        string workingDir,
-        Action<InstallerMessage> onMessage,
-        CancellationToken cancel)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = fileName,
-            WorkingDirectory = workingDir,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-        foreach (var a in args) psi.ArgumentList.Add(a);
-
-        using var process = Process.Start(psi)
-            ?? throw new InvalidOperationException($"Failed to start: {fileName}");
-
-        // Read stdout line-by-line for progress
-        var stdout = Task.Run(() =>
-        {
-            var sb = new StringBuilder();
-            string? line;
-            while ((line = process.StandardOutput.ReadLine()) is not null)
-            {
-                sb.AppendLine(line);
-                if (line.Contains("Installing") || line.Contains("Created") || line.Contains("Applied"))
-                    onMessage(new InstallerMessage { Kind = InstallerMessageKind.Progress, Text = line.Trim() });
-            }
-            return sb.ToString();
-        }, cancel);
-
-        var stderr = Task.Run(() => process.StandardError.ReadToEnd(), cancel);
-
-        await process.WaitForExitAsync(cancel).ConfigureAwait(false);
-        var err = await stderr.ConfigureAwait(false);
-
-        if (process.ExitCode != 0 && !string.IsNullOrWhiteSpace(err))
-            throw new InvalidOperationException(err.Trim());
-    }
 
     private static string? UpdateEnvDb(string sitePath, string dbName, AppSettings settings, SqlEngine engine)
     {

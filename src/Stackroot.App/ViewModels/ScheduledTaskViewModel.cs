@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using Stackroot.App.Commands;
+using Stackroot.App.Helpers;
 using Stackroot.App.Scheduling;
 using Stackroot.App.Views;
 
@@ -83,7 +84,7 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
         ViewLogCommand.RaiseCanExecuteChanged();
     }
 
-    private void OpenLog()
+    public void OpenLog(bool openInExternalEditor = false)
     {
         if (string.IsNullOrWhiteSpace(Model.LastLogPath) || !System.IO.File.Exists(Model.LastLogPath))
         {
@@ -96,16 +97,8 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
                 System.Windows.MessageBoxImage.Information);
             return;
         }
-        // Open the log folder so all historical runs are visible
-        var dir = System.IO.Path.GetDirectoryName(Model.LastLogPath);
-        if (dir is not null && System.IO.Directory.Exists(dir))
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = dir,
-                UseShellExecute = true
-            });
-        }
+
+        _parent.OpenTaskLog(Model.LastLogPath, Model.Label, openInExternalEditor);
     }
 }
 
@@ -202,44 +195,8 @@ public sealed class ScheduledTaskViewModel : ViewModelBase
         OpenDialog(row);
     }
 
-    public void OpenFileWithEditor(string path)
+    public void OpenTaskLog(string logPath, string label, bool openInExternalEditor)
     {
-        var settings = _settingsStore.Load();
-        var editor = settings.General.PreferredEditor ?? Stackroot.Core.Abstractions.PreferredEditor.System;
-        string? exe = editor switch
-        {
-            Stackroot.Core.Abstractions.PreferredEditor.Vscode => ResolveInPath("code"),
-            Stackroot.Core.Abstractions.PreferredEditor.Cursor => ResolveInPath("cursor"),
-            Stackroot.Core.Abstractions.PreferredEditor.NotepadPlusPlus => ResolveInPath("notepad++"),
-            Stackroot.Core.Abstractions.PreferredEditor.Custom => settings.General.CustomEditorPath,
-            _ => null
-        };
-
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(exe) && System.IO.File.Exists(exe))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = exe,
-                    Arguments = path,
-                    UseShellExecute = false
-                });
-            }
-            else
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true
-                });
-            }
-        }
-        catch { /* best-effort */ }
+        StackrootLogViewer.Open(logPath, $"Log — {label}", openInExternalEditor, _settingsStore);
     }
-
-    private static string? ResolveInPath(string name) =>
-        System.IO.File.Exists($@"C:\Program Files\{name}\{name}.exe") ? $@"C:\Program Files\{name}\{name}.exe"
-        : System.IO.File.Exists($@"C:\Users\{Environment.UserName}\AppData\Local\Programs\{name}\{name}.exe") ? $@"C:\Users\{Environment.UserName}\AppData\Local\Programs\{name}\{name}.exe"
-        : null;
 }

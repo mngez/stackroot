@@ -29,6 +29,43 @@ public sealed class SiteCommandRunner
         _npmTooling = npmTooling;
     }
 
+    public SiteCommandResult RunCustomCommand(
+        SiteModel site,
+        string commandId,
+        string commandLine,
+        Action<string>? onLogCreated = null)
+    {
+        ArgumentNullException.ThrowIfNull(site);
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
+
+        if (!Directory.Exists(site.Path))
+        {
+            throw new DirectoryNotFoundException($"Site folder not found: {site.Path}");
+        }
+
+        var trimmedCommand = commandLine.Trim();
+        var logPath = CreateCustomCommandLogFile(site.Id, commandId, trimmedCommand);
+        onLogCreated?.Invoke(logPath);
+        var versionId = ResolveSitePhpVersionId(site);
+        var environment = BuildSiteCommandEnvironment(versionId);
+        var startedAt = Stopwatch.StartNew();
+        var result = RunShellProcess(site.Path, trimmedCommand, environment, logPath, 600_000);
+        startedAt.Stop();
+
+        AppendLogFooter(logPath, result.ExitCode, startedAt.ElapsedMilliseconds);
+
+        return new SiteCommandResult
+        {
+            ExitCode = result.ExitCode,
+            Stdout = result.Output,
+            Stderr = result.Error,
+            DurationMs = startedAt.ElapsedMilliseconds,
+            CommandLine = trimmedCommand,
+            LogPath = logPath
+        };
+    }
+
     public SiteCommandResult RunQuickAction(SiteModel site, string actionId, Action<string>? onLogCreated = null)
     {
         ArgumentNullException.ThrowIfNull(site);
@@ -172,15 +209,53 @@ public sealed class SiteCommandRunner
             startInfo.ArgumentList.Add(arg);
         }
 
+        ApplyEnvironment(startInfo, environment);
+        return RunCapturedProcess(startInfo, logPath, timeoutMs, $"Failed to start command: {executable}");
+    }
+
+    private static ProcessResult RunShellProcess(
+        string cwd,
+        string commandLine,
+        IReadOnlyDictionary<string, string> environment,
+        string logPath,
+        int timeoutMs)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            WorkingDirectory = cwd,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add("/d");
+        startInfo.ArgumentList.Add("/s");
+        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add(commandLine);
+
+        ApplyEnvironment(startInfo, environment);
+        return RunCapturedProcess(startInfo, logPath, timeoutMs, "Failed to start custom command.");
+    }
+
+    private static void ApplyEnvironment(ProcessStartInfo startInfo, IReadOnlyDictionary<string, string> environment)
+    {
         foreach (var pair in environment)
         {
             startInfo.Environment[pair.Key] = pair.Value;
         }
+    }
 
+    private static ProcessResult RunCapturedProcess(
+        ProcessStartInfo startInfo,
+        string logPath,
+        int timeoutMs,
+        string startFailureMessage)
+    {
         using var process = new Process { StartInfo = startInfo };
         if (!process.Start())
         {
-            throw new InvalidOperationException($"Failed to start command: {executable}");
+            throw new InvalidOperationException(startFailureMessage);
         }
 
         using var logWriter = new StreamWriter(logPath, append: true, Encoding.UTF8) { AutoFlush = true };
@@ -239,12 +314,18 @@ public sealed class SiteCommandRunner
         }
     }
 
-    private string CreateLogFile(string siteId, string actionId, string commandLine)
+    private string CreateLogFile(string siteId, string actionId, string commandLine) =>
+        CreateSiteCommandLogFile(siteId, actionId, commandLine);
+
+    private string CreateCustomCommandLogFile(string siteId, string commandId, string commandLine) =>
+        CreateSiteCommandLogFile(siteId, $"custom-{SanitizeLogSlug(commandId)}", commandLine);
+
+    private string CreateSiteCommandLogFile(string siteId, string slug, string commandLine)
     {
         var dir = Path.Combine(_paths.LogsRoot, "sites", siteId);
         Directory.CreateDirectory(dir);
         var stamp = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss-fffZ");
-        var path = Path.Combine(dir, $"{actionId}-{stamp}.log");
+        var path = Path.Combine(dir, $"{slug}-{stamp}.log");
         File.WriteAllText(
             path,
             new StringBuilder()
@@ -254,6 +335,17 @@ public sealed class SiteCommandRunner
                 .ToString(),
             Encoding.UTF8);
         return path;
+    }
+
+    private static string SanitizeLogSlug(string value)
+    {
+        var slug = new string(value.Where(static c => char.IsLetterOrDigit(c) || c is '-' or '_').ToArray());
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return "cmd";
+        }
+
+        return slug.Length <= 32 ? slug : slug[..32];
     }
 
     private static void AppendLogFooter(string logPath, int exitCode, long durationMs)

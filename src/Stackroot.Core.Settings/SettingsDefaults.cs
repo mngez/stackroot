@@ -189,10 +189,10 @@ public static class SettingsDefaults
     {
         return new PhpVersionSettings
         {
-            MemoryLimit = "256M",
-            MaxExecutionTime = "120",
-            UploadMaxFilesize = "64M",
-            PostMaxSize = "64M",
+            MemoryLimit = "-1",
+            MaxExecutionTime = "0",
+            UploadMaxFilesize = "128M",
+            PostMaxSize = "128M",
             DisplayErrors = true,
             HideWarnings = false,
             HideDeprecated = true,

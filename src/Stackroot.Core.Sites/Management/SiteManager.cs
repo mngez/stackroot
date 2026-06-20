@@ -251,6 +251,16 @@ public sealed class SiteManager
         return _commandRunner.RunQuickAction(site, actionId, onLogCreated);
     }
 
+    public SiteCommandResult RunCustomCommand(
+        string siteId,
+        string commandId,
+        string commandLine,
+        Action<string>? onLogCreated = null)
+    {
+        var site = _store.GetById(siteId) ?? throw new KeyNotFoundException($"Site not found: {siteId}");
+        return _commandRunner.RunCustomCommand(site, commandId, commandLine, onLogCreated);
+    }
+
     public DevSslTrustResult TrustDevSslCertificate()
     {
         _ = EnsureDevSslForCurrentDomains();

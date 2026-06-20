@@ -93,7 +93,8 @@ public static class NginxRuntime
         confBuilder.AppendLine("pid        logs/nginx.pid;");
         confBuilder.AppendLine();
         confBuilder.AppendLine("events {");
-        confBuilder.AppendLine("    worker_connections  1024;");
+        confBuilder.AppendLine("    worker_connections  8192;");
+        confBuilder.AppendLine("    multi_accept on;");
         confBuilder.AppendLine("}");
         confBuilder.AppendLine();
         confBuilder.AppendLine("http {");
@@ -101,7 +102,9 @@ public static class NginxRuntime
         confBuilder.AppendLine("    default_type  application/octet-stream;");
         confBuilder.AppendLine($"    access_log    {NormalizePath(accessLogPath)} combined;");
         confBuilder.AppendLine("    sendfile      on;");
-        confBuilder.AppendLine("    keepalive_timeout  65;");
+        confBuilder.AppendLine("    tcp_nopush    on;");
+        confBuilder.AppendLine("    keepalive_timeout  75;");
+        NginxStabilityDirectives.AppendHttpDefaults(confBuilder);
         confBuilder.AppendLine();
         confBuilder.AppendLine("    server {");
         confBuilder.AppendLine($"        listen       {httpPort};");
