@@ -4,7 +4,8 @@ public enum PerformanceItemKind
 {
     Service,
     Process,
-    App
+    App,
+    PhpListener
 }
 
 public sealed class ProcessPerformance
@@ -16,6 +17,7 @@ public sealed class ProcessPerformance
     public double? CpuPercent { get; init; }
     public double? MemoryMb { get; init; }
     public string? Status { get; init; }
+    public string? Endpoint { get; init; }
 }
 
 public sealed class PerformanceSnapshot
@@ -30,6 +32,7 @@ public sealed class ServicePerformanceTarget
     public string Name { get; init; } = string.Empty;
     public string? Status { get; init; }
     public int? Pid { get; init; }
+    public IReadOnlyList<int> MemoryPids { get; init; } = [];
 }
 
 public sealed class ProcessPerformanceTarget
@@ -39,4 +42,20 @@ public sealed class ProcessPerformanceTarget
     public string? Status { get; init; }
     public int? Pid { get; init; }
     public string? SiteName { get; init; }
+    public IReadOnlyList<int> MemoryPids { get; init; } = [];
+}
+
+public sealed class PhpListenerPerformanceTarget
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
+
+    public string Endpoint { get; init; } = string.Empty;
+
+    public string? Status { get; init; }
+
+    public int? Pid { get; init; }
+
+    public IReadOnlyList<int> MemoryPids { get; init; } = [];
 }

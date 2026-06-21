@@ -39,16 +39,16 @@ public static class StackrootBootstrap
 
         services.AddSingleton(_ => StackrootPathResolver.Resolve());
 
-        services.AddSingleton<Stackroot.Core.IO.JsonFileStore>();
-        services.AddSingleton<IJsonFileStore, Stackroot.Core.IO.Storage.JsonFileStore>();
+        services.AddSingleton<IJsonFileStore, JsonFileStore>();
 
         services.AddSingleton<AppSettingsStore>();
         services.AddSingleton<SettingsStore>(provider =>
         {
             var paths = provider.GetRequiredService<StackrootPaths>();
-            var json = provider.GetRequiredService<Stackroot.Core.IO.JsonFileStore>();
+            var json = provider.GetRequiredService<IJsonFileStore>();
             return new SettingsStore(paths.DataRoot, json);
         });
+        services.AddSingleton<SettingsLoadState>();
 
         services.AddSingleton<InstallRegistryStore>(provider =>
         {
@@ -114,9 +114,13 @@ public static class StackrootBootstrap
         services.AddSingleton<DiagnosticsReportLogger>();
         services.AddSingleton<IDiagnosticsReporter>(provider => provider.GetRequiredService<DiagnosticsReportLogger>());
         services.AddSingleton<PerformanceSampler>();
+        services.AddSingleton<RuntimeMetricsService>();
+        services.AddSingleton<RuntimeMetricsTrayViewModel>();
+        services.AddSingleton<RuntimeStateService>();
 
         services.AddSingleton<BackgroundWorkQueue>();
         services.AddSingleton<DeferredStartupCoordinator>();
+        services.AddSingleton<DashboardShellReadyGate>();
         services.AddSingleton<PhpConfigWriter>();
         services.AddSingleton<PhpExtensionsManifestStore>();
         services.AddSingleton<PhpExtensionManager>();
@@ -223,7 +227,7 @@ public static class StackrootBootstrap
         using var startupScope = diagnostics.BeginAction("Startup", "Background startup tasks");
 
         var paths = services.GetRequiredService<StackrootPaths>();
-        var migrationReport = DataMigrationRunner.Run(paths);
+        var migrationReport = DataMigrationRunner.Run(paths, allowRepeat: false);
         if (migrationReport.HasChanges)
         {
             foreach (var change in migrationReport.Changes)
@@ -285,6 +289,9 @@ public static class StackrootBootstrap
             },
             cancellationToken).ConfigureAwait(false);
 
+        // Deferred auto-start runs after nginx config files are on disk (stack step).
+        ApplyServiceSettings(paths, registry, settings);
+
         var coordinator = services.GetRequiredService<PackageInstallCoordinator>();
         var nodeManager = services.GetRequiredService<NodeManager>();
 
@@ -327,8 +334,6 @@ public static class StackrootBootstrap
             "Starting web stack",
             async () =>
             {
-                ApplyServiceSettings(paths, registry, settings);
-
                 var requiredPhpVersionIds = serviceManager.ResolveRequiredPhpVersionIds();
                 _ = phpConfigWriter.WriteRequiredPhpConfigs(settings, requiredPhpVersionIds);
 
@@ -340,25 +345,19 @@ public static class StackrootBootstrap
                     services.GetRequiredService<SslTrustPromptCoordinator>().ScheduleCheck();
                 }
 
+                var webStackRebuilder = services.GetRequiredService<NginxWebStackRebuilder>();
+                await webStackRebuilder.WriteStartupNginxConfigFilesAsync(cancellationToken).ConfigureAwait(false);
+                diagnostics.LogActivity("Startup", "Nginx config files written (nginx not running yet)");
+
                 var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
                 await activityCoordinator.NotifyCoreStartupFinishedAsync(cancellationToken).ConfigureAwait(false);
 
                 var testDns = services.GetRequiredService<TestDnsCoordinator>();
-                if (settings.Sites.TestDnsEnabled)
-                {
-                    try
-                    {
-                        await testDns.ApplySettingsAsync(cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        diagnostics.LogUserError("Test DNS", ex.Message);
-                    }
-                }
+                await testDns.EnsureAutoStartAsync(cancellationToken).ConfigureAwait(false);
+
+                EnqueueDeferredStartupTasks(services);
             },
             cancellationToken).ConfigureAwait(false);
-
-        EnqueueDeferredStartupTasks(services);
     }
 
     private static void RunStartupStep(
@@ -406,7 +405,7 @@ public static class StackrootBootstrap
         var queue = services.GetRequiredService<BackgroundWorkQueue>();
         var coordinator = services.GetRequiredService<DeferredStartupCoordinator>();
         var startupCancellation = coordinator.CancellationToken;
-        services.GetRequiredService<SessionActivityCoordinator>().RegisterDeferredStartupPhases(3);
+        services.GetRequiredService<SessionActivityCoordinator>().RegisterDeferredStartupPhases(4);
 
         queue.Enqueue(
             "Startup",
@@ -418,6 +417,8 @@ public static class StackrootBootstrap
                 try
                 {
                     var serviceManager = services.GetRequiredService<ServiceManager>();
+                    var shellReady = services.GetRequiredService<DashboardShellReadyGate>();
+                    await shellReady.WaitAsync(startupToken).ConfigureAwait(false);
                     await serviceManager.AutoStartEnabledServicesAsync(startupToken).ConfigureAwait(false);
                 }
                 finally
@@ -435,11 +436,8 @@ public static class StackrootBootstrap
                 var startupToken = linkedCts.Token;
                 try
                 {
-                    var serviceManager = services.GetRequiredService<ServiceManager>();
                     var mailpitManager = services.GetRequiredService<MailpitManager>();
                     var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
-                    var diagnostics = services.GetRequiredService<IDiagnosticsReporter>();
-                    var settingsStore = services.GetRequiredService<SettingsStore>();
 
                     using (activityCoordinator.Suppress("mailpit"))
                     {
@@ -461,14 +459,21 @@ public static class StackrootBootstrap
             {
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, startupCancellation);
                 var startupToken = linkedCts.Token;
-                startupToken.ThrowIfCancellationRequested();
-                var settingsStore = services.GetRequiredService<SettingsStore>();
-                var phpConfigWriter = services.GetRequiredService<PhpConfigWriter>();
-                var serviceManager = services.GetRequiredService<ServiceManager>();
-                var currentSettings = settingsStore.Load();
-                var requiredIds = serviceManager.ResolveRequiredPhpVersionIds();
-                _ = phpConfigWriter.WriteRemainingPhpConfigs(currentSettings, requiredIds);
-                return Task.CompletedTask;
+                try
+                {
+                    startupToken.ThrowIfCancellationRequested();
+                    var settingsStore = services.GetRequiredService<SettingsStore>();
+                    var phpConfigWriter = services.GetRequiredService<PhpConfigWriter>();
+                    var serviceManager = services.GetRequiredService<ServiceManager>();
+                    var currentSettings = settingsStore.Load();
+                    var requiredIds = serviceManager.ResolveRequiredPhpVersionIds();
+                    _ = phpConfigWriter.WriteRemainingPhpConfigs(currentSettings, requiredIds);
+                    return Task.CompletedTask;
+                }
+                finally
+                {
+                    services.GetRequiredService<SessionActivityCoordinator>().NotifyDeferredPhaseComplete();
+                }
             });
 
         queue.Enqueue(
@@ -499,12 +504,15 @@ public static class StackrootBootstrap
                         () => phpRedisAdminManager.ApplyAsync(startupToken),
                         diagnostics).ConfigureAwait(false);
 
+                    webStackRebuilder.WriteAppDomainConfig();
+
                     var phpProgressId = activityCoordinator.BeginPhpStackStartup();
                     try
                     {
-                        await webStackRebuilder.FinalizeAndReloadAsync(startupToken).ConfigureAwait(false);
+                        // PHP only — nginx already started with on-disk config from the stack step.
+                        await webStackRebuilder.FinalizeAndReloadAsync(startupToken, reloadNginx: false).ConfigureAwait(false);
                         await activityCoordinator.CompletePhpStackStartupAsync(phpProgressId, startupToken).ConfigureAwait(false);
-                        diagnostics.LogActivity("Startup", "Nginx reloaded with admin tool routes and php-cgi");
+                        diagnostics.LogActivity("Startup", "PHP listeners ensured after auto-start");
                     }
                     catch (OperationCanceledException) when (startupToken.IsCancellationRequested)
                     {

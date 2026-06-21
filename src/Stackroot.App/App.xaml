@@ -58,6 +58,18 @@
             </Setter>
         </Style>
 
+        <Style x:Key="StackrootLiveBadgeStyle" TargetType="Border">
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource StackrootAccentSoftBrush}" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="120" />
+            <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+            <Setter Property="ToolTipService.BetweenShowDelay" Value="0" />
+            <Setter Property="ToolTipService.Placement" Value="Top" />
+            <Setter Property="helpers:LiveUptimeToolTipBehavior.IsEnabled" Value="True" />
+        </Style>
+
         <Style x:Key="StackrootButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
             <Setter Property="Background" Value="{StaticResource StackrootCardBrush}" />

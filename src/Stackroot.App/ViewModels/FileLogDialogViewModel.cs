@@ -143,7 +143,7 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             return string.Empty;
         }
 
-        const int maxBytes = 256 * 1024;
+        const int maxBytes = 512 * 1024;
         var start = stream.Length > maxBytes ? stream.Length - maxBytes : 0;
         stream.Seek(start, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);

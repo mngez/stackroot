@@ -53,6 +53,18 @@ public sealed class SessionActivityService : ViewModelBase
         var id = Guid.NewGuid();
         RunOnUi(() =>
         {
+            var existing = Items.FirstOrDefault(item => item.Id == id);
+            if (existing is not null)
+            {
+                if (existing.Tone == SessionActivityTone.Progress)
+                {
+                    existing.Message = message;
+                }
+
+                NotifyActivityChanged();
+                return;
+            }
+
             var entry = CreateEntry(message, SessionActivityTone.Progress, id);
             Items.Insert(0, entry);
             TrimItems();
@@ -140,11 +152,10 @@ public sealed class SessionActivityService : ViewModelBase
 
     private void UpdateEntry(Guid id, string message, SessionActivityTone tone)
     {
-        var entry = Items.FirstOrDefault(item => item.Id == id)
-            ?? Items.FirstOrDefault(item => item.Tone == SessionActivityTone.Progress);
+        var entry = Items.FirstOrDefault(item => item.Id == id);
         if (entry is null)
         {
-            Items.Insert(0, CreateEntry(message, tone));
+            Items.Insert(0, CreateEntry(message, tone, id));
             TrimItems();
             return;
         }

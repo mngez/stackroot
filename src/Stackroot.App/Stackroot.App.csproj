@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
     <AssemblyName>Stackroot</AssemblyName>
     <Company>mngez</Company>
     <Authors>mngez</Authors>
@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Stackroot.Core.Sites\Stackroot.Core.Sites.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Supervisor\Stackroot.Core.Supervisor.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Observability\Stackroot.Core.Observability.csproj" />
+    <ProjectReference Include="..\Stackroot.Engine\Stackroot.Engine.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\resources\packages\catalog.json">

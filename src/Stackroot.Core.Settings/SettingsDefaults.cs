@@ -1,4 +1,5 @@
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
 
 namespace Stackroot.Core.Settings;
 
@@ -7,7 +8,7 @@ public static class SettingsDefaults
     public const string DefaultPhpMyAdminPackageId = "phpmyadmin-5.2.3";
     public const string DefaultPhpRedisAdminPackageId = "phpredisadmin-1.26.0";
     public const string DefaultMailpitPackageId = "mailpit-1.21.8";
-    public const int SchemaVersion = 2;
+    public const int SchemaVersion = DataDocumentSchemas.Settings;
 
     public static readonly IReadOnlyList<ServiceDefinition> ServiceDefinitions =
     [
@@ -101,6 +102,14 @@ public static class SettingsDefaults
             DefaultPort = 1025,
             PackageId = DefaultMailpitPackageId,
             Executable = "mailpit.exe"
+        },
+        new()
+        {
+            Id = ServiceId.TestDns,
+            Name = "Test DNS",
+            Category = ServiceCategory.Web,
+            Description = "Wildcard .test resolution via 127.0.0.1:53 (NRPT)",
+            DefaultPort = 53
         }
     ];
 
@@ -111,7 +120,7 @@ public static class SettingsDefaults
 
         var settings = new AppSettings
         {
-            SchemaVersion = 1,
+            SchemaVersion = SettingsDefaults.SchemaVersion,
             General = new GeneralSettings
             {
                 AppDomain = "stackroot.test",
@@ -119,7 +128,9 @@ public static class SettingsDefaults
                 LogRetentionDays = 30,
                 DiagnosticsLogEnabled = false,
                 ThumbnailsEnabled = false,
-                LaunchAtStartup = false
+                LaunchAtStartup = false,
+                ShellMetricsEnabled = true,
+                ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds
             },
             Php = new PhpSettings
             {
@@ -170,6 +181,11 @@ public static class SettingsDefaults
                 AutoStart = true,
                 Supervise = true
             },
+            TestDns = new TestDnsSettings
+            {
+                Enabled = false,
+                AutoStart = true
+            },
             Services = DefaultServices()
         };
 
@@ -180,6 +196,13 @@ public static class SettingsDefaults
             PackageId = settings.Mailpit.PackageId,
             AutoStart = settings.Mailpit.AutoStart,
             Supervise = settings.Mailpit.Supervise
+        };
+
+        settings.Services[ServiceId.TestDns] = settings.Services[ServiceId.TestDns] with
+        {
+            Enabled = settings.TestDns.Enabled,
+            Port = 53,
+            AutoStart = settings.TestDns.AutoStart
         };
 
         return settings;

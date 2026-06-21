@@ -10,10 +10,15 @@ public sealed class TaskSchedulerService : IDisposable
 {
     private readonly string _storePath;
     private List<ScheduledTaskModel> _tasks = [];
+    private readonly HashSet<string> _runningTaskIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly System.Timers.Timer _timer;
     private readonly object _lock = new();
+    private volatile bool _isStarted;
 
     public event EventHandler? TaskExecuted;
+    public event EventHandler? StatusChanged;
+
+    public bool IsStarted => _isStarted;
 
     public TaskSchedulerService(StackrootPaths paths)
     {
@@ -30,6 +35,8 @@ public sealed class TaskSchedulerService : IDisposable
     public void Start()
     {
         _timer.Start();
+        _isStarted = true;
+        RaiseStatusChanged();
     }
 
     public IReadOnlyList<ScheduledTaskModel> List()
@@ -61,14 +68,16 @@ public sealed class TaskSchedulerService : IDisposable
 
     public Task RunNowAsync(string id)
     {
-        ScheduledTaskModel? task;
-        lock (_lock) task = _tasks.FirstOrDefault(t => t.Id == id);
-        if (task is null) return Task.CompletedTask;
-        return Task.Run(() => ExecuteTask(task));
+        return Task.Run(() => ExecuteTask(id));
     }
 
     private void OnTick(object? sender, System.Timers.ElapsedEventArgs e)
     {
+        if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+        {
+            return;
+        }
+
         List<ScheduledTaskModel> snapshot;
         lock (_lock) snapshot = _tasks.Where(t => t.IsEnabled).ToList();
 
@@ -78,27 +87,41 @@ public sealed class TaskSchedulerService : IDisposable
             var next = CronParser.GetNextRun(task.CronExpression, now.AddMinutes(-1));
             if (next.HasValue && next.Value <= now)
             {
-                ExecuteTask(task);
+                _ = Task.Run(() => ExecuteTask(task.Id));
             }
         }
     }
 
-    private void ExecuteTask(ScheduledTaskModel task)
+    private void ExecuteTask(string taskId)
     {
+        ScheduledTaskModel? task;
+        lock (_lock)
+        {
+            task = _tasks.FirstOrDefault(t => t.Id == taskId);
+            if (task is null || !_runningTaskIds.Add(taskId))
+            {
+                return;
+            }
+        }
+
+        var command = task.Command;
+        var workingDirectory = task.WorkingDirectory;
         var logPath = task.CaptureLog
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Stackroot", "logs", "scheduled", $"task-{task.Id}.log")
             : null;
+        string? lastRunAt;
+        string? lastError;
 
         try
         {
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c \"{task.Command}\"",
-                WorkingDirectory = string.IsNullOrWhiteSpace(task.WorkingDirectory)
+                Arguments = $"/c \"{command}\"",
+                WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
                     ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-                    : task.WorkingDirectory,
+                    : workingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
@@ -108,7 +131,9 @@ public sealed class TaskSchedulerService : IDisposable
             var process = System.Diagnostics.Process.Start(psi);
             if (process is null)
             {
-                task.LastError = "Failed to start process.";
+                lastRunAt = DateTime.Now.ToString("O");
+                lastError = "Failed to start process.";
+                UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
                 return;
             }
 
@@ -127,18 +152,28 @@ public sealed class TaskSchedulerService : IDisposable
                 File.AppendAllText(logPath, runHeader + body + "\r\n");
             }
 
-            task.LastRunAt = DateTime.Now.ToString("O");
-            task.LastLogPath = logPath;
-            task.LastError = process.ExitCode != 0 ? $"Exit code: {process.ExitCode}" : null;
+            lastRunAt = DateTime.Now.ToString("O");
+            lastError = process.ExitCode != 0 ? $"Exit code: {process.ExitCode}" : null;
+            UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
         }
         catch (Exception ex)
         {
-            task.LastRunAt = DateTime.Now.ToString("O");
-            task.LastError = ex.Message;
+            lastRunAt = DateTime.Now.ToString("O");
+            lastError = ex.Message;
+            UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
         }
+        finally
+        {
+            lock (_lock)
+            {
+                _runningTaskIds.Remove(taskId);
+            }
+        }
+    }
 
-        Save();
-        try { TaskExecuted?.Invoke(this, EventArgs.Empty); } catch { }
+    private void RaiseStatusChanged()
+    {
+        try { StatusChanged?.Invoke(this, EventArgs.Empty); } catch { }
     }
 
     private void Load()
@@ -159,7 +194,7 @@ public sealed class TaskSchedulerService : IDisposable
         }
         catch
         {
-            lock (_lock) _tasks = [];
+            // Keep the in-memory snapshot unchanged on read failures.
         }
     }
 
@@ -181,9 +216,38 @@ public sealed class TaskSchedulerService : IDisposable
             }
 
             var json = JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
-            File.WriteAllText(_storePath, json);
+            var tempPath = $"{_storePath}.tmp";
+            File.WriteAllText(tempPath, json);
+            if (File.Exists(_storePath))
+            {
+                File.Replace(tempPath, _storePath, null, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(tempPath, _storePath);
+            }
         }
         catch { }
+    }
+
+    private void UpdateTaskExecutionResult(string taskId, string? lastRunAt, string? lastLogPath, string? lastError)
+    {
+        lock (_lock)
+        {
+            var task = _tasks.FirstOrDefault(t => t.Id == taskId);
+            if (task is null)
+            {
+                return;
+            }
+
+            task.LastRunAt = lastRunAt;
+            task.LastLogPath = lastLogPath;
+            task.LastError = lastError;
+        }
+
+        Save();
+        try { TaskExecuted?.Invoke(this, EventArgs.Empty); } catch { }
+        RaiseStatusChanged();
     }
 
     private static ScheduledTaskModel ToModel(ScheduledTaskEntry entry) => new()
@@ -197,7 +261,8 @@ public sealed class TaskSchedulerService : IDisposable
         IsEnabled = entry.IsEnabled,
         LastRunAt = entry.LastRunAt,
         LastLogPath = entry.LastLogPath,
-        LastError = entry.LastError
+        LastError = entry.LastError,
+        SiteId = entry.SiteId
     };
 
     private static ScheduledTaskEntry ToEntry(ScheduledTaskModel model) => new()
@@ -211,11 +276,13 @@ public sealed class TaskSchedulerService : IDisposable
         IsEnabled = model.IsEnabled,
         LastRunAt = model.LastRunAt,
         LastLogPath = model.LastLogPath,
-        LastError = model.LastError
+        LastError = model.LastError,
+        SiteId = model.SiteId
     };
 
     public void Dispose()
     {
+        _isStarted = false;
         _timer.Stop();
         _timer.Dispose();
     }

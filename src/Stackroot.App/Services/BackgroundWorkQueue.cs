@@ -11,6 +11,7 @@ namespace Stackroot.App.Services;
 public sealed class BackgroundWorkQueue : IDisposable
 {
     private readonly IDiagnosticsReporter _diagnostics;
+    private readonly DeferredStartupCoordinator _deferredStartup;
     private readonly Channel<WorkItem> _channel = Channel.CreateUnbounded<WorkItem>(
         new UnboundedChannelOptions
         {
@@ -21,9 +22,10 @@ public sealed class BackgroundWorkQueue : IDisposable
     private readonly Task _pumpTask;
     private bool _disposed;
 
-    public BackgroundWorkQueue(IDiagnosticsReporter diagnostics)
+    public BackgroundWorkQueue(IDiagnosticsReporter diagnostics, DeferredStartupCoordinator deferredStartup)
     {
         _diagnostics = diagnostics;
+        _deferredStartup = deferredStartup;
         _pumpTask = PumpAsync(_lifetime.Token);
     }
 
@@ -65,24 +67,37 @@ public sealed class BackgroundWorkQueue : IDisposable
         {
             await foreach (var item in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
             {
+                if (ApplicationShutdownState.IsClosing)
+                {
+                    continue;
+                }
+
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    _deferredStartup.CancellationToken);
                 using (_diagnostics.BeginAction(item.Area, item.Action))
                 {
                     try
                     {
-                        await item.Work(cancellationToken).ConfigureAwait(false);
+                        await item.Work(linkedCts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
+                    {
+                        _diagnostics.LogActivity(item.Area, $"{item.Action} cancelled");
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
                         throw;
                     }
-                    catch (OperationCanceledException)
-                    {
-                        _diagnostics.LogActivity(item.Area, $"{item.Action} cancelled");
-                    }
                     catch (Exception ex)
                     {
                         _diagnostics.LogException(item.Area, ex);
                     }
+                }
+
+                if (linkedCts.IsCancellationRequested)
+                {
+                    continue;
                 }
 
                 try

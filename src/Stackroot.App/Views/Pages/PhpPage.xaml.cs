@@ -11,6 +11,8 @@ public partial class PhpPage : UserControl
     {
         DataContext = viewModel;
         InitializeComponent();
+        Loaded += (_, _) => viewModel.BeginLoading();
+        Unloaded += (_, _) => viewModel.EndLoading();
     }
 
     private void OpenRowMenu_Click(object sender, RoutedEventArgs e)

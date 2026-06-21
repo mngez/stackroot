@@ -34,6 +34,8 @@ public sealed class StackrootShutdownCoordinator
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly ShellViewModel _shellViewModel;
     private readonly TestDnsCoordinator _testDnsCoordinator;
+    private readonly RuntimeStateService _runtimeStateService;
+    private readonly RuntimeMetricsService _runtimeMetricsService;
     private int _shutdownCompleted;
 
     public StackrootShutdownCoordinator(
@@ -44,7 +46,9 @@ public sealed class StackrootShutdownCoordinator
         IProcessJobManager processJobManager,
         IDiagnosticsReporter diagnostics,
         ShellViewModel shellViewModel,
-        TestDnsCoordinator testDnsCoordinator)
+        TestDnsCoordinator testDnsCoordinator,
+        RuntimeStateService runtimeStateService,
+        RuntimeMetricsService runtimeMetricsService)
     {
         _serviceManager = serviceManager;
         _globalProcessManager = globalProcessManager;
@@ -54,6 +58,8 @@ public sealed class StackrootShutdownCoordinator
         _diagnostics = diagnostics;
         _shellViewModel = shellViewModel;
         _testDnsCoordinator = testDnsCoordinator;
+        _runtimeStateService = runtimeStateService;
+        _runtimeMetricsService = runtimeMetricsService;
     }
 
     public async Task ShutdownAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -65,7 +71,11 @@ public sealed class StackrootShutdownCoordinator
 
         BackgroundOperationTracker.RequestShutdown();
         ApplicationShutdownState.ShutdownRequested = true;
+        IsShuttingDown = true;
         _deferredStartup.Cancel();
+        _runtimeStateService.StopPolling();
+        _runtimeMetricsService.StopPolling();
+        _serviceManager.PrepareForShutdown();
 
         try
         {
@@ -94,8 +104,6 @@ public sealed class StackrootShutdownCoordinator
         {
             throw;
         }
-
-        IsShuttingDown = true;
 
         using var scope = _diagnostics.BeginAction("Shutdown", "Stop managed processes");
 

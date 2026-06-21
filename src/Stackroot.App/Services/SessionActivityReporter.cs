@@ -44,6 +44,12 @@ public sealed class SessionActivityReporter
         _activity.Log(message, SessionActivityTone.Error);
     }
 
+    public void LogWarning(string area, string message)
+    {
+        _diagnostics.LogActivity(area, message);
+        _activity.Log(message, SessionActivityTone.Warning);
+    }
+
     public Guid Begin(string area, string message)
     {
         _diagnostics.LogActivity(area, message);

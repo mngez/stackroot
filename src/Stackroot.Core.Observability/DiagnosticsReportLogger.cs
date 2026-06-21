@@ -30,6 +30,8 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
     private const long MaxLogBytes = 5 * 1024 * 1024;
     private static readonly TimeSpan DuplicateErrorWindow = TimeSpan.FromSeconds(30);
 
+    private Action<string>? _countersHandler;
+
     public DiagnosticsReportLogger(StackrootPaths paths, SettingsStore settingsStore)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -40,6 +42,8 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
         _logPath = Path.Combine(paths.LogsRoot, LogFileName);
         DevelopmentReportLogRotation.RotateSessionLog(paths.LogsRoot);
         _writerTask = Task.Run(ProcessQueueAsync);
+        _countersHandler = summary => LogActivity("Counters", summary);
+        DiagnosticsCounters.SummaryLogged += _countersHandler;
     }
 
     public string LogPath => _logPath;
@@ -48,6 +52,12 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
 
     public void Dispose()
     {
+        if (_countersHandler is not null)
+        {
+            DiagnosticsCounters.SummaryLogged -= _countersHandler;
+            _countersHandler = null;
+        }
+
         _logQueue.Writer.TryComplete();
         try
         {

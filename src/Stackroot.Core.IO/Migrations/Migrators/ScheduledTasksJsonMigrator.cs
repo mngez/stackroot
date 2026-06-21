@@ -67,5 +67,10 @@ internal sealed class ScheduledTasksJsonMigrator : JsonDocumentMigrator
 
     protected override void ApplyStep(int fromVersion, int toVersion, JsonNode root)
     {
+        // v2: optional siteId per task; absent/null means app-wide (legacy tasks unchanged).
+        if (toVersion == 2 && root is JsonObject obj && obj["tasks"] is not JsonArray)
+        {
+            obj["tasks"] = new JsonArray();
+        }
     }
 }

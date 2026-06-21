@@ -17,8 +17,8 @@ internal static class ServiceProcessTools
             FileName = fileName,
             WorkingDirectory = workingDirectory,
             UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
             CreateNoWindow = true
         };
 
@@ -75,32 +75,8 @@ internal static class ServiceProcessTools
         }
     }
 
-    public static bool IsExecutableUnderInstallPath(int pid, string installPath)
-    {
-        if (string.IsNullOrWhiteSpace(installPath))
-        {
-            return false;
-        }
-
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            var executablePath = process.MainModule?.FileName;
-            if (string.IsNullOrWhiteSpace(executablePath))
-            {
-                return false;
-            }
-
-            var normalizedExecutable = Path.GetFullPath(executablePath);
-            var normalizedInstall = Path.GetFullPath(installPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            return normalizedExecutable.StartsWith(normalizedInstall + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(normalizedExecutable, normalizedInstall, StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    public static bool IsExecutableUnderInstallPath(int pid, string installPath) =>
+        ProcessImageTools.IsExecutableUnderInstallPath(pid, installPath);
 
     public static bool ProcessNameContains(int pid, string fragment)
     {

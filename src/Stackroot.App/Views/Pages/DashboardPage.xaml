@@ -67,75 +67,82 @@
 
         <StackPanel Grid.Row="2"
                     Margin="0,16,0,24">
-                <ItemsControl Margin="0,0,0,8"
-                              Visibility="{Binding HasQuickLinks, Converter={StaticResource BoolToVis}}"
-                              ItemsSource="{Binding QuickLinks}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Margin="0,0,8,0"
-                                    Style="{StaticResource StackrootButtonStyle}"
-                                    Content="{Binding Label}"
-                                    Command="{Binding OpenCommand}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <Border MinHeight="44"
+                        Margin="0,0,0,8">
+                    <ItemsControl VerticalAlignment="Center"
+                                  Visibility="{Binding HasQuickLinks, Converter={StaticResource BoolToVis}}"
+                                  ItemsSource="{Binding QuickLinks}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="0,0,8,0"
+                                        Style="{StaticResource StackrootButtonStyle}"
+                                        Content="{Binding Label}"
+                                        Command="{Binding OpenCommand}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
 
-                <DockPanel Margin="0,0,0,16" LastChildFill="False">
-                    <UniformGrid DockPanel.Dock="Left"
-                                 Columns="2"
-                                 Margin="0,0,16,0">
-                        <Border Margin="0,0,8,0"
-                                Padding="12,8"
-                                Background="#121A26"
-                                BorderBrush="{StaticResource StackrootBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock HorizontalAlignment="Center"
-                                           FontSize="11"
-                                           Foreground="{StaticResource StackrootTextMutedBrush}"
-                                           Text="Running" />
-                                <TextBlock Margin="0,2,0,0"
-                                           HorizontalAlignment="Center"
-                                           FontSize="22"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource StackrootAccentTextBrush}"
-                                           Text="{Binding RunningCount}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Margin="8,0,0,0"
-                                Padding="12,8"
-                                Background="#121A26"
-                                BorderBrush="{StaticResource StackrootBorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock HorizontalAlignment="Center"
-                                           FontSize="11"
-                                           Foreground="{StaticResource StackrootTextMutedBrush}"
-                                           Text="Stopped" />
-                                <TextBlock Margin="0,2,0,0"
-                                           HorizontalAlignment="Center"
-                                           FontSize="22"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding StoppedCount}" />
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-                    <Button DockPanel.Dock="Right"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource StackrootButtonStyle}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Foreground="{StaticResource StackrootAccentBrush}"
-                            Content="Manage →"
-                            Command="{Binding OpenServicesCommand}" />
-                </DockPanel>
+                <Border MinHeight="72"
+                        Margin="0,0,0,16">
+                    <DockPanel LastChildFill="False"
+                               Visibility="{Binding HasServices, Converter={StaticResource BoolToVis}}">
+                        <UniformGrid DockPanel.Dock="Left"
+                                     Columns="2"
+                                     Margin="0,0,16,0">
+                            <Border Margin="0,0,8,0"
+                                    Padding="12,8"
+                                    Background="#121A26"
+                                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Running" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               HorizontalAlignment="Center"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource StackrootAccentTextBrush}"
+                                               Text="{Binding RunningCount}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="8,0,0,0"
+                                    Padding="12,8"
+                                    Background="#121A26"
+                                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Stopped" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               HorizontalAlignment="Center"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding StoppedCount}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                        <Button DockPanel.Dock="Right"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource StackrootButtonStyle}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="{StaticResource StackrootAccentBrush}"
+                                Content="Manage →"
+                                Command="{Binding OpenServicesCommand}" />
+                    </DockPanel>
+                </Border>
 
                 <Border Margin="0,0,0,16"
                         Padding="24"
@@ -239,17 +246,29 @@
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock Margin="0,2,0,0"
                                                    FontSize="11"
-                                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    Text="{Binding Message}"
-                                                   TextTrimming="CharacterEllipsis" />
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding StatusText}" Value="Error">
+                                                            <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </StackPanel>
 
                                     <Border Grid.Column="2"
                                             Margin="12,0,12,0"
-                                            Padding="8,3"
-                                            VerticalAlignment="Center"
-                                            Background="#1A4CAE8C"
-                                            CornerRadius="4"
+                                            Style="{StaticResource StackrootLiveBadgeStyle}"
+                                            ToolTip="{Binding UptimeToolTip}"
                                             Visibility="{Binding IsLive, Converter={StaticResource BoolToVis}}">
                                         <TextBlock FontSize="11"
                                                    FontWeight="Bold"
@@ -268,7 +287,7 @@
                                         <ProgressBar Margin="0,5,0,0"
                                                      Height="3"
                                                      IsIndeterminate="True"
-                                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                                                     Visibility="{Binding ShowProgressBar, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="4"
@@ -376,10 +395,8 @@
 
                                             <Border Grid.Column="2"
                                                     Margin="16,0,16,0"
-                                                    Padding="8,3"
-                                                    VerticalAlignment="Center"
-                                                    Background="#1A4CAE8C"
-                                                    CornerRadius="4"
+                                                    Style="{StaticResource StackrootLiveBadgeStyle}"
+                                                    ToolTip="{Binding UptimeToolTip}"
                                                     Visibility="{Binding IsLive, Converter={StaticResource BoolToVis}}">
                                                 <TextBlock FontSize="11"
                                                            FontWeight="Bold"
@@ -537,10 +554,8 @@
 
                                             <Border Grid.Column="2"
                                                     Margin="16,0,16,0"
-                                                    Padding="8,3"
-                                                    VerticalAlignment="Center"
-                                                    Background="#1A4CAE8C"
-                                                    CornerRadius="4"
+                                                    Style="{StaticResource StackrootLiveBadgeStyle}"
+                                                    ToolTip="{Binding UptimeToolTip}"
                                                     Visibility="{Binding IsLive, Converter={StaticResource BoolToVis}}">
                                                 <TextBlock FontSize="11"
                                                            FontWeight="Bold"

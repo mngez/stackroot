@@ -276,6 +276,18 @@ public static class PhpCgiRuntime
         return Managed.Values.ToDictionary(v => v.VersionId, v => v.Port, StringComparer.OrdinalIgnoreCase);
     }
 
+    public static bool TryGetManagedListenerPid(string versionId, out int pid)
+    {
+        if (Managed.TryGetValue(versionId, out var listener) && IsProcessAlive(listener.Pid))
+        {
+            pid = listener.Pid;
+            return true;
+        }
+
+        pid = 0;
+        return false;
+    }
+
     private static async Task<bool> ReclaimPortAsync(
         string host,
         int port,

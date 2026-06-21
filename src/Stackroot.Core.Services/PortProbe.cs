@@ -2,22 +2,49 @@ using System.Net.Sockets;
 
 namespace Stackroot.Core.Services;
 
+public enum PortProbeResult
+{
+    Open,
+    Closed,
+    Inconclusive
+}
+
 public static class PortProbe
 {
-    public static async Task<bool> IsPortOpenAsync(string host, int port, int timeoutMs = 800)
+    public static Action<string, Exception>? FailureLogger { get; set; }
+
+    public static async Task<PortProbeResult> ProbePortAsync(string host, int port, int timeoutMs = 800)
     {
         using var client = new TcpClient();
         using var cts = new CancellationTokenSource(timeoutMs);
 
         try
         {
-            await client.ConnectAsync(host, port, cts.Token);
-            return true;
+            await client.ConnectAsync(host, port, cts.Token).ConfigureAwait(false);
+            return PortProbeResult.Open;
         }
-        catch
+        catch (OperationCanceledException)
         {
-            return false;
+            return PortProbeResult.Inconclusive;
         }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionRefused)
+        {
+            return PortProbeResult.Closed;
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+        {
+            return PortProbeResult.Closed;
+        }
+        catch (Exception ex)
+        {
+            FailureLogger?.Invoke("PortProbe", ex);
+            return PortProbeResult.Inconclusive;
+        }
+    }
+
+    public static async Task<bool> IsPortOpenAsync(string host, int port, int timeoutMs = 800)
+    {
+        return await ProbePortAsync(host, port, timeoutMs).ConfigureAwait(false) == PortProbeResult.Open;
     }
 
     public static Task SleepAsync(int milliseconds, CancellationToken cancellationToken = default)

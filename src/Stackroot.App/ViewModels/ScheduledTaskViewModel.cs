@@ -4,6 +4,7 @@ using Stackroot.App.Commands;
 using Stackroot.App.Helpers;
 using Stackroot.App.Scheduling;
 using Stackroot.App.Views;
+using Stackroot.Core.Sites.Management;
 
 namespace Stackroot.App.ViewModels;
 
@@ -19,6 +20,7 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
     public string CronExpression { get => Model.CronExpression; set { Model.CronExpression = value; RaisePropertyChanged(); _parent.Save(); } }
     public bool CaptureLog { get => Model.CaptureLog; set { Model.CaptureLog = value; RaisePropertyChanged(); _parent.Save(); } }
     public bool IsEnabled { get => Model.IsEnabled; set { Model.IsEnabled = value; RaisePropertyChanged(); _parent.Save(); } }
+    public string SiteLabel { get; }
 
     public string CronDescription => Scheduling.CronParser.Describe(Model.CronExpression);
     public string LastRunDisplay => Model.LastRunAt is not null
@@ -37,13 +39,25 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
     public bool IsRunning { get => _isRunning; set { if (SetProperty(ref _isRunning, value)) RaisePropertyChanged(nameof(RunButtonText)); } }
     public string RunButtonText => IsRunning ? "⏳" : "▶";
 
-    public ScheduledTaskRowViewModel(ScheduledTaskModel model, ScheduledTaskViewModel parent)
+    public ScheduledTaskRowViewModel(ScheduledTaskModel model, ScheduledTaskViewModel parent, SiteManager siteManager)
     {
         Model = model;
         _parent = parent;
+        SiteLabel = FormatSiteLabel(model.SiteId, siteManager);
         RunNowCommand = new RelayCommand(_ => Run(), _ => !IsRunning);
         ViewLogCommand = new RelayCommand(_ => OpenLog(), _ => HasLog);
         DeleteCommand = new RelayCommand(_ => ConfirmDelete());
+    }
+
+    private static string FormatSiteLabel(string? siteId, SiteManager siteManager)
+    {
+        if (string.IsNullOrWhiteSpace(siteId))
+        {
+            return "App-wide";
+        }
+
+        var site = siteManager.Get(siteId);
+        return site is null ? siteId : $"{site.Name} ({site.Domain})";
     }
 
     private async void Run()
@@ -105,21 +119,40 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
 public sealed class ScheduledTaskViewModel : ViewModelBase
 {
     private readonly Scheduling.TaskSchedulerService _scheduler;
+    private readonly SiteManager _siteManager;
     private readonly Stackroot.App.Services.SessionActivityReporter _activity;
     private readonly Stackroot.Core.Settings.SettingsStore _settingsStore;
+    private string? _siteFilter = string.Empty;
+    private bool _suppressSiteFilterRefresh;
 
     public ObservableCollection<ScheduledTaskRowViewModel> Tasks { get; } = [];
+    public ObservableCollection<SiteFilterOptionViewModel> SiteFilterOptions { get; } = [];
     public bool HasTasks => Tasks.Count > 0;
+    public bool ShowEmptyState => !HasTasks;
+
+    public string? SiteFilter
+    {
+        get => _siteFilter;
+        set
+        {
+            if (SetProperty(ref _siteFilter, value) && !_suppressSiteFilterRefresh)
+            {
+                Load();
+            }
+        }
+    }
 
     public RelayCommand AddCommand { get; }
     public RelayCommand EditCommand { get; }
     public RelayCommand RefreshCommand { get; }
 
     public ScheduledTaskViewModel(Scheduling.TaskSchedulerService scheduler,
+        SiteManager siteManager,
         Stackroot.App.Services.SessionActivityReporter activity,
         Stackroot.Core.Settings.SettingsStore settingsStore)
     {
         _scheduler = scheduler;
+        _siteManager = siteManager;
         _activity = activity;
         _settingsStore = settingsStore;
 
@@ -138,10 +171,16 @@ public sealed class ScheduledTaskViewModel : ViewModelBase
 
     public void Load()
     {
+        RebuildSiteFilterOptions();
+
         Tasks.Clear();
-        foreach (var task in _scheduler.List())
-            Tasks.Add(new ScheduledTaskRowViewModel(task, this));
+        foreach (var task in ListFilteredTasks(_siteFilter))
+        {
+            Tasks.Add(new ScheduledTaskRowViewModel(task, this, _siteManager));
+        }
+
         RaisePropertyChanged(nameof(HasTasks));
+        RaisePropertyChanged(nameof(ShowEmptyState));
     }
 
     public void Save()
@@ -160,9 +199,63 @@ public sealed class ScheduledTaskViewModel : ViewModelBase
         Load();
     }
 
+    private void RebuildSiteFilterOptions()
+    {
+        var selected = _siteFilter;
+        _suppressSiteFilterRefresh = true;
+        try
+        {
+            SiteFilterOptions.Clear();
+            SiteFilterOptions.Add(new SiteFilterOptionViewModel(string.Empty, "All sites"));
+            SiteFilterOptions.Add(new SiteFilterOptionViewModel(ProcessesViewModel.GlobalSiteFilter, "App-wide only"));
+
+            var siteIdsWithTasks = _scheduler.List()
+                .Select(task => task.SiteId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var site in _siteManager.List().OrderBy(site => site.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                if (siteIdsWithTasks.Contains(site.Id))
+                {
+                    SiteFilterOptions.Add(new SiteFilterOptionViewModel(site.Id, $"{site.Name} ({site.Domain})"));
+                }
+            }
+
+            if (!SiteFilterOptions.Any(option => string.Equals(option.Id, selected, StringComparison.Ordinal)))
+            {
+                selected = string.Empty;
+            }
+
+            _siteFilter = selected;
+            RaisePropertyChanged(nameof(SiteFilter));
+        }
+        finally
+        {
+            _suppressSiteFilterRefresh = false;
+        }
+    }
+
+    private IEnumerable<ScheduledTaskModel> ListFilteredTasks(string? siteFilter)
+    {
+        var all = _scheduler.List();
+        if (string.Equals(siteFilter, ProcessesViewModel.GlobalSiteFilter, StringComparison.Ordinal))
+        {
+            return all.Where(task => string.IsNullOrWhiteSpace(task.SiteId));
+        }
+
+        if (string.IsNullOrWhiteSpace(siteFilter))
+        {
+            return all;
+        }
+
+        return all.Where(task => string.Equals(task.SiteId, siteFilter, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void OpenDialog(ScheduledTaskRowViewModel? existing = null)
     {
-        var dlgVm = new CronTaskDialogViewModel(existing?.Model);
+        var dlgVm = new CronTaskDialogViewModel(_siteManager, existing?.Model);
         var owner = System.Windows.Application.Current?.MainWindow;
         var dialog = new Views.CronTaskDialog { DataContext = dlgVm, Owner = owner };
         var result = false;
@@ -179,6 +272,7 @@ public sealed class ScheduledTaskViewModel : ViewModelBase
             existing.Model.CronExpression = model.CronExpression;
             existing.Model.WorkingDirectory = model.WorkingDirectory;
             existing.Model.CaptureLog = model.CaptureLog;
+            existing.Model.SiteId = model.SiteId;
             _scheduler.Update(existing.Model);
             existing.Refresh();
         }

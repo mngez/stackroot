@@ -117,7 +117,9 @@ public sealed class SiteManageViewModel : ViewModelBase
         CreateDatabaseCommand = new RelayCommand(_ => OpenCreateDatabaseDialog(), _ => Site is not null);
         InstallSiteCommand = new RelayCommand(_ => _ = InstallSiteAsync(), _ => ShowInstallerButton && !_isInstalling);
         OpenPostInstallAdminCommand = new RelayCommand(_ => OpenPostInstallAdmin());
-        CaptureThumbnailCommand = new RelayCommand(_ => _ = CaptureThumbnailAsync(), _ => Site is not null && Site.Enabled && !IsCapturing);
+        CaptureThumbnailCommand = new RelayCommand(
+            _ => _ = CaptureThumbnailAsync(forceRefresh: true),
+            _ => Site is not null && Site.Enabled && !IsCapturing);
         CopyPasswordCommand = new RelayCommand(_ => Clipboard.SetText(PostInstallAdminPassword));
         TogglePasswordCommand = new RelayCommand(_ => PasswordVisible = !PasswordVisible);
         ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync());
@@ -1731,7 +1733,7 @@ public sealed class SiteManageViewModel : ViewModelBase
             _ = Task.Run(async () =>
             {
                 await Task.Delay(2000); // wait for nginx/php to settle
-                await CaptureThumbnailAsync();
+                await CaptureThumbnailAsync(forceRefresh: false);
             });
         }
         catch (Exception ex)
@@ -1866,7 +1868,7 @@ die('Admin user not found.');
         return dialog.ShowDialog() == true ? dialog.Password : null;
     }
 
-    private async Task CaptureThumbnailAsync()
+    private async Task CaptureThumbnailAsync(bool forceRefresh)
     {
         if (Site is null || !Site.Enabled || IsCapturing) return;
 
@@ -1876,7 +1878,7 @@ die('Admin user not found.');
             var url = (Site.ForceHttps == true ? "https" : "http") + "://" + Site.Domain;
             var path = ThumbnailPath;
 
-            var result = await _thumbnailService.CaptureAsync(url, path);
+            var result = await _thumbnailService.CaptureAsync(url, path, forceRefresh);
 
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {

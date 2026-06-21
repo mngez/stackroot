@@ -221,7 +221,7 @@ public sealed class SessionActivityCoordinator : IDisposable
         _packageInstaller.ProgressChanged -= OnInstallProgressChanged;
     }
 
-    private void OnDeferredStartupCompleted() => _ = ReconcileStartupStateAsync();
+    private void OnDeferredStartupCompleted() => _ = FinalizeStartupActivityAsync();
 
     private void OnPhpListenersChanged(object? sender, EventArgs e) => _ = OnPhpListenersChangedAsync();
 
@@ -311,7 +311,11 @@ public sealed class SessionActivityCoordinator : IDisposable
 
                 if (info.Status == ServiceStatus.Starting)
                 {
-                    _awaitingServiceStarts.Add(info.Id);
+                    if (_serviceProgressIds.ContainsKey(info.Id))
+                    {
+                        _awaitingServiceStarts.Add(info.Id);
+                    }
+
                     continue;
                 }
 
@@ -352,22 +356,103 @@ public sealed class SessionActivityCoordinator : IDisposable
         TryCompleteStartup();
     }
 
-    private async Task InitializeBaselineAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Runs when deferred startup finishes — aligns activity rows with the toast
+    /// ("All services started") and closes any stuck per-service progress.
+    /// </summary>
+    private async Task FinalizeStartupActivityAsync()
     {
-        var live = await Task.Run(
-            () => _serviceManager.ListLiveAsync(cancellationToken).GetAwaiter().GetResult(),
-            cancellationToken).ConfigureAwait(false);
+        await ReconcileStartupStateAsync().ConfigureAwait(false);
+        await SettleRemainingServiceProgressAsync().ConfigureAwait(false);
+        TryCompleteStartup();
+    }
+
+    private async Task SettleRemainingServiceProgressAsync()
+    {
+        List<(string ServiceId, Guid ProgressId)> pending;
         lock (_sync)
         {
-            foreach (var info in live)
+            pending = _serviceProgressIds
+                .Select(pair => (pair.Key, pair.Value))
+                .ToList();
+        }
+
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        var live = await Task.Run(() => _serviceManager.ListLiveAsync().GetAwaiter().GetResult())
+            .ConfigureAwait(false);
+        var liveById = live.ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
+        var resolutions = new List<(Guid Id, string Message, bool Failed)>();
+
+        lock (_sync)
+        {
+            foreach (var (serviceId, progressId) in pending)
             {
-                _lastServiceStatus[info.Id] = info.Status;
+                if (!_serviceProgressIds.Remove(serviceId))
+                {
+                    continue;
+                }
+
+                _awaitingServiceStarts.Remove(serviceId);
+                var name = FormatServiceLabel(serviceId);
+                if (!liveById.TryGetValue(serviceId, out var info))
+                {
+                    continue;
+                }
+
+                _lastServiceStatus[serviceId] = info.Status;
+                if (info.Status == ServiceStatus.Running || (info.Status == ServiceStatus.Starting && info.PortOpen == true))
+                {
+                    resolutions.Add((progressId, SessionActivityMessages.ServiceAction(name, "started", true), false));
+                }
+                else if (info.Status == ServiceStatus.Error)
+                {
+                    resolutions.Add((progressId, SessionActivityMessages.ServiceAction(name, "start", false, info.Message), true));
+                }
             }
+        }
+
+        foreach (var (id, message, failed) in resolutions)
+        {
+            if (failed)
+            {
+                _activity.Fail(id, message);
+            }
+            else
+            {
+                _activity.Complete(id, message);
+            }
+        }
+    }
+
+    private async Task InitializeBaselineAsync(CancellationToken cancellationToken)
+    {
+        // Do not block live status notifications on an expensive full port scan.
+        _baselineReady = true;
+
+        try
+        {
+            var live = await Task.Run(
+                () => _serviceManager.ListLiveAsync(cancellationToken).GetAwaiter().GetResult(),
+                cancellationToken).ConfigureAwait(false);
+            lock (_sync)
+            {
+                foreach (var info in live)
+                {
+                    _lastServiceStatus[info.Id] = info.Status;
+                }
+            }
+        }
+        catch
+        {
+            // Baseline seed is best-effort; live events remain authoritative during startup.
         }
 
         var mailpit = await _mailpitManager.GetStatusAsync(cancellationToken).ConfigureAwait(false);
         _mailpitRunning = IsMailpitProcessRunning(mailpit);
-        _baselineReady = true;
     }
 
     private void OnServiceLiveStatusChanged(object? sender, ServiceInfo info)
@@ -417,6 +502,12 @@ public sealed class SessionActivityCoordinator : IDisposable
         switch (info.Status)
         {
             case ServiceStatus.Starting:
+                // Stale progress while the service is already up (e.g. nginx reload during deferred init).
+                if (previous is ServiceStatus.Running)
+                {
+                    break;
+                }
+
                 if (previous != ServiceStatus.Starting)
                 {
                     lock (_sync)
@@ -716,6 +807,17 @@ public sealed class SessionActivityCoordinator : IDisposable
         }
 
         return char.ToUpperInvariant(serviceKey[0]) + serviceKey[1..];
+    }
+
+    private static string FormatActivityDetail(ServiceInfo info)
+    {
+        if (string.IsNullOrWhiteSpace(info.Message))
+        {
+            return string.Empty;
+        }
+
+        var message = info.Message.Length <= 60 ? info.Message : info.Message[..59] + "…";
+        return $" msg=\"{message}\"";
     }
 
     private static string FormatPackageLabel(string packageId)

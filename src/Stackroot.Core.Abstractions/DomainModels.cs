@@ -47,7 +47,7 @@ public enum InstallPhase
 
 public enum ServiceId
 {
-    Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb, Mailpit
+    Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb, Mailpit, TestDns
 }
 
 public enum PreferredEditor
@@ -232,6 +232,10 @@ public record class GeneralSettings
     public bool? DiagnosticsLogEnabled { get; set; }
     public bool? ThumbnailsEnabled { get; set; }
     public bool? LaunchAtStartup { get; set; }
+    /// <summary>Show RAM/CPU summary in the main shell header.</summary>
+    public bool? ShellMetricsEnabled { get; set; }
+    /// <summary>Header CPU refresh interval in seconds (6-120).</summary>
+    public int? ShellMetricsCpuRefreshSeconds { get; set; }
     public string? DownloadCachePath { get; set; }
 }
 
@@ -291,12 +295,16 @@ public record class NodeSettings
 public record class SiteDefaults
 {
     public bool AutoHosts { get; set; } = true;
+}
 
+public record class TestDnsSettings
+{
     /// <summary>
-    /// Route <c>.test</c> DNS queries to Stackroot's local resolver (127.0.0.1:53 via NRPT).
-    /// Disabled by default; does not affect other domains.
+    /// Route <c>.test</c> queries to Stackroot's local resolver (127.0.0.1:53 via NRPT).
     /// </summary>
-    public bool TestDnsEnabled { get; set; }
+    public bool Enabled { get; set; }
+
+    public bool AutoStart { get; set; } = true;
 }
 
 public record class DatabaseCredentials
@@ -359,6 +367,7 @@ public record class AppSettings
     public PhpMyAdminSettings Phpmyadmin { get; set; } = new();
     public PhpRedisAdminSettings Phpredisadmin { get; set; } = new();
     public MailpitSettings Mailpit { get; set; } = new();
+    public TestDnsSettings TestDns { get; set; } = new();
     public Dictionary<ServiceId, ServicePortSettings> Services { get; set; } = [];
 }
 

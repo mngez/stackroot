@@ -89,7 +89,8 @@ public sealed class NginxWebStackRebuilder
     /// </summary>
     public async Task FinalizeAndReloadAsync(
         CancellationToken cancellationToken = default,
-        bool forceNginxRestart = false)
+        bool forceNginxRestart = false,
+        bool reloadNginx = true)
     {
         var php = await _serviceManager.EnsureStackPhpCgiAsync(cancellationToken).ConfigureAwait(false);
         if (!php.Success)
@@ -97,13 +98,33 @@ public sealed class NginxWebStackRebuilder
             throw new InvalidOperationException(php.Message ?? "Failed to start php-cgi listeners.");
         }
 
-        await ReloadNginxAsync(cancellationToken, forceNginxRestart).ConfigureAwait(false);
+        if (reloadNginx)
+        {
+            await ReloadNginxAsync(cancellationToken, forceNginxRestart).ConfigureAwait(false);
+        }
     }
+
+    /// <summary>
+    /// Registers admin-tool nginx snippets and writes stackroot-app.conf while nginx is still stopped.
+    /// </summary>
+    public async Task WriteStartupNginxConfigFilesAsync(CancellationToken cancellationToken = default)
+    {
+        await ApplyAdminToolSafelyAsync(() => _phpMyAdminManager.ApplyAsync(cancellationToken)).ConfigureAwait(false);
+        await ApplyAdminToolSafelyAsync(() => _phpRedisAdminManager.ApplyAsync(cancellationToken)).ConfigureAwait(false);
+        _appDomainConfigWriter.Write();
+    }
+
+    public void WriteAppDomainConfig() => _appDomainConfigWriter.Write();
 
     private async Task ReloadNginxAsync(CancellationToken cancellationToken, bool forceRestart = false)
     {
         var settings = _settingsStore.Load();
         if (!settings.Services.TryGetValue(ServiceId.Nginx, out var nginxSettings))
+        {
+            return;
+        }
+
+        if (!nginxSettings.Enabled)
         {
             return;
         }
@@ -121,8 +142,18 @@ public sealed class NginxWebStackRebuilder
             return;
         }
 
+        if (!nginxSettings.AutoStart
+            && !await PortProbe.IsPortOpenAsync(nginxSettings.Host, nginxSettings.Port).ConfigureAwait(false))
+        {
+            return;
+        }
+
         NginxRuntime.setupNginxRuntime(_paths, installed.InstallPath);
-        await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+        if (!_webStackCoordinator.WasMainConfigPreparedRecently(TimeSpan.FromMinutes(2)))
+        {
+            await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         _appDomainConfigWriter.Write();
 
         if (forceRestart)
@@ -147,6 +178,8 @@ public sealed class NginxWebStackRebuilder
         {
             throw new InvalidOperationException(reloadResult.Message ?? "Failed to reload nginx.");
         }
+
+        _serviceManager.SyncNginxLiveStatus(reloadResult);
     }
 
     private async Task ApplyAdminToolSafelyAsync(Func<Task> apply)

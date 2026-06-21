@@ -47,6 +47,12 @@ public sealed class WindowsNrptManager
 
     public bool TryDisable(out string? error)
     {
+        if (!IsRulePresent())
+        {
+            error = null;
+            return true;
+        }
+
         var script =
             $"Get-DnsClientNrptRule -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -eq '{RuleDisplayName}' }} | Remove-DnsClientNrptRule -Force -ErrorAction SilentlyContinue";
         if (RunPowerShell(script, elevate: false, out error) == 0)

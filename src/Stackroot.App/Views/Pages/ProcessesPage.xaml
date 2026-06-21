@@ -172,10 +172,8 @@
 
                                 <Border Grid.Column="3"
                                         Margin="12,0,12,0"
-                                        Padding="8,3"
-                                        VerticalAlignment="Center"
-                                        Background="#1A4CAE8C"
-                                        CornerRadius="4"
+                                        Style="{StaticResource StackrootLiveBadgeStyle}"
+                                        ToolTip="{Binding UptimeToolTip}"
                                         Visibility="{Binding IsLive, Converter={StaticResource BoolToVis}}">
                                     <TextBlock FontSize="11"
                                                FontWeight="Bold"

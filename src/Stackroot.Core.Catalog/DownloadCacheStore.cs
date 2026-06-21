@@ -157,13 +157,7 @@ public sealed class DownloadCacheStore
         foreach (var file in Directory.EnumerateFiles(CacheRoot))
         {
             var fileName = Path.GetFileName(file);
-            if (string.Equals(fileName, RegistryFileName, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (!ArchiveExtensions.Contains(Path.GetExtension(fileName), StringComparer.OrdinalIgnoreCase)
-                && !fileName.Contains('.', StringComparison.Ordinal))
+            if (!IsOrphanCacheFile(fileName))
             {
                 continue;
             }
@@ -241,6 +235,26 @@ public sealed class DownloadCacheStore
             registry with { SchemaVersion = SchemaVersion },
             JsonSerializerConfig.Default);
         File.WriteAllText(RegistryPath, json);
+    }
+
+    private static bool IsOrphanCacheFile(string fileName)
+    {
+        if (string.Equals(fileName, RegistryFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (fileName.StartsWith(".", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (ArchiveExtensions.Contains(Path.GetExtension(fileName), StringComparer.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return fileName.Length == 64 && fileName.All(static c => Uri.IsHexDigit(c));
     }
 
     private static string SanitizeFileName(string fileName)

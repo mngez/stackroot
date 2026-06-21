@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Stackroot.Engine</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>Headless Stackroot engine — shared runtime models and core service registration.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.IO\Stackroot.Core.IO.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Supervisor\Stackroot.Core.Supervisor.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+</Project>

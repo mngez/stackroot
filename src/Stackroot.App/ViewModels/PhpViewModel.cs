@@ -65,6 +65,8 @@ public sealed class PhpViewModel : ViewModelBase
 
     private readonly ServicesViewModel _servicesViewModel;
 
+    private readonly RuntimeStateService _runtimeState;
+
     private readonly ICollectionView _phpInstallQueueView;
 
     private bool _isRefreshing;
@@ -78,6 +80,7 @@ public sealed class PhpViewModel : ViewModelBase
     private string _statusMessage = string.Empty;
 
     private bool _showPhpInstallQueue;
+    private int _pageVisible;
 
 
 
@@ -111,7 +114,9 @@ public sealed class PhpViewModel : ViewModelBase
 
         PhpProfileImporter profileImporter,
 
-        ServicesViewModel servicesViewModel)
+        ServicesViewModel servicesViewModel,
+
+        RuntimeStateService runtimeState)
 
     {
 
@@ -144,6 +149,18 @@ public sealed class PhpViewModel : ViewModelBase
         _profileImporter = profileImporter;
 
         _servicesViewModel = servicesViewModel;
+
+        _runtimeState = runtimeState;
+
+        _runtimeState.StateUpdated += (_, _) =>
+        {
+            if (Volatile.Read(ref _pageVisible) <= 0)
+            {
+                return;
+            }
+
+            Application.Current?.Dispatcher.BeginInvoke(UpdateListenerStatusesFromRuntimeState);
+        };
 
         _installTracker.Changed += (_, _) => OnInstallTrackerChanged();
 
@@ -459,6 +476,22 @@ public sealed class PhpViewModel : ViewModelBase
 
     public Task RefreshNowAsync() => RefreshAsync();
 
+    public void BeginLoading()
+    {
+        Interlocked.Increment(ref _pageVisible);
+        _runtimeState.SetDetailedPolling(enabled: true);
+    }
+
+    public void EndLoading()
+    {
+        if (Interlocked.Decrement(ref _pageVisible) < 0)
+        {
+            Interlocked.Exchange(ref _pageVisible, 0);
+        }
+
+        _runtimeState.SetDetailedPolling(enabled: false);
+    }
+
 
 
     private void OnInstallTrackerChanged()
@@ -626,7 +659,7 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-    private async Task SyncInstalledVersionsAsync()
+    private Task SyncInstalledVersionsAsync()
 
     {
 
@@ -658,7 +691,9 @@ public sealed class PhpViewModel : ViewModelBase
 
             var isListening = version.FastCgiPort is int port
 
-                && await _serviceManager.IsPortOpenAsync(settings.Php.FpmHost, port);
+                && port > 0
+
+                && _runtimeState.IsManagedPhpListenerRunning(version.Id);
 
 
 
@@ -682,11 +717,13 @@ public sealed class PhpViewModel : ViewModelBase
 
         }
 
+        return Task.CompletedTask;
+
     }
 
 
 
-    private async Task AddInstalledVersionAsync(string packageId)
+    private Task AddInstalledVersionAsync(string packageId)
 
     {
 
@@ -698,7 +735,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             UpdatePhpInstallQueuePresentation();
 
-            return;
+            return Task.CompletedTask;
 
         }
 
@@ -708,7 +745,7 @@ public sealed class PhpViewModel : ViewModelBase
 
         {
 
-            return;
+            return Task.CompletedTask;
 
         }
 
@@ -722,7 +759,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             {
 
-                return;
+                return Task.CompletedTask;
 
             }
 
@@ -748,7 +785,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             {
 
-                return;
+                return Task.CompletedTask;
 
             }
 
@@ -756,7 +793,9 @@ public sealed class PhpViewModel : ViewModelBase
 
             var isListening = version.FastCgiPort is int port
 
-                && await _serviceManager.IsPortOpenAsync(settings.Php.FpmHost, port);
+                && port > 0
+
+                && _runtimeState.IsManagedPhpListenerRunning(version.Id);
 
 
 
@@ -785,6 +824,8 @@ public sealed class PhpViewModel : ViewModelBase
         _installTracker.Dismiss(packageId);
 
         UpdatePhpInstallQueuePresentation();
+
+        return Task.CompletedTask;
 
     }
 
@@ -842,29 +883,19 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-    private async Task UpdateListenerStatusesAsync()
+    private void UpdateListenerStatusesFromRuntimeState()
 
     {
-
-        var settings = _settingsStore.Load();
 
         foreach (var row in InstalledVersions)
 
         {
 
-            if (row.FastCgiPort is not int port)
+            row.IsRunning = row.FastCgiPort is int port
 
-            {
+                && port > 0
 
-                row.IsRunning = false;
-
-                continue;
-
-            }
-
-
-
-            row.IsRunning = await _serviceManager.IsPortOpenAsync(settings.Php.FpmHost, port);
+                && _runtimeState.IsManagedPhpListenerRunning(row.Id);
 
         }
 
@@ -1028,7 +1059,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             IsRefreshing = false;
 
-            await UpdateListenerStatusesAsync();
+            UpdateListenerStatusesFromRuntimeState();
 
         }
 

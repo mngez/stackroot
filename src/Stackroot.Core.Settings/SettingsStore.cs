@@ -1,16 +1,23 @@
 using System.Text.Json;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.IO;
+using Stackroot.Core.IO.Storage;
 
 namespace Stackroot.Core.Settings;
+
+public enum SettingsLoadIssue
+{
+    None,
+    Corrupted
+}
 
 public sealed class SettingsStore
 {
     private AppSettings? _cache;
     private readonly object _cacheSync = new();
-    private readonly JsonFileStore _jsonStore;
+    private readonly IJsonFileStore _jsonStore;
 
-    public SettingsStore(string dataRoot, JsonFileStore? jsonStore = null)
+    public SettingsStore(string dataRoot, IJsonFileStore? jsonStore = null)
     {
         DataRoot = dataRoot;
         _jsonStore = jsonStore ?? new JsonFileStore();
@@ -20,17 +27,119 @@ public sealed class SettingsStore
 
     public string Path => StackrootPathResolver.SettingsPath(DataRoot);
 
+    /// <summary>
+    /// True when defaults are in memory because settings.json could not be read — blocks disk writes.
+    /// </summary>
+    public bool PersistenceBlocked { get; private set; }
+
     public AppSettings Load()
     {
         lock (_cacheSync)
         {
             if (_cache is not null)
             {
-                return Clone(_cache);
+                return AppSettingsCopier.Detach(_cache);
             }
         }
 
         return LoadCore(allowRepair: true);
+    }
+
+    public bool TryLoad(out AppSettings settings, out SettingsLoadIssue issue)
+    {
+        lock (_cacheSync)
+        {
+            if (_cache is not null)
+            {
+                settings = AppSettingsCopier.Detach(_cache);
+                issue = SettingsLoadIssue.None;
+                return true;
+            }
+        }
+
+        try
+        {
+            settings = LoadCore(allowRepair: true);
+            PersistenceBlocked = false;
+            issue = SettingsLoadIssue.None;
+            return true;
+        }
+        catch (InvalidDataException)
+        {
+            PersistenceBlocked = true;
+            settings = SettingsDefaults.CreateDefaultSettings();
+            settings.SchemaVersion = SettingsDefaults.SchemaVersion;
+            lock (_cacheSync)
+            {
+                _cache = AppSettingsCopier.Detach(settings);
+            }
+
+            issue = SettingsLoadIssue.Corrupted;
+            return false;
+        }
+    }
+
+    public string? FindLatestBackupPath()
+    {
+        var directory = System.IO.Path.GetDirectoryName(Path);
+        var fileName = System.IO.Path.GetFileName(Path);
+        if (string.IsNullOrWhiteSpace(directory) || string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        return Directory
+            .EnumerateFiles(directory, $"{fileName}.*.bak")
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+    }
+
+    public bool TryRestoreFromLatestBackup(out string? error)
+    {
+        var backupPath = FindLatestBackupPath();
+        if (string.IsNullOrWhiteSpace(backupPath))
+        {
+            error = "No settings backup file was found.";
+            return false;
+        }
+
+        return TryRestoreFromBackup(backupPath, out error);
+    }
+
+    public bool TryRestoreFromBackup(string backupPath, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(backupPath) || !File.Exists(backupPath))
+        {
+            error = "Backup file not found.";
+            return false;
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(backupPath);
+            var json = SettingsJsonSanitizer.Repair(raw, out _);
+            if (JsonSerializer.Deserialize<AppSettings>(json, JsonSerializerConfig.Default) is null)
+            {
+                error = "Backup file is not valid Stackroot settings.";
+                return false;
+            }
+
+            File.Copy(backupPath, Path, overwrite: true);
+            lock (_cacheSync)
+            {
+                _cache = null;
+            }
+
+            _ = LoadCore(allowRepair: false);
+            PersistenceBlocked = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     private AppSettings LoadCore(bool allowRepair)
@@ -41,7 +150,7 @@ public sealed class SettingsStore
             lock (_cacheSync)
             {
                 _cache = defaults;
-                return Clone(_cache);
+                return AppSettingsCopier.Detach(_cache);
             }
         }
 
@@ -56,18 +165,20 @@ public sealed class SettingsStore
                 File.WriteAllText(Path, json);
             }
 
+            var legacyTestDnsEnabled = ReadLegacySitesTestDnsEnabled(json);
             var stored = JsonSerializer.Deserialize<AppSettings>(json, JsonSerializerConfig.Default);
             if (stored is null)
             {
                 throw new InvalidDataException($"Settings file is empty or invalid: {Path}");
             }
 
-            var merged = MergeWithDefaults(defaults, stored);
+            var merged = MergeWithDefaults(defaults, stored, legacyTestDnsEnabled);
             merged.SchemaVersion = SettingsDefaults.SchemaVersion;
             lock (_cacheSync)
             {
                 _cache = merged;
-                return Clone(_cache);
+                PersistenceBlocked = false;
+                return AppSettingsCopier.Detach(_cache);
             }
         }
         catch (Exception ex)
@@ -97,209 +208,283 @@ public sealed class SettingsStore
 
     public void Save(AppSettings settings)
     {
+        EnsureCanPersist();
         settings.SchemaVersion = SettingsDefaults.SchemaVersion;
-        _jsonStore.WriteAtomic(Path, settings);
+        _jsonStore.Save(Path, settings);
         lock (_cacheSync)
         {
-            _cache = Clone(settings);
+            _cache = AppSettingsCopier.Detach(settings);
         }
     }
 
     public AppSettings UpdateGeneral(GeneralSettings patch)
     {
-        var settings = Load();
-        settings.General = settings.General with
+        return Mutate(settings =>
         {
-            WwwPath = patch.WwwPath ?? settings.General.WwwPath,
-            AppDomain = patch.AppDomain ?? settings.General.AppDomain,
-            PreferredEditor = patch.PreferredEditor ?? settings.General.PreferredEditor,
-            CustomEditorPath = patch.CustomEditorPath ?? settings.General.CustomEditorPath,
-            CloseBehavior = patch.CloseBehavior ?? settings.General.CloseBehavior,
-            LogRetentionDays = patch.LogRetentionDays ?? settings.General.LogRetentionDays,
-            AddBinToPath = patch.AddBinToPath ?? settings.General.AddBinToPath,
-            ThumbnailsEnabled = patch.ThumbnailsEnabled ?? settings.General.ThumbnailsEnabled,
-            LaunchAtStartup = patch.LaunchAtStartup ?? settings.General.LaunchAtStartup,
-            DiagnosticsLogEnabled = patch.DiagnosticsLogEnabled ?? settings.General.DiagnosticsLogEnabled,
-            DownloadCachePath = patch.DownloadCachePath ?? settings.General.DownloadCachePath
-        };
+            var updated = settings with
+            {
+                General = settings.General with
+                {
+                    WwwPath = patch.WwwPath ?? settings.General.WwwPath,
+                    AppDomain = patch.AppDomain ?? settings.General.AppDomain,
+                    PreferredEditor = patch.PreferredEditor ?? settings.General.PreferredEditor,
+                    CustomEditorPath = patch.CustomEditorPath ?? settings.General.CustomEditorPath,
+                    CloseBehavior = patch.CloseBehavior ?? settings.General.CloseBehavior,
+                    LogRetentionDays = patch.LogRetentionDays ?? settings.General.LogRetentionDays,
+                    AddBinToPath = patch.AddBinToPath ?? settings.General.AddBinToPath,
+                    ThumbnailsEnabled = patch.ThumbnailsEnabled ?? settings.General.ThumbnailsEnabled,
+                    LaunchAtStartup = patch.LaunchAtStartup ?? settings.General.LaunchAtStartup,
+                    ShellMetricsEnabled = patch.ShellMetricsEnabled ?? settings.General.ShellMetricsEnabled,
+                    ShellMetricsCpuRefreshSeconds = patch.ShellMetricsCpuRefreshSeconds
+                        ?? settings.General.ShellMetricsCpuRefreshSeconds,
+                    DiagnosticsLogEnabled = patch.DiagnosticsLogEnabled ?? settings.General.DiagnosticsLogEnabled,
+                    DownloadCachePath = patch.DownloadCachePath ?? settings.General.DownloadCachePath
+                }
+            };
 
-        if (!string.IsNullOrWhiteSpace(settings.General.AppDomain))
-        {
-            settings.Phpmyadmin.BaseDomain = settings.General.AppDomain!;
-            settings.Phpredisadmin.BaseDomain = settings.General.AppDomain!;
-        }
+            if (!string.IsNullOrWhiteSpace(updated.General.AppDomain))
+            {
+                updated = updated with
+                {
+                    Phpmyadmin = updated.Phpmyadmin with { BaseDomain = updated.General.AppDomain! },
+                    Phpredisadmin = updated.Phpredisadmin with { BaseDomain = updated.General.AppDomain! }
+                };
+            }
 
-        Save(settings);
-        return settings;
+            return updated;
+        });
     }
 
     public AppSettings UpdateService(ServiceId id, ServicePortSettings patch)
     {
-        var settings = Load();
-        var current = settings.Services.TryGetValue(id, out var existing)
-            ? existing
-            : SettingsDefaults.DefaultServices()[id];
-
-        settings.Services[id] = current with
+        return Mutate(settings =>
         {
-            Enabled = patch.Enabled,
-            Host = string.IsNullOrWhiteSpace(patch.Host) ? current.Host : patch.Host,
-            Port = patch.Port == 0 ? current.Port : patch.Port,
-            SslPort = patch.SslPort ?? current.SslPort,
-            SslEnabled = patch.SslEnabled ?? current.SslEnabled,
-            AutoStart = patch.AutoStart,
-            Supervise = patch.Supervise,
-            PackageId = patch.PackageId ?? current.PackageId
-        };
+            var current = settings.Services.TryGetValue(id, out var existing)
+                ? existing
+                : SettingsDefaults.DefaultServices()[id];
 
-        if (id == ServiceId.Mailpit)
-        {
-            settings.Mailpit = settings.Mailpit with
+            var updated = settings with
             {
-                Enabled = patch.Enabled,
-                SmtpPort = patch.Port == 0 ? settings.Mailpit.SmtpPort : patch.Port,
-                PackageId = patch.PackageId ?? settings.Mailpit.PackageId,
-                AutoStart = patch.AutoStart,
-                Supervise = patch.Supervise
+                Services = new Dictionary<ServiceId, ServicePortSettings>(settings.Services)
+                {
+                    [id] = current with
+                    {
+                        Enabled = patch.Enabled,
+                        Host = string.IsNullOrWhiteSpace(patch.Host) ? current.Host : patch.Host,
+                        Port = patch.Port == 0 ? current.Port : patch.Port,
+                        SslPort = patch.SslPort ?? current.SslPort,
+                        SslEnabled = patch.SslEnabled ?? current.SslEnabled,
+                        AutoStart = patch.AutoStart,
+                        Supervise = patch.Supervise,
+                        PackageId = patch.PackageId ?? current.PackageId
+                    }
+                }
             };
-        }
 
-        Save(settings);
-        return settings;
+            if (id != ServiceId.Mailpit)
+            {
+                return updated;
+            }
+
+            var mailpitService = updated.Services[ServiceId.Mailpit];
+            return updated with
+            {
+                Mailpit = updated.Mailpit with
+                {
+                    Enabled = patch.Enabled,
+                    SmtpPort = patch.Port == 0 ? updated.Mailpit.SmtpPort : patch.Port,
+                    PackageId = patch.PackageId ?? updated.Mailpit.PackageId,
+                    AutoStart = patch.AutoStart,
+                    Supervise = patch.Supervise
+                }
+            };
+        });
     }
 
     public AppSettings UpdatePhp(PhpSettings patch)
     {
-        var settings = Load();
-        settings.Php = settings.Php with
+        return Mutate(settings => settings with
         {
-            ActiveVersionId = patch.ActiveVersionId ?? settings.Php.ActiveVersionId,
-            FpmHost = string.IsNullOrWhiteSpace(patch.FpmHost) ? settings.Php.FpmHost : patch.FpmHost,
-            FpmPort = patch.FpmPort <= 0 ? settings.Php.FpmPort : patch.FpmPort,
-            Versions = patch.Versions is null ? settings.Php.Versions : new Dictionary<string, PhpVersionSettings>(patch.Versions),
-            MemoryLimit = patch.MemoryLimit ?? settings.Php.MemoryLimit,
-            MaxExecutionTime = patch.MaxExecutionTime ?? settings.Php.MaxExecutionTime,
-            UploadMaxFilesize = patch.UploadMaxFilesize ?? settings.Php.UploadMaxFilesize,
-            PostMaxSize = patch.PostMaxSize ?? settings.Php.PostMaxSize,
-            Extensions = patch.Extensions is null ? settings.Php.Extensions : new Dictionary<string, bool>(patch.Extensions),
-            IniOverrides = patch.IniOverrides is null ? settings.Php.IniOverrides : new Dictionary<string, string>(patch.IniOverrides)
-        };
-
-        Save(settings);
-        return settings;
+            Php = settings.Php with
+            {
+                ActiveVersionId = patch.ActiveVersionId ?? settings.Php.ActiveVersionId,
+                FpmHost = string.IsNullOrWhiteSpace(patch.FpmHost) ? settings.Php.FpmHost : patch.FpmHost,
+                FpmPort = patch.FpmPort <= 0 ? settings.Php.FpmPort : patch.FpmPort,
+                Versions = patch.Versions is null ? settings.Php.Versions : new Dictionary<string, PhpVersionSettings>(patch.Versions),
+                MemoryLimit = patch.MemoryLimit ?? settings.Php.MemoryLimit,
+                MaxExecutionTime = patch.MaxExecutionTime ?? settings.Php.MaxExecutionTime,
+                UploadMaxFilesize = patch.UploadMaxFilesize ?? settings.Php.UploadMaxFilesize,
+                PostMaxSize = patch.PostMaxSize ?? settings.Php.PostMaxSize,
+                Extensions = patch.Extensions is null ? settings.Php.Extensions : new Dictionary<string, bool>(patch.Extensions),
+                IniOverrides = patch.IniOverrides is null ? settings.Php.IniOverrides : new Dictionary<string, string>(patch.IniOverrides)
+            }
+        });
     }
 
     public AppSettings UpdateNode(NodeSettings patch)
     {
-        var settings = Load();
-        settings.Node = settings.Node with
+        return Mutate(settings => settings with
         {
-            NvmPackageId = patch.NvmPackageId ?? settings.Node.NvmPackageId,
-            ActiveVersion = patch.ActiveVersion ?? settings.Node.ActiveVersion,
-            NpmRegistry = string.IsNullOrWhiteSpace(patch.NpmRegistry) ? settings.Node.NpmRegistry : patch.NpmRegistry,
-            AutoUseNvmrc = patch.AutoUseNvmrc,
-            PinnedVersions = patch.PinnedVersions ?? settings.Node.PinnedVersions
-        };
-
-        Save(settings);
-        return settings;
+            Node = settings.Node with
+            {
+                NvmPackageId = patch.NvmPackageId ?? settings.Node.NvmPackageId,
+                ActiveVersion = patch.ActiveVersion ?? settings.Node.ActiveVersion,
+                NpmRegistry = string.IsNullOrWhiteSpace(patch.NpmRegistry) ? settings.Node.NpmRegistry : patch.NpmRegistry,
+                AutoUseNvmrc = patch.AutoUseNvmrc,
+                PinnedVersions = patch.PinnedVersions ?? settings.Node.PinnedVersions
+            }
+        });
     }
 
     public AppSettings UpdateSites(SiteDefaults patch)
     {
-        var settings = Load();
-        settings.Sites = settings.Sites with
+        return Mutate(settings => settings with
         {
-            AutoHosts = patch.AutoHosts,
-            TestDnsEnabled = patch.TestDnsEnabled
-        };
-
-        Save(settings);
-        return settings;
+            Sites = settings.Sites with
+            {
+                AutoHosts = patch.AutoHosts
+            }
+        });
     }
 
     public AppSettings UpdateDatabases(DatabaseSettings patch)
     {
-        var settings = Load();
-        settings.Databases = settings.Databases with
+        return Mutate(settings => settings with
         {
-            Mysql = patch.Mysql ?? settings.Databases.Mysql,
-            Mariadb = patch.Mariadb ?? settings.Databases.Mariadb,
-            ActiveSqlEngine = patch.ActiveSqlEngine ?? settings.Databases.ActiveSqlEngine
-        };
-
-        Save(settings);
-        return settings;
+            Databases = settings.Databases with
+            {
+                Mysql = patch.Mysql ?? settings.Databases.Mysql,
+                Mariadb = patch.Mariadb ?? settings.Databases.Mariadb,
+                ActiveSqlEngine = patch.ActiveSqlEngine ?? settings.Databases.ActiveSqlEngine
+            }
+        });
     }
 
     public AppSettings UpdatePhpMyAdmin(PhpMyAdminSettings patch)
     {
-        var settings = Load();
-        settings.Phpmyadmin = settings.Phpmyadmin with
+        return Mutate(settings => settings with
         {
-            Enabled = patch.Enabled,
-            BaseDomain = string.IsNullOrWhiteSpace(patch.BaseDomain) ? settings.Phpmyadmin.BaseDomain : patch.BaseDomain,
-            AccessMode = patch.AccessMode,
-            Subdomain = string.IsNullOrWhiteSpace(patch.Subdomain) ? settings.Phpmyadmin.Subdomain : patch.Subdomain,
-            Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Phpmyadmin.Path : patch.Path,
-            PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Phpmyadmin.PackageId : patch.PackageId,
-            PhpVersionId = patch.PhpVersionId ?? settings.Phpmyadmin.PhpVersionId,
-            BlowfishSecret = patch.BlowfishSecret ?? settings.Phpmyadmin.BlowfishSecret,
-            Domain = patch.Domain ?? settings.Phpmyadmin.Domain
-        };
-
-        Save(settings);
-        return settings;
+            Phpmyadmin = settings.Phpmyadmin with
+            {
+                Enabled = patch.Enabled,
+                BaseDomain = string.IsNullOrWhiteSpace(patch.BaseDomain) ? settings.Phpmyadmin.BaseDomain : patch.BaseDomain,
+                AccessMode = patch.AccessMode,
+                Subdomain = string.IsNullOrWhiteSpace(patch.Subdomain) ? settings.Phpmyadmin.Subdomain : patch.Subdomain,
+                Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Phpmyadmin.Path : patch.Path,
+                PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Phpmyadmin.PackageId : patch.PackageId,
+                PhpVersionId = patch.PhpVersionId ?? settings.Phpmyadmin.PhpVersionId,
+                BlowfishSecret = patch.BlowfishSecret ?? settings.Phpmyadmin.BlowfishSecret,
+                Domain = patch.Domain ?? settings.Phpmyadmin.Domain
+            }
+        });
     }
 
     public AppSettings UpdatePhpRedisAdmin(PhpRedisAdminSettings patch)
     {
-        var settings = Load();
-        settings.Phpredisadmin = settings.Phpredisadmin with
+        return Mutate(settings => settings with
         {
-            Enabled = patch.Enabled,
-            BaseDomain = string.IsNullOrWhiteSpace(patch.BaseDomain) ? settings.Phpredisadmin.BaseDomain : patch.BaseDomain,
-            AccessMode = patch.AccessMode,
-            Subdomain = string.IsNullOrWhiteSpace(patch.Subdomain) ? settings.Phpredisadmin.Subdomain : patch.Subdomain,
-            Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Phpredisadmin.Path : patch.Path,
-            PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Phpredisadmin.PackageId : patch.PackageId,
-            PhpVersionId = patch.PhpVersionId ?? settings.Phpredisadmin.PhpVersionId
-        };
-
-        Save(settings);
-        return settings;
+            Phpredisadmin = settings.Phpredisadmin with
+            {
+                Enabled = patch.Enabled,
+                BaseDomain = string.IsNullOrWhiteSpace(patch.BaseDomain) ? settings.Phpredisadmin.BaseDomain : patch.BaseDomain,
+                AccessMode = patch.AccessMode,
+                Subdomain = string.IsNullOrWhiteSpace(patch.Subdomain) ? settings.Phpredisadmin.Subdomain : patch.Subdomain,
+                Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Phpredisadmin.Path : patch.Path,
+                PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Phpredisadmin.PackageId : patch.PackageId,
+                PhpVersionId = patch.PhpVersionId ?? settings.Phpredisadmin.PhpVersionId
+            }
+        });
     }
 
     public AppSettings UpdateMailpit(MailpitSettings patch)
     {
-        var settings = Load();
-        settings.Mailpit = settings.Mailpit with
+        return Mutate(settings =>
         {
-            Enabled = patch.Enabled,
-            SmtpPort = patch.SmtpPort <= 0 ? settings.Mailpit.SmtpPort : patch.SmtpPort,
-            WebPort = patch.WebPort <= 0 ? settings.Mailpit.WebPort : patch.WebPort,
-            PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Mailpit.PackageId : patch.PackageId,
-            AutoStart = patch.AutoStart,
-            Supervise = patch.Supervise
-        };
-
-        if (settings.Services.TryGetValue(ServiceId.Mailpit, out var mailpitService))
-        {
-            settings.Services[ServiceId.Mailpit] = mailpitService with
+            var updated = settings with
             {
-                Enabled = settings.Mailpit.Enabled,
-                Port = settings.Mailpit.SmtpPort,
-                PackageId = settings.Mailpit.PackageId,
-                AutoStart = settings.Mailpit.AutoStart,
-                Supervise = settings.Mailpit.Supervise
+                Mailpit = settings.Mailpit with
+                {
+                    Enabled = patch.Enabled,
+                    SmtpPort = patch.SmtpPort <= 0 ? settings.Mailpit.SmtpPort : patch.SmtpPort,
+                    WebPort = patch.WebPort <= 0 ? settings.Mailpit.WebPort : patch.WebPort,
+                    PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Mailpit.PackageId : patch.PackageId,
+                    AutoStart = patch.AutoStart,
+                    Supervise = patch.Supervise
+                }
             };
-        }
 
-        Save(settings);
-        return settings;
+            if (!updated.Services.TryGetValue(ServiceId.Mailpit, out var mailpitService))
+            {
+                return updated;
+            }
+
+            var services = new Dictionary<ServiceId, ServicePortSettings>(updated.Services)
+            {
+                [ServiceId.Mailpit] = mailpitService with
+                {
+                    Enabled = updated.Mailpit.Enabled,
+                    Port = updated.Mailpit.SmtpPort,
+                    PackageId = updated.Mailpit.PackageId,
+                    AutoStart = updated.Mailpit.AutoStart,
+                    Supervise = updated.Mailpit.Supervise
+                }
+            };
+
+            return updated with { Services = services };
+        });
     }
 
-    private static AppSettings MergeWithDefaults(AppSettings defaults, AppSettings? stored)
+    public AppSettings UpdateTestDns(TestDnsSettings patch)
+    {
+        return Mutate(settings =>
+        {
+            var updated = settings with
+            {
+                TestDns = settings.TestDns with
+                {
+                    Enabled = patch.Enabled,
+                    AutoStart = patch.AutoStart
+                }
+            };
+
+            if (!updated.Services.TryGetValue(ServiceId.TestDns, out var testDnsService))
+            {
+                return updated;
+            }
+
+            var services = new Dictionary<ServiceId, ServicePortSettings>(updated.Services)
+            {
+                [ServiceId.TestDns] = testDnsService with
+                {
+                    Enabled = updated.TestDns.Enabled,
+                    Port = 53,
+                    AutoStart = updated.TestDns.AutoStart
+                }
+            };
+
+            return updated with { Services = services };
+        });
+    }
+
+    private AppSettings Mutate(Func<AppSettings, AppSettings> mutator)
+    {
+        EnsureCanPersist();
+        lock (_cacheSync)
+        {
+            if (_cache is null)
+            {
+                _ = LoadCore(allowRepair: true);
+            }
+
+            var updated = mutator(_cache!);
+            updated.SchemaVersion = SettingsDefaults.SchemaVersion;
+            _jsonStore.Save(Path, updated);
+            _cache = AppSettingsCopier.Detach(updated);
+            return AppSettingsCopier.Detach(_cache);
+        }
+    }
+
+    private static AppSettings MergeWithDefaults(AppSettings defaults, AppSettings? stored, bool legacyTestDnsEnabled = false)
     {
         if (stored is null)
         {
@@ -320,6 +505,9 @@ public sealed class SettingsStore
                 AddBinToPath = stored.General.AddBinToPath ?? defaults.General.AddBinToPath,
                 ThumbnailsEnabled = stored.General.ThumbnailsEnabled ?? defaults.General.ThumbnailsEnabled,
                 LaunchAtStartup = stored.General.LaunchAtStartup ?? defaults.General.LaunchAtStartup,
+                ShellMetricsEnabled = stored.General.ShellMetricsEnabled ?? defaults.General.ShellMetricsEnabled,
+                ShellMetricsCpuRefreshSeconds = stored.General.ShellMetricsCpuRefreshSeconds
+                    ?? defaults.General.ShellMetricsCpuRefreshSeconds,
                 DiagnosticsLogEnabled = stored.General.DiagnosticsLogEnabled ?? defaults.General.DiagnosticsLogEnabled,
                 DownloadCachePath = stored.General.DownloadCachePath ?? defaults.General.DownloadCachePath
             },
@@ -348,8 +536,7 @@ public sealed class SettingsStore
             },
             Sites = defaults.Sites with
             {
-                AutoHosts = stored.Sites.AutoHosts,
-                TestDnsEnabled = stored.Sites.TestDnsEnabled
+                AutoHosts = stored.Sites.AutoHosts
             },
             Databases = defaults.Databases with
             {
@@ -388,16 +575,42 @@ public sealed class SettingsStore
                 AutoStart = stored.Mailpit.AutoStart,
                 Supervise = stored.Mailpit.Supervise
             },
+            TestDns = defaults.TestDns with
+            {
+                Enabled = stored.TestDns?.Enabled ?? legacyTestDnsEnabled,
+                AutoStart = stored.TestDns?.AutoStart ?? (stored.TestDns?.Enabled ?? legacyTestDnsEnabled)
+            },
             Services = MergeServices(defaults.Services, stored.Services)
         };
 
         merged = merged with
         {
-            Services = SyncMailpitServiceSettings(merged.Services, merged.Mailpit)
+            Services = SyncTestDnsServiceSettings(
+                SyncMailpitServiceSettings(merged.Services, merged.Mailpit),
+                merged.TestDns)
         };
 
         merged.SchemaVersion = SettingsDefaults.SchemaVersion;
         return merged;
+    }
+
+    private static Dictionary<ServiceId, ServicePortSettings> SyncTestDnsServiceSettings(
+        Dictionary<ServiceId, ServicePortSettings> services,
+        TestDnsSettings testDns)
+    {
+        if (!services.TryGetValue(ServiceId.TestDns, out var testDnsService))
+        {
+            return services;
+        }
+
+        services[ServiceId.TestDns] = testDnsService with
+        {
+            Enabled = testDns.Enabled,
+            Port = 53,
+            AutoStart = testDns.AutoStart
+        };
+
+        return services;
     }
 
     private static Dictionary<ServiceId, ServicePortSettings> SyncMailpitServiceSettings(
@@ -451,11 +664,23 @@ public sealed class SettingsStore
         return output;
     }
 
-    private static AppSettings Clone(AppSettings value)
+    private static bool ReadLegacySitesTestDnsEnabled(string json)
     {
-        var json = JsonSerializer.Serialize(value, JsonSerializerConfig.Default);
-        return JsonSerializer.Deserialize<AppSettings>(json, JsonSerializerConfig.Default)
-               ?? SettingsDefaults.CreateDefaultSettings();
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            if (!document.RootElement.TryGetProperty("sites", out var sites)
+                || !sites.TryGetProperty("testDnsEnabled", out var flag))
+            {
+                return false;
+            }
+
+            return flag.ValueKind == JsonValueKind.True;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string? TryBackupUnreadableFile(string path)
@@ -474,6 +699,15 @@ public sealed class SettingsStore
         catch
         {
             return null;
+        }
+    }
+
+    private void EnsureCanPersist()
+    {
+        if (PersistenceBlocked)
+        {
+            throw new InvalidOperationException(
+                "settings.json could not be read. Restore from a backup before saving changes.");
         }
     }
 }

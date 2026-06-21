@@ -5,7 +5,28 @@ namespace Stackroot.Core.IO.Storage;
 
 public sealed class JsonFileStore : IJsonFileStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = JsonSerializerConfig.Default;
+    private readonly JsonSerializerOptions _options;
+
+    public JsonFileStore(JsonSerializerOptions? options = null)
+    {
+        _options = options ?? JsonSerializerConfig.Default;
+    }
+
+    public T? Read<T>(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return default;
+        }
+
+        var json = File.ReadAllText(path);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return default;
+        }
+
+        return JsonSerializer.Deserialize<T>(json, _options);
+    }
 
     public T Load<T>(string path, Func<T> fallbackFactory)
     {
@@ -17,7 +38,7 @@ public sealed class JsonFileStore : IJsonFileStore
         try
         {
             var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<T>(json, SerializerOptions) ?? fallbackFactory();
+            return JsonSerializer.Deserialize<T>(json, _options) ?? fallbackFactory();
         }
         catch (Exception ex)
         {
@@ -29,7 +50,9 @@ public sealed class JsonFileStore : IJsonFileStore
         }
     }
 
-    public void Save<T>(string path, T value)
+    public void Save<T>(string path, T value) => WriteAtomic(path, value);
+
+    public void WriteAtomic<T>(string path, T value)
     {
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -38,7 +61,7 @@ public sealed class JsonFileStore : IJsonFileStore
         }
 
         var tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
-        var payload = JsonSerializer.Serialize(value, SerializerOptions);
+        var payload = JsonSerializer.Serialize(value, _options);
         File.WriteAllText(tempPath, payload);
 
         if (File.Exists(path))

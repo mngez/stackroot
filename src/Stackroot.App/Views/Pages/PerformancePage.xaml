@@ -41,6 +41,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <TextBlock Text="Performance"
@@ -88,16 +89,54 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
                             <DataGridTextColumn Header="Type" Binding="{Binding Kind}" Width="120" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="140" />
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="100" />
-                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="140" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
             </Border>
 
-            <!-- Custom processes (only when present) -->
+            <!-- PHP FastCGI listeners -->
             <Border Grid.Row="3"
+                    Margin="0,0,0,16"
+                    Padding="1"
+                    Background="{StaticResource StackrootCardBrush}"
+                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Visibility="{Binding HasPhpListeners, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <DockPanel Margin="16,14,16,10"
+                               LastChildFill="False">
+                        <TextBlock FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Text="PHP listeners" />
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal">
+                            <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       Text="Total memory: " />
+                            <TextBlock Text="{Binding PhpTotalMemory}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid Style="{StaticResource PerformanceDataGridStyle}"
+                              ItemsSource="{Binding PhpItems}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Version" Binding="{Binding Label}" Width="*" />
+                            <DataGridTextColumn Header="Endpoint" Binding="{Binding Endpoint}" Width="160" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Custom processes -->
+            <Border Grid.Row="4"
                     Margin="0,0,0,24"
                     Padding="1"
                     Background="{StaticResource StackrootCardBrush}"
@@ -123,9 +162,10 @@
                               ItemsSource="{Binding ProcessItems}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="140" />
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="100" />
-                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="140" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>

@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Windows\Stackroot.Core.Windows.csproj" />
   </ItemGroup>
 </Project>

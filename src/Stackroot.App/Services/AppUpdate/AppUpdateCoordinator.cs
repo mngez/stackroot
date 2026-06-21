@@ -7,9 +7,10 @@ using Stackroot.Core.Abstractions;
 
 namespace Stackroot.App.Services.AppUpdate;
 
-public sealed class AppUpdateCoordinator
+public sealed class AppUpdateCoordinator : IDisposable
 {
     private static readonly TimeSpan PostStartupDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PeriodicCheckInterval = TimeSpan.FromHours(6);
 
     private readonly GitHubAppReleaseClient _releaseClient;
     private readonly AppUpdateStateStore _stateStore;
@@ -20,6 +21,8 @@ public sealed class AppUpdateCoordinator
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly Dispatcher _dispatcher;
     private bool _started;
+    private int _periodicTimerStarted;
+    private System.Threading.Timer? _periodicTimer;
     private AppReleaseInfo? _pendingRelease;
     private string? _downloadedInstallerPath;
 
@@ -115,7 +118,7 @@ public sealed class AppUpdateCoordinator
 
     private async Task CheckForUpdatesAsync(CancellationToken cancellationToken)
     {
-        if (StackrootShutdownCoordinator.IsShuttingDown)
+        if (ApplicationShutdownState.IsClosing)
         {
             return;
         }
@@ -123,6 +126,11 @@ public sealed class AppUpdateCoordinator
         try
         {
             await Task.Delay(PostStartupDelay, cancellationToken).ConfigureAwait(false);
+
+            if (ApplicationShutdownState.IsClosing)
+            {
+                return;
+            }
 
             var currentVersion = AppVersion.Current;
             var release = await _releaseClient.GetLatestReleaseAsync(cancellationToken: cancellationToken)
@@ -158,6 +166,37 @@ public sealed class AppUpdateCoordinator
         {
             _diagnostics.LogException("AppUpdate", ex);
         }
+        finally
+        {
+            StartPeriodicTimer();
+        }
+    }
+
+    private void StartPeriodicTimer()
+    {
+        if (Interlocked.CompareExchange(ref _periodicTimerStarted, 1, 0) != 0)
+        {
+            return;
+        }
+
+        _periodicTimer = new System.Threading.Timer(
+            _ => SchedulePeriodicCheck(),
+            null,
+            PeriodicCheckInterval,
+            PeriodicCheckInterval);
+    }
+
+    private void SchedulePeriodicCheck()
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        _workQueue.Enqueue(
+            "AppUpdate",
+            "Periodic update check",
+            CheckForUpdatesAsync);
     }
 
     private async Task<string> EnsureInstallerDownloadedAsync(AppReleaseInfo release)
@@ -203,5 +242,11 @@ public sealed class AppUpdateCoordinator
         }
 
         _dispatcher.Invoke(action);
+    }
+
+    public void Dispose()
+    {
+        _periodicTimer?.Dispose();
+        _periodicTimer = null;
     }
 }

@@ -8,6 +8,11 @@ public partial class ProcessesPage : System.Windows.Controls.UserControl
     {
         InitializeComponent();
         DataContext = viewModel;
-        Unloaded += (_, _) => viewModel.Dispose();
+        Loaded += (_, _) => viewModel.BeginLoading();
+        Unloaded += (_, _) =>
+        {
+            viewModel.EndLoading();
+            viewModel.Dispose();
+        };
     }
 }

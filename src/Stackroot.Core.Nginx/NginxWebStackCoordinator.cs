@@ -13,6 +13,8 @@ public sealed class NginxWebStackCoordinator
     private readonly IDiagnosticsReporter? _diagnostics;
     private readonly Func<CancellationToken, Task>? _regenerateSitesAsync;
     private readonly SemaphoreSlim _sync = new(1, 1);
+    private DateTimeOffset _lastPreparedAt;
+    private bool _mainConfigPrepared;
 
     public NginxWebStackCoordinator(
         StackrootPaths paths,
@@ -42,13 +44,19 @@ public sealed class NginxWebStackCoordinator
             if (writeMainConfig)
             {
                 WriteMainNginxConfig();
+                _mainConfigPrepared = true;
             }
+
+            _lastPreparedAt = DateTimeOffset.UtcNow;
         }
         finally
         {
             _sync.Release();
         }
     }
+
+    public bool WasMainConfigPreparedRecently(TimeSpan window)
+        => _mainConfigPrepared && DateTimeOffset.UtcNow - _lastPreparedAt < window;
 
     public void WriteMainNginxConfig()
     {

@@ -1,12 +1,17 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Stackroot.Core.Abstractions;
 
 namespace Stackroot.Core.Windows;
 
 public static class ProcessPortTools
 {
     private static readonly ConcurrentDictionary<int, PortCacheEntry> PortLookupCache = new();
-    private static readonly TimeSpan PortCacheTtl = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PortCacheTtl = TimeSpan.FromSeconds(5);
+    private static readonly object NetstatMapSync = new();
+    private static readonly TimeSpan NetstatMapTtl = TimeSpan.FromSeconds(5);
+    private static IReadOnlyDictionary<int, List<int>>? _netstatPortPidMap;
+    private static DateTimeOffset _netstatMapExpiresAt;
 
     private readonly record struct PortCacheEntry(DateTimeOffset ExpiresAt, IReadOnlyList<int> Pids);
     public static int? TryResolveListenPort(string executable, IReadOnlyList<string> arguments)
@@ -52,6 +57,11 @@ public static class ProcessPortTools
 
     public static void InvalidatePortCache(int? port = null)
     {
+        lock (NetstatMapSync)
+        {
+            _netstatPortPidMap = null;
+        }
+
         if (port is not > 0)
         {
             return;
@@ -69,16 +79,80 @@ public static class ProcessPortTools
 
         if (PortLookupCache.TryGetValue(port, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
-            return cached.Pids;
+            return FilterAlivePids(cached.Pids, port);
         }
 
-        var pids = FindPidsListeningOnPortUncached(port);
+        var pids = FilterAlivePids(FindPidsListeningOnPortUncached(port), port);
         PortLookupCache[port] = new PortCacheEntry(DateTimeOffset.UtcNow.Add(PortCacheTtl), pids);
         return pids;
     }
 
+    private static IReadOnlyList<int> FilterAlivePids(IReadOnlyList<int> pids, int port)
+    {
+        if (pids.Count == 0)
+        {
+            return pids;
+        }
+
+        var alive = pids.Where(IsProcessAlive).ToList();
+        if (alive.Count != pids.Count)
+        {
+            InvalidatePortCache(port);
+        }
+
+        return alive;
+    }
+
+    private static bool IsProcessAlive(int pid)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return !process.HasExited;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static IReadOnlyList<int> FindPidsListeningOnPortUncached(int port)
     {
+        var map = GetPortPidMap();
+        return map.TryGetValue(port, out var pids) ? pids : [];
+    }
+
+    private static IReadOnlyDictionary<int, List<int>> GetPortPidMap()
+    {
+        lock (NetstatMapSync)
+        {
+            if (_netstatPortPidMap is not null && _netstatMapExpiresAt > DateTimeOffset.UtcNow)
+            {
+                return _netstatPortPidMap;
+            }
+
+            var tcpTableMap = TcpOwnerPidTable.TryGetListeningPortPidMap();
+            var netstatOutput = RunNetstatOnce();
+            var udpMap = NetstatPortMapParser.ParseUdp(netstatOutput);
+            if (tcpTableMap is not null)
+            {
+                DiagnosticsCounters.RecordTcpTableInvocation();
+                _netstatPortPidMap = NetstatPortMapParser.MergeMaps(tcpTableMap, udpMap);
+            }
+            else
+            {
+                _netstatPortPidMap = NetstatPortMapParser.Parse(netstatOutput);
+            }
+
+            _netstatMapExpiresAt = DateTimeOffset.UtcNow.Add(NetstatMapTtl);
+            return _netstatPortPidMap;
+        }
+    }
+
+    private static string RunNetstatOnce()
+    {
+        DiagnosticsCounters.RecordNetstatInvocation();
+
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -94,10 +168,10 @@ public static class ProcessPortTools
 
         if (!process.Start())
         {
-            return [];
+            return string.Empty;
         }
 
-        if (!process.WaitForExit(300))
+        if (!process.WaitForExit(800))
         {
             try
             {
@@ -110,46 +184,12 @@ public static class ProcessPortTools
             }
 
             DrainProcessStreams(process);
-            return [];
+            return string.Empty;
         }
 
         var output = process.StandardOutput.ReadToEnd();
         DrainProcessStreams(process);
-
-        var pids = new HashSet<int>();
-        var targetPort = $":{port}";
-        foreach (var rawLine in output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (!rawLine.StartsWith("TCP", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var columns = rawLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (columns.Length < 5)
-            {
-                continue;
-            }
-
-            var localAddress = columns[1];
-            var state = columns[3];
-            if (!state.Equals("LISTENING", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (!LocalAddressMatchesPort(localAddress, targetPort))
-            {
-                continue;
-            }
-
-            if (int.TryParse(columns[4], out var pid) && pid > 0)
-            {
-                pids.Add(pid);
-            }
-        }
-
-        return [.. pids];
+        return output;
     }
 
     public static void KillMatchingListenersOnPort(int port, string executablePath)
@@ -209,28 +249,5 @@ public static class ProcessPortTools
         {
             // Best effort — process may already be gone.
         }
-    }
-
-    private static bool LocalAddressMatchesPort(string localAddress, string targetPort)
-    {
-        if (localAddress.EndsWith(targetPort, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (localAddress.StartsWith("[", StringComparison.Ordinal))
-        {
-            var endBracket = localAddress.IndexOf(']');
-            if (endBracket > -1)
-            {
-                var suffix = localAddress[(endBracket + 1)..];
-                if (suffix.Equals(targetPort, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

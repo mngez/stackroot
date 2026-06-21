@@ -4,6 +4,7 @@ using Stackroot.App.Commands;
 using Stackroot.App.Services;
 using Stackroot.App.Views.Pages;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Settings;
 using Stackroot.Core.Sites.Management;
 using SiteModel = Stackroot.Core.Sites.Models.Site;
 
@@ -13,25 +14,41 @@ public sealed class ShellViewModel : ViewModelBase
 {
     private readonly IServiceProvider _services;
     private readonly IDiagnosticsReporter _diagnostics;
+    private readonly RuntimeStateService _runtimeStateService;
+    private readonly RuntimeMetricsService _runtimeMetricsService;
+    private readonly SettingsStore _settingsStore;
     private readonly Dictionary<string, Func<System.Windows.Controls.UserControl>> _pageFactories;
     private object? _currentPage;
     private string _selectedRoute = string.Empty;
     private bool _isShutdownOverlayVisible;
     private string _shutdownMessage = "Closing services...";
     private string _overlayTitle = "Stackroot";
+    private bool _detailedPollingPausedForTray;
+    private bool _systemPowerSaving;
+    private bool _showHeaderMetrics = true;
+
+    private DashboardViewModel? _dashboardViewModel;
 
     public ShellViewModel(
         IServiceProvider services,
         DownloadTrayViewModel downloadTray,
         SessionActivityTrayViewModel activityTray,
+        RuntimeMetricsTrayViewModel runtimeMetricsTray,
+        RuntimeStateService runtimeStateService,
+        RuntimeMetricsService runtimeMetricsService,
+        SettingsStore settingsStore,
         AppUpdateViewModel appUpdate,
         SslTrustPromptViewModel sslTrustPrompt,
         IDiagnosticsReporter diagnostics)
     {
         _services = services;
         _diagnostics = diagnostics;
+        _runtimeStateService = runtimeStateService;
+        _runtimeMetricsService = runtimeMetricsService;
+        _settingsStore = settingsStore;
         ActivityTray = activityTray;
         DownloadTray = downloadTray;
+        RuntimeMetricsTray = runtimeMetricsTray;
         AppUpdate = appUpdate;
         SslTrustPrompt = sslTrustPrompt;
         _pageFactories = new Dictionary<string, Func<System.Windows.Controls.UserControl>>(StringComparer.OrdinalIgnoreCase)
@@ -73,7 +90,126 @@ public sealed class ShellViewModel : ViewModelBase
         ]);
 
         NavigateTo("dashboard");
+        runtimeStateService.StartBackgroundPolling();
+        ApplyHeaderMetricsFromSettings();
         _diagnostics.LogActivity("App", "Shell initialized");
+    }
+
+    public void OnWindowHiddenToTray()
+    {
+        if (_detailedPollingPausedForTray)
+        {
+            return;
+        }
+
+        _detailedPollingPausedForTray = true;
+        SetDetailedPollingForCurrentRoute(enabled: false);
+        UpdatePowerSavingMode();
+    }
+
+    public void OnWindowShownFromTray()
+    {
+        if (!_detailedPollingPausedForTray)
+        {
+            return;
+        }
+
+        _detailedPollingPausedForTray = false;
+        SetDetailedPollingForCurrentRoute(enabled: true);
+        UpdatePowerSavingMode();
+        SyncCurrentPageAfterTrayReturn();
+    }
+
+    private void SyncCurrentPageAfterTrayReturn()
+    {
+        if (!string.Equals(SelectedRoute, "dashboard", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _services.GetRequiredService<DashboardViewModel>().SyncPresentationWhenVisible();
+    }
+
+    public void OnSystemPowerModeChanged(bool suspended)
+    {
+        _systemPowerSaving = suspended;
+        UpdatePowerSavingMode();
+    }
+
+    public void ApplyHeaderMetricsFromSettings()
+    {
+        var enabled = _settingsStore.Load().General.ShellMetricsEnabled ?? true;
+        if (ShowHeaderMetrics != enabled)
+        {
+            ShowHeaderMetrics = enabled;
+        }
+
+        UpdatePowerSavingMode();
+    }
+
+    private void UpdatePowerSavingMode()
+    {
+        var powerSaving = _detailedPollingPausedForTray || _systemPowerSaving;
+        var general = _settingsStore.Load().General;
+        var metricsEnabled = ShowHeaderMetrics && !powerSaving;
+        var cpuRefreshSeconds = general.ShellMetricsCpuRefreshSeconds ?? ShellMetricsDefaults.CpuRefreshSeconds;
+        _runtimeStateService.SetPowerSavingMode(powerSaving);
+        _runtimeMetricsService.ConfigureHeaderMetrics(metricsEnabled, cpuRefreshSeconds);
+    }
+
+    public bool ShowHeaderMetrics
+    {
+        get => _showHeaderMetrics;
+        private set => SetProperty(ref _showHeaderMetrics, value);
+    }
+
+    private void SetDetailedPollingForCurrentRoute(bool enabled)
+    {
+        switch (SelectedRoute.ToLowerInvariant())
+        {
+            case "dashboard":
+                var dashboard = _services.GetRequiredService<DashboardViewModel>();
+                if (enabled)
+                {
+                    dashboard.BeginLoading();
+                }
+                else
+                {
+                    dashboard.EndLoading();
+                }
+
+                break;
+
+            case "performance":
+                if (CurrentPage is System.Windows.FrameworkElement { DataContext: PerformanceViewModel performance })
+                {
+                    if (enabled)
+                    {
+                        performance.BeginLoading();
+                    }
+                    else
+                    {
+                        performance.EndLoading();
+                    }
+                }
+
+                break;
+
+            case "processes":
+                if (CurrentPage is System.Windows.FrameworkElement { DataContext: ProcessesViewModel processes })
+                {
+                    if (enabled)
+                    {
+                        processes.BeginLoading();
+                    }
+                    else
+                    {
+                        processes.EndLoading();
+                    }
+                }
+
+                break;
+        }
     }
 
     public void RefreshSiteNavFromStore(SiteManager siteManager)
@@ -118,6 +254,10 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<NavigationItem> BottomNavigationItems { get; }
 
     public DownloadTrayViewModel DownloadTray { get; }
+
+    public RuntimeMetricsTrayViewModel RuntimeMetricsTray { get; }
+
+    public DashboardViewModel Dashboard => _dashboardViewModel ??= _services.GetRequiredService<DashboardViewModel>();
 
     public SessionActivityTrayViewModel ActivityTray { get; }
 

@@ -11,7 +11,9 @@ public sealed class SiteThumbnailService
     private IBrowser? _browser;
     private IPlaywright? _playwright;
     private bool _initialized;
-    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly SemaphoreSlim _captureLock = new(1, 1);
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private static readonly TimeSpan ThumbnailCacheTtl = TimeSpan.FromHours(24);
 
     public SiteThumbnailService(StackrootPaths? paths = null, IDiagnosticsReporter? diagnostics = null)
     {
@@ -23,13 +25,24 @@ public sealed class SiteThumbnailService
         _diagnostics = diagnostics;
     }
 
-    public async Task<string?> CaptureAsync(string siteUrl, string savePath)
+    /// <param name="forceRefresh">When true, always capture a new screenshot and replace the saved file (user refresh).</param>
+    public async Task<string?> CaptureAsync(string siteUrl, string savePath, bool forceRefresh = false)
     {
-        await EnsureBrowserAsync();
-        if (_browser is null) return null;
+        if (!forceRefresh && IsCached(savePath))
+        {
+            return savePath;
+        }
 
+        await _captureLock.WaitAsync();
         try
         {
+            if (!forceRefresh && IsCached(savePath))
+            {
+                return savePath;
+            }
+
+            await EnsureBrowserAsync();
+            if (_browser is null) return null;
             var dir = Path.GetDirectoryName(savePath);
             if (dir is not null) Directory.CreateDirectory(dir);
 
@@ -58,17 +71,26 @@ public sealed class SiteThumbnailService
 
             return savePath;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _diagnostics?.LogException("Thumbnails", ex);
             return null;
         }
+        finally
+        {
+            _captureLock.Release();
+        }
     }
+
+    private static bool IsCached(string savePath)
+        => File.Exists(savePath)
+           && File.GetLastWriteTimeUtc(savePath) > DateTime.UtcNow.Add(-ThumbnailCacheTtl);
 
     private async Task EnsureBrowserAsync()
     {
         if (_initialized) return;
 
-        await _lock.WaitAsync();
+        await _initLock.WaitAsync();
         try
         {
             if (_initialized) return;
@@ -100,7 +122,7 @@ public sealed class SiteThumbnailService
         }
         finally
         {
-            _lock.Release();
+            _initLock.Release();
         }
     }
 

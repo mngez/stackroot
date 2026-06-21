@@ -5,14 +5,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Helpers;
 using Stackroot.App.Services;
 using Stackroot.App.ViewModels;
 using Stackroot.App.Windows;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Settings;
-using Stackroot.Core.Sites.Management;
 using Forms = System.Windows.Forms;
 
 namespace Stackroot.App;
@@ -47,6 +45,12 @@ public partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         SetupTrayIcon();
         Loaded += OnWindowLoaded;
+        Microsoft.Win32.SystemEvents.PowerModeChanged += OnSystemPowerModeChanged;
+    }
+
+    private void OnSystemPowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+    {
+        _viewModel.OnSystemPowerModeChanged(e.Mode == Microsoft.Win32.PowerModes.Suspend);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -88,21 +92,6 @@ public partial class MainWindow : Window
         Topmost = true;
         Topmost = false;
         Focus();
-
-        // Refresh featured sites nav after startup completes
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(5000); // wait for deferred startup
-            await Dispatcher.InvokeAsync(() =>
-            {
-                try
-                {
-                    var siteManager = ((App)Application.Current).Services.GetRequiredService<SiteManager>();
-                    _viewModel.RefreshSiteNavFromStore(siteManager);
-                }
-                catch { }
-            });
-        });
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -158,6 +147,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        Microsoft.Win32.SystemEvents.PowerModeChanged -= OnSystemPowerModeChanged;
         _trayIcon?.Dispose();
         _trayMenu?.Dispose();
         _trayManagedIcon?.Dispose();
@@ -275,7 +265,8 @@ public partial class MainWindow : Window
 
         try
         {
-            await Task.Run(() => _shutdown.ShutdownAsync(TimeSpan.FromSeconds(10))).ConfigureAwait(true);
+            await Task.Run(() => _shutdown.ShutdownAsync(StackrootShutdownCoordinator.DefaultShutdownTimeout))
+                .ConfigureAwait(true);
         }
         catch
         {
@@ -287,6 +278,7 @@ public partial class MainWindow : Window
 
     private void HideToTray()
     {
+        _viewModel.OnWindowHiddenToTray();
         ShowInTaskbar = false;
         Hide();
         if (_trayIcon is not null)
@@ -299,6 +291,7 @@ public partial class MainWindow : Window
 
     private void ShowFromTray()
     {
+        _viewModel.OnWindowShownFromTray();
         ShowInTaskbar = true;
         Show();
         WindowState = WindowState.Normal;

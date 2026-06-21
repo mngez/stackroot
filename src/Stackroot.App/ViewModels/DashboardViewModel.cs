@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -7,7 +6,9 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Commands;
 using Stackroot.App.Helpers;
+using Stackroot.App.Scheduling;
 using Stackroot.App.Services;
+using Stackroot.Engine.Runtime;
 using Stackroot.App.Views;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.AdminTools;
@@ -16,6 +17,7 @@ using Stackroot.Core.Services;
 using Stackroot.Core.Services.Php;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Supervisor;
+using Stackroot.Core.Windows;
 namespace Stackroot.App.ViewModels;
 
 public sealed class DashboardViewModel : ViewModelBase
@@ -35,8 +37,14 @@ public sealed class DashboardViewModel : ViewModelBase
     private readonly SessionActivityCoordinator _activityCoordinator;
     private readonly SessionActivityReporter _activity;
     private readonly IDiagnosticsReporter _diagnostics;
-    private readonly ConcurrentDictionary<string, ServiceInfo> _pendingLiveServiceUpdates = new(StringComparer.OrdinalIgnoreCase);
-    private DispatcherTimer? _refreshTimer;
+    private readonly RuntimeStateService _runtimeState;
+    private readonly DashboardShellReadyGate _shellReadyGate;
+    private readonly TaskSchedulerService _taskScheduler;
+    public HealthDomainChipViewModel StackHealthChip { get; }
+    public HealthDomainChipViewModel ProcessesHealthChip { get; }
+    public HealthDomainChipViewModel SchedulerHealthChip { get; }
+    public IReadOnlyList<HealthDomainChipViewModel> HealthChips { get; }
+    private int _shellInitStarted;
     private bool _isRefreshing;
     private bool _isSilentRefreshing;
     private bool _dashboardInitialized;
@@ -46,8 +54,6 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _lastQuickLinkCount = -1;
     private bool _lastAnyRunning;
     private bool _lastAnyProcessRunning;
-    private int _liveServiceUpdateScheduled;
-    private int _mailpitUpdateScheduled;
     private int _lastRunningProcessCount = -1;
     private int _lastStoppedProcessCount = -1;
     private int _lastErrorProcessCount = -1;
@@ -56,10 +62,27 @@ public sealed class DashboardViewModel : ViewModelBase
     private string? _lastProcessStatusSnapshot;
     private string? _errorMessage;
     private int _pendingStartupResync;
-    private int _pendingPhpListenerRefresh;
     private int _pendingInstallTrackerResync;
+    private int _pendingRuntimeApply;
+    private int _runtimeApplyScheduled;
+    private int _visibilityStaleRefreshDone;
+    private DateTimeOffset? _lastAppliedSnapshotAt;
+    private static readonly TimeSpan StaleSnapshotThreshold = TimeSpan.FromSeconds(45);
     private readonly HashSet<string> _handledCompletedStackPackages = new(StringComparer.OrdinalIgnoreCase);
     private bool _startupIsComplete;
+    private DateTimeOffset _lastAuxiliaryWorkAt;
+    private DateTimeOffset _lastUptimeDisplayRefreshAt;
+    private string? _lastAppliedPresentationFingerprint;
+    private EnvironmentHealthLevel _environmentHealth = EnvironmentHealthLevel.Healthy;
+    private string _healthLabel = "Web stack OK";
+    private string _healthSummary = string.Empty;
+    private string _healthBadgeBackground = "#142019";
+    private string _healthTextColor = "#8FD6B6";
+    private string _healthIndicatorColor = "#4CAE8C";
+    private readonly HashSet<string> _keepAliveDownNotified = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DateTimeOffset> _serviceLastStableRunningAt = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan ServiceSnapshotStabilization = TimeSpan.FromSeconds(15);
+    private readonly HashSet<string> _supervisionAlertNotified = new(StringComparer.OrdinalIgnoreCase);
 
     public DashboardViewModel(
         ServiceManager serviceManager,
@@ -76,7 +99,10 @@ public sealed class DashboardViewModel : ViewModelBase
         InstallProgressTracker installTracker,
         SessionActivityCoordinator activityCoordinator,
         SessionActivityReporter activity,
-        IDiagnosticsReporter diagnostics)
+        IDiagnosticsReporter diagnostics,
+        RuntimeStateService runtimeState,
+        DashboardShellReadyGate shellReadyGate,
+        TaskSchedulerService taskScheduler)
     {
         _serviceManager = serviceManager;
         _settingsStore = settingsStore;
@@ -93,11 +119,20 @@ public sealed class DashboardViewModel : ViewModelBase
         _activityCoordinator = activityCoordinator;
         _activity = activity;
         _diagnostics = diagnostics;
+        _runtimeState = runtimeState;
+        _shellReadyGate = shellReadyGate;
+        _taskScheduler = taskScheduler;
+        StackHealthChip = new HealthDomainChipViewModel { DomainName = "Web stack" };
+        ProcessesHealthChip = new HealthDomainChipViewModel { DomainName = "Processes" };
+        SchedulerHealthChip = new HealthDomainChipViewModel { DomainName = "Scheduler" };
+        HealthChips = [StackHealthChip, ProcessesHealthChip, SchedulerHealthChip];
         _installTracker.Changed += (_, _) => OnInstallTrackerChanged();
-        _serviceManager.LiveStatusChanged += OnServiceLiveStatusChanged;
-        _mailpitManager.StatusChanged += OnMailpitStatusChanged;
-        _serviceManager.PhpListenersChanged += OnPhpListenersChanged;
+        _runtimeState.StateUpdated += OnRuntimeStateUpdated;
         _processManager.Changed += OnProcessManagerChanged;
+        _serviceManager.LiveStatusChanged += OnServiceLiveStatusChanged;
+        _serviceManager.SupervisionAlert += OnServiceSupervisionAlert;
+        _taskScheduler.TaskExecuted += (_, _) => UpdateEnvironmentHealth();
+        _taskScheduler.StatusChanged += (_, _) => UpdateEnvironmentHealth();
 
         RefreshCommand = new RelayCommand(_ => _ = RefreshAsync(resyncStructure: true), _ => !IsRefreshing && !IsAllBusy && !IsProcessBulkBusy);
         StopAllCommand = new RelayCommand(_ => _ = StopAllAsync(), _ => !IsAllBusy && AnyRunning);
@@ -117,7 +152,20 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public void BeginLoading()
     {
-        StartAutoRefresh();
+        _runtimeState.SetDetailedPolling(enabled: true);
+        if (Interlocked.CompareExchange(ref _shellInitStarted, 1, 0) != 0)
+        {
+            SyncPresentationWhenVisible();
+            return;
+        }
+
+        StackHealthChip.SetPresentation(
+            EnvironmentHealthLevel.Healthy,
+            "Auto-starting services…",
+            "Starting web stack…");
+        MirrorLegacyStackHealth();
+        RaisePropertyChanged(nameof(ShowHealthBadge));
+
         _ = InitializeDashboardShellAsync();
     }
 
@@ -128,6 +176,10 @@ public sealed class DashboardViewModel : ViewModelBase
     public void NotifyStartupCompleted()
     {
         _startupIsComplete = true;
+        _lastAppliedPresentationFingerprint = null;
+        SeedExpectRunningForMonitoredServices();
+        UpdateEnvironmentHealth();
+        ScanKeepAliveServiceNotifications();
     }
 
     public Task RefreshAfterStartupAsync()
@@ -143,14 +195,21 @@ public sealed class DashboardViewModel : ViewModelBase
 
     private async Task InitializeDashboardShellAsync()
     {
-        var serviceItems = await Task.Run(BuildServiceShellItems).ConfigureAwait(false);
-        await RunOnUiAsync(() =>
+        try
         {
-            ApplyServiceShellItems(serviceItems);
-            NotifyStructureChanged();
-        }).ConfigureAwait(false);
-        await RunOnUiAsync(SyncProcessesAsync).ConfigureAwait(false);
-        await RunOnUiAsync(NotifyStructureChanged).ConfigureAwait(false);
+            var serviceItems = await Task.Run(BuildServiceShellItems).ConfigureAwait(false);
+            await RunOnUiAsync(() =>
+            {
+                ApplyServiceShellItems(serviceItems);
+                NotifyStructureChanged();
+            }).ConfigureAwait(false);
+            await RunOnUiAsync(SyncProcessesAsync).ConfigureAwait(false);
+            await RunOnUiAsync(NotifyStructureChanged).ConfigureAwait(false);
+        }
+        finally
+        {
+            _shellReadyGate.SignalReady();
+        }
     }
 
     private void OnInstallTrackerChanged()
@@ -211,7 +270,202 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public void EndLoading()
     {
-        StopAutoRefresh();
+        _runtimeState.SetDetailedPolling(enabled: false);
+        Interlocked.Exchange(ref _visibilityStaleRefreshDone, 0);
+    }
+
+    /// <summary>
+    /// Event-first recovery when Dashboard becomes visible — apply cached snapshot, then one silent
+    /// refresh if data is older than <see cref="StaleSnapshotThreshold"/> (no periodic timer).
+    /// </summary>
+    public void SyncPresentationWhenVisible()
+    {
+        if (ApplicationShutdownState.IsClosing || Services.Count == 0)
+        {
+            return;
+        }
+
+        TryApplyLatestRuntimeState();
+        MaybeRequestStaleSnapshotRefreshOnce();
+    }
+
+    /// <inheritdoc cref="SyncPresentationWhenVisible"/>
+    public void SyncPresentationAfterTrayReturn() => SyncPresentationWhenVisible();
+
+    private void TryApplyLatestRuntimeState()
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        var snapshot = _runtimeState.LatestSnapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        void Apply()
+        {
+            ApplyFromRuntimeState(snapshot);
+            _lastAppliedSnapshotAt = snapshot.RefreshedAt;
+            Interlocked.Exchange(ref _pendingRuntimeApply, 0);
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            Apply();
+            return;
+        }
+
+        dispatcher.BeginInvoke(Apply, DispatcherPriority.ContextIdle);
+    }
+
+    private void ScheduleRuntimeApply()
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        if (_isSilentRefreshing || IsRefreshing)
+        {
+            Interlocked.Exchange(ref _pendingRuntimeApply, 1);
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _runtimeApplyScheduled, 1, 0) != 0)
+        {
+            return;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.HasShutdownStarted)
+        {
+            Interlocked.Exchange(ref _runtimeApplyScheduled, 0);
+            return;
+        }
+
+        dispatcher.BeginInvoke(
+            () =>
+            {
+                Interlocked.Exchange(ref _runtimeApplyScheduled, 0);
+                if (ApplicationShutdownState.IsClosing)
+                {
+                    return;
+                }
+
+                if (_isSilentRefreshing || IsRefreshing)
+                {
+                    Interlocked.Exchange(ref _pendingRuntimeApply, 1);
+                    return;
+                }
+
+                TryApplyLatestRuntimeState();
+                MaybeRefreshCachedUptimeDisplays();
+                MaybeRunThrottledAuxiliaryWorkAsync();
+            },
+            DispatcherPriority.ContextIdle);
+    }
+
+    private void MaybeRefreshCachedUptimeDisplays()
+    {
+        if (!_startupIsComplete)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (now - _lastUptimeDisplayRefreshAt < TimeSpan.FromSeconds(30))
+        {
+            return;
+        }
+
+        _lastUptimeDisplayRefreshAt = now;
+        foreach (var service in Services)
+        {
+            service.RefreshUptimeDisplay();
+        }
+
+        foreach (var listener in PhpListeners)
+        {
+            listener.RefreshUptimeDisplay();
+        }
+
+        foreach (var row in EnabledProcesses)
+        {
+            row.RefreshUptimeDisplay();
+        }
+    }
+
+    private void MaybeRunThrottledAuxiliaryWorkAsync()
+    {
+        if (!_startupIsComplete
+            || StackrootShutdownCoordinator.IsShuttingDown
+            || ApplicationShutdownState.ShutdownRequested
+            || _isSilentRefreshing
+            || IsRefreshing)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (now - _lastAuxiliaryWorkAt < TimeSpan.FromSeconds(30))
+        {
+            return;
+        }
+
+        _ = RunThrottledAuxiliaryWorkAsync();
+    }
+
+    private void MaybeRequestStaleSnapshotRefreshOnce()
+    {
+        if (Volatile.Read(ref _visibilityStaleRefreshDone) == 1)
+        {
+            return;
+        }
+
+        var snapshot = _runtimeState.LatestSnapshot;
+        var snapshotAge = snapshot is null
+            ? TimeSpan.MaxValue
+            : DateTimeOffset.UtcNow - snapshot.RefreshedAt;
+        if (snapshotAge <= StaleSnapshotThreshold)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _visibilityStaleRefreshDone, 1, 0) != 0)
+        {
+            return;
+        }
+
+        _diagnostics.LogActivity("Dashboard",
+            $"Stale snapshot ({snapshotAge.TotalSeconds:F0}s) — one silent refresh");
+        _ = RequestStaleSnapshotRefreshAsync();
+    }
+
+    private async Task RequestStaleSnapshotRefreshAsync()
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        if (_isSilentRefreshing || IsRefreshing)
+        {
+            Interlocked.Exchange(ref _pendingRuntimeApply, 1);
+            return;
+        }
+
+        try
+        {
+            await RefreshAsync(silent: true).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Stale recovery is best-effort.
+        }
     }
 
     public ObservableCollection<DashboardServiceRowViewModel> Services { get; }
@@ -219,7 +473,17 @@ public sealed class DashboardViewModel : ViewModelBase
     public ObservableCollection<DashboardProcessRowViewModel> EnabledProcesses { get; }
     public ObservableCollection<DashboardQuickLinkViewModel> QuickLinks { get; }
 
-    private sealed record ServiceShellItem(string Key, ServiceDefinition? Definition, bool IsMailpit);
+    private enum DashboardShellServiceKind
+    {
+        Managed,
+        Mailpit,
+        TestDns
+    }
+
+    private sealed record ServiceShellItem(
+        string Key,
+        ServiceDefinition? Definition,
+        DashboardShellServiceKind Kind = DashboardShellServiceKind.Managed);
 
     public RelayCommand RefreshCommand { get; }
     public RelayCommand StopAllCommand { get; }
@@ -248,6 +512,62 @@ public sealed class DashboardViewModel : ViewModelBase
     public int ErrorProcessCount => EnabledProcesses.Count(p => p.StatusText == "Error");
     public bool HasProcessErrors => ErrorProcessCount > 0;
     public bool HasQuickLinks => QuickLinks.Count > 0;
+
+    public EnvironmentHealthLevel EnvironmentHealth
+    {
+        get => _environmentHealth;
+        private set => SetProperty(ref _environmentHealth, value);
+    }
+
+    public string HealthBadgeText
+    {
+        get
+        {
+            if (_environmentHealth == EnvironmentHealthLevel.Healthy)
+            {
+                return _healthLabel;
+            }
+
+            return string.IsNullOrWhiteSpace(_healthSummary) ? _healthLabel : _healthSummary;
+        }
+    }
+
+    public string HealthLabel
+    {
+        get => _healthLabel;
+        private set => SetProperty(ref _healthLabel, value);
+    }
+
+    public string HealthSummary
+    {
+        get => _healthSummary;
+        private set => SetProperty(ref _healthSummary, value);
+    }
+
+    public string HealthBadgeBackground
+    {
+        get => _healthBadgeBackground;
+        private set => SetProperty(ref _healthBadgeBackground, value);
+    }
+
+    public string HealthTextColor
+    {
+        get => _healthTextColor;
+        private set
+        {
+            if (SetProperty(ref _healthTextColor, value))
+            {
+                RaisePropertyChanged(nameof(HealthIndicatorBrush));
+                RaisePropertyChanged(nameof(HealthTextBrush));
+            }
+        }
+    }
+
+    public System.Windows.Media.Brush HealthIndicatorBrush => CreateHealthBrush(_healthIndicatorColor);
+
+    public System.Windows.Media.Brush HealthTextBrush => CreateHealthBrush(_healthTextColor);
+
+    public bool ShowHealthBadge => HasServices || _shellInitStarted == 1;
 
     public string? ErrorMessage
     {
@@ -303,200 +623,997 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
-    private void StartAutoRefresh()
+    private void OnRuntimeStateUpdated(object? sender, EventArgs e)
     {
-        _refreshTimer ??= new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(10)
-        };
-        _refreshTimer.Tick -= OnRefreshTimerTick;
-        _refreshTimer.Tick += OnRefreshTimerTick;
-
-        if (!_refreshTimer.IsEnabled)
-        {
-            _refreshTimer.Start();
-        }
+        ScheduleRuntimeApply();
     }
 
-    private void StopAutoRefresh()
+    private async Task RunThrottledAuxiliaryWorkAsync()
     {
-        if (_refreshTimer is null)
+        if (!_startupIsComplete
+            || StackrootShutdownCoordinator.IsShuttingDown
+            || ApplicationShutdownState.ShutdownRequested)
         {
             return;
         }
 
-        _refreshTimer.Stop();
-        _refreshTimer.Tick -= OnRefreshTimerTick;
-    }
-
-    private void OnRefreshTimerTick(object? sender, EventArgs e) => _ = RefreshAuxiliaryAsync();
-
-    private async Task RefreshAuxiliaryAsync()
-    {
         if (_isSilentRefreshing || IsRefreshing)
         {
             return;
         }
 
-        // Avoid starting any work while the application is shutting down.
-        if (StackrootShutdownCoordinator.IsShuttingDown)
+        var now = DateTimeOffset.UtcNow;
+        if (now - _lastAuxiliaryWorkAt < TimeSpan.FromSeconds(30))
         {
-            StopAutoRefresh();
             return;
         }
 
-        // Don't attempt PHP recovery during initial startup — the startup
-        // pipeline handles service initialization in order.
+        _lastAuxiliaryWorkAt = now;
+        _isSilentRefreshing = true;
+        try
+        {
+            await SyncQuickLinksAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            _isSilentRefreshing = false;
+        }
+    }
+
+    private void ApplyFromRuntimeState(RuntimeStateSnapshot? snapshot)
+    {
+        if (snapshot is null || ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        if (_startupIsComplete)
+        {
+            var fingerprint = RuntimeStateSnapshotFingerprint.Compute(snapshot);
+            if (string.Equals(fingerprint, _lastAppliedPresentationFingerprint, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastAppliedPresentationFingerprint = fingerprint;
+        }
+
+        ApplyServiceStatusesFromSnapshot(snapshot);
+        ApplyPhpListenersFromSnapshot(snapshot);
+        ApplyProcessStatusesFromSnapshot(snapshot);
+        UpdateEnvironmentHealth();
+        ScanKeepAliveServiceNotifications();
+        NotifyAggregatePropertiesChanged();
+        RaisePropertyChanged(nameof(ShowHealthBadge));
+        RefreshUptimeFromSnapshot(snapshot);
+    }
+
+    private void UpdateEnvironmentHealth()
+    {
+        UpdateStackHealthChip();
+        UpdateProcessesHealthChip();
+        UpdateSchedulerHealthChip();
+        ApplyKeepAliveRowMessages();
+    }
+
+    private void UpdateStackHealthChip()
+    {
+        var visible = ShowHealthBadge;
+        if (!_startupIsComplete)
+        {
+            var issues = CollectStackHealthIssues();
+            if (issues.Any(i => i.Kind == "error"))
+            {
+                StackHealthChip.SetPresentation(
+                    EnvironmentHealthLevel.Critical,
+                    BuildHealthSummaryText(issues),
+                    "Starting web stack…",
+                    visible);
+            }
+            else if (issues.Count > 0)
+            {
+                StackHealthChip.SetPresentation(
+                    EnvironmentHealthLevel.Degraded,
+                    BuildHealthSummaryText(issues),
+                    "Starting web stack…",
+                    visible);
+            }
+            else
+            {
+                StackHealthChip.SetPresentation(
+                    EnvironmentHealthLevel.Healthy,
+                    "Auto-starting services…",
+                    "Starting web stack…",
+                    visible);
+            }
+
+            MirrorLegacyStackHealth();
+            return;
+        }
+
+        var healthIssues = CollectStackHealthIssues();
+        if (healthIssues.Any(i => i.Kind == "error"))
+        {
+            StackHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Critical,
+                BuildHealthSummaryText(healthIssues),
+                "Web stack OK",
+                visible);
+        }
+        else if (healthIssues.Count > 0)
+        {
+            StackHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Degraded,
+                BuildHealthSummaryText(healthIssues),
+                "Web stack OK",
+                visible);
+        }
+        else
+        {
+            StackHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Healthy,
+                "Web stack OK",
+                "Web stack OK",
+                visible);
+        }
+
+        MirrorLegacyStackHealth();
+    }
+
+    private void UpdateProcessesHealthChip()
+    {
+        if (!_startupIsComplete)
+        {
+            ProcessesHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Healthy,
+                string.Empty,
+                string.Empty,
+                visible: false);
+            return;
+        }
+
+        var issues = CollectProcessHealthIssues();
+        if (issues.Any(i => i.Kind == "error"))
+        {
+            ProcessesHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Critical,
+                BuildProcessSummaryText(issues),
+                "Processes OK");
+        }
+        else if (issues.Count > 0)
+        {
+            ProcessesHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Degraded,
+                BuildProcessSummaryText(issues),
+                "Processes OK");
+        }
+        else if (EnabledProcesses.Count == 0)
+        {
+            ProcessesHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Healthy,
+                "No enabled processes",
+                "No processes");
+        }
+        else
+        {
+            var waiting = CountProcessesWaitingForRestart();
+            var healthyText = waiting > 0
+                ? $"Processes OK ({waiting} waiting)"
+                : "Processes OK";
+            ProcessesHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Healthy,
+                waiting > 0 ? $"{waiting} process(es) idle between scheduled runs" : "All enabled processes running",
+                healthyText);
+        }
+    }
+
+    private void UpdateSchedulerHealthChip()
+    {
+        if (!_startupIsComplete)
+        {
+            SchedulerHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Healthy,
+                string.Empty,
+                string.Empty,
+                visible: false);
+            return;
+        }
+
+        if (!_taskScheduler.IsStarted)
+        {
+            SchedulerHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Critical,
+                "Scheduler is not running",
+                "Scheduler stopped");
+            return;
+        }
+
+        var failedTasks = _taskScheduler.List()
+            .Where(task => task.IsEnabled && !string.IsNullOrWhiteSpace(task.LastError))
+            .ToList();
+        if (failedTasks.Count > 0)
+        {
+            var summary = failedTasks.Count == 1
+                ? $"{failedTasks[0].Label} failed"
+                : $"{failedTasks.Count} scheduled tasks failed";
+            SchedulerHealthChip.SetPresentation(
+                EnvironmentHealthLevel.Degraded,
+                summary,
+                "Scheduler active");
+            return;
+        }
+
+        var enabledCount = _taskScheduler.List().Count(task => task.IsEnabled);
+        SchedulerHealthChip.SetPresentation(
+            EnvironmentHealthLevel.Healthy,
+            enabledCount == 0 ? "No enabled scheduled tasks" : "Scheduler running",
+            "Scheduler active");
+    }
+
+    private void MirrorLegacyStackHealth()
+    {
+        EnvironmentHealth = StackHealthChip.Level;
+        HealthSummary = StackHealthChip.Summary;
+        HealthLabel = StackHealthChip.BadgeText;
+        HealthBadgeBackground = StackHealthChip.BadgeBackground;
+        HealthTextColor = StackHealthChip.TextColor;
+        _healthIndicatorColor = StackHealthChip.Level switch
+        {
+            EnvironmentHealthLevel.Critical => "#E88A92",
+            EnvironmentHealthLevel.Degraded => "#E9BD5B",
+            _ => "#4CAE8C"
+        };
+        RaisePropertyChanged(nameof(HealthIndicatorBrush));
+        RaisePropertyChanged(nameof(HealthBadgeText));
+    }
+
+    private sealed record HealthIssue(string Label, int RetryCount, string Kind, bool IsSupervised);
+
+    private List<HealthIssue> CollectStackHealthIssues()
+    {
+        var issues = new List<HealthIssue>();
+        issues.AddRange(CollectServiceHealthIssues());
+        issues.AddRange(CollectRequiredPhpHealthIssues());
+        return issues;
+    }
+
+    private List<HealthIssue> CollectServiceHealthIssues()
+    {
+        var issues = new List<HealthIssue>();
+
+        foreach (var service in Services)
+        {
+            if (!ExpectsToBeUp(service))
+            {
+                continue;
+            }
+
+            var supervised = IsKeepAliveEnabled(service);
+            var retries = supervised ? GetSupervisionFailureCount(service.ServiceKey) : 0;
+
+            if (service.StatusText == "Error")
+            {
+                issues.Add(new HealthIssue(service.Name, retries, "error", supervised));
+                continue;
+            }
+
+            if (!service.IsRunning && !service.IsBusy && service.StatusText == "Stopped")
+            {
+                issues.Add(new HealthIssue(service.Name, retries, "stopped", supervised));
+                continue;
+            }
+
+            if (string.Equals(service.StatusText, "Starting", StringComparison.Ordinal))
+            {
+                issues.Add(new HealthIssue(service.Name, retries, "starting", supervised));
+            }
+            else if (string.Equals(service.StatusText, "Restarting", StringComparison.Ordinal))
+            {
+                issues.Add(new HealthIssue(service.Name, retries, "restarting", supervised));
+            }
+        }
+
+        return issues;
+    }
+
+    private IEnumerable<HealthIssue> CollectRequiredPhpHealthIssues()
+    {
+        foreach (var listener in PhpListeners.Where(listener => listener.IsRequired))
+        {
+            var label = FormatPhpListenerLabel(listener.VersionId);
+
+            if (string.Equals(listener.StatusText, "Error", StringComparison.Ordinal))
+            {
+                yield return new HealthIssue(label, 0, "error", false);
+                continue;
+            }
+
+            if (!listener.IsRunning
+                && !listener.IsRestarting
+                && string.Equals(listener.StatusText, "Stopped", StringComparison.Ordinal))
+            {
+                yield return new HealthIssue(label, 0, "stopped", false);
+                continue;
+            }
+
+            if (listener.IsRestarting
+                || listener.StatusText is "Recovering" or "Starting")
+            {
+                yield return new HealthIssue(label, 0, "starting", false);
+            }
+        }
+    }
+
+    private List<HealthIssue> CollectProcessHealthIssues()
+    {
+        var issues = new List<HealthIssue>();
+
+        foreach (var process in EnabledProcesses)
+        {
+            if (!ShouldReportProcessHealthIssue(process))
+            {
+                continue;
+            }
+
+            if (string.Equals(process.StatusText, "Error", StringComparison.Ordinal))
+            {
+                issues.Add(new HealthIssue(process.Name, 0, "error", false));
+                continue;
+            }
+
+            if (string.Equals(process.StatusText, "Stopped", StringComparison.Ordinal))
+            {
+                issues.Add(new HealthIssue(process.Name, 0, "stopped", false));
+            }
+        }
+
+        return issues;
+    }
+
+    private static bool ShouldReportProcessHealthIssue(DashboardProcessRowViewModel process)
+    {
+        if (string.Equals(process.StatusText, "Error", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (process.IsBusy
+            || string.Equals(process.StatusText, "Restarting", StringComparison.Ordinal))
+        {
+            // Supervisor restart wait — explicit delay or runtime default (2s, then backoff).
+            return false;
+        }
+
+        if (string.Equals(process.StatusText, "Stopped", StringComparison.Ordinal))
+        {
+            // Explicit inter-run delay (e.g. queue worker every N minutes).
+            if (process.HasExplicitRestartDelay)
+            {
+                return false;
+            }
+
+            // Supervised on-demand workers (typical queue worker: no autostart, supervisor still restarts on exit).
+            if (process.IsSupervised && !process.AutoStart)
+            {
+                return false;
+            }
+
+            // Always-on daemons: flag only when auto-start expects them up.
+            return process.AutoStart;
+        }
+
+        return false;
+    }
+
+    private int CountProcessesWaitingForRestart()
+    {
+        return EnabledProcesses.Count(process =>
+            string.Equals(process.StatusText, "Restarting", StringComparison.Ordinal)
+            || (process.HasExplicitRestartDelay
+                && string.Equals(process.StatusText, "Stopped", StringComparison.Ordinal)));
+    }
+
+    private static string FormatPhpListenerLabel(string versionId)
+    {
+        if (string.IsNullOrWhiteSpace(versionId))
+        {
+            return "PHP listener";
+        }
+
+        return versionId.StartsWith("php-", StringComparison.OrdinalIgnoreCase)
+            ? "PHP " + versionId["php-".Length..]
+            : "PHP " + versionId;
+    }
+
+    private static string BuildHealthSummaryText(IReadOnlyList<HealthIssue> issues)
+    {
+        if (issues.Count == 0)
+        {
+            return "Web stack OK";
+        }
+
+        return string.Join(" · ", issues.Select(FormatHealthIssue));
+    }
+
+    private static string BuildProcessSummaryText(IReadOnlyList<HealthIssue> issues)
+    {
+        if (issues.Count == 0)
+        {
+            return "Processes OK";
+        }
+
+        return string.Join(" · ", issues.Select(FormatProcessHealthIssue));
+    }
+
+    private static string FormatProcessHealthIssue(HealthIssue issue) => issue.Kind switch
+    {
+        "error" => $"{issue.Label} error",
+        "stopped" => $"{issue.Label} stopped",
+        _ => issue.Label
+    };
+
+    private static string FormatHealthIssue(HealthIssue issue) => issue.Kind switch
+    {
+        "error" when issue.IsSupervised && issue.RetryCount > 0
+            => $"{issue.Label} error (auto-restart attempt {issue.RetryCount})",
+        "error" => $"{issue.Label} error",
+        "stopped" when issue.IsSupervised && issue.RetryCount > 0
+            => $"{issue.Label} stopped (auto-restart attempt {issue.RetryCount})",
+        "stopped" when issue.IsSupervised
+            => $"{issue.Label} stopped, auto-restart pending",
+        "stopped" => $"{issue.Label} stopped",
+        "starting" => $"{issue.Label} starting",
+        "restarting" when issue.IsSupervised && issue.RetryCount > 0
+            => $"{issue.Label} restarting (auto-restart attempt {issue.RetryCount})",
+        "restarting" => $"{issue.Label} restarting",
+        _ => issue.Label
+    };
+
+    private bool IsKeepAliveEnabled(DashboardServiceRowViewModel service)
+    {
+        var settings = _settingsStore.Load();
+        if (string.Equals(service.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+        {
+            return settings.Mailpit.Supervise
+                && settings.Mailpit.Enabled
+                && _registryStore.IsInstalled(settings.Mailpit.PackageId);
+        }
+
+        if (!Enum.TryParse<ServiceId>(service.ServiceKey, ignoreCase: true, out var serviceId))
+        {
+            return false;
+        }
+
+        return settings.Services.TryGetValue(serviceId, out var serviceSettings)
+            && serviceSettings.Supervise
+            && serviceSettings.Enabled;
+    }
+
+    private int GetSupervisionFailureCount(string serviceKey)
+    {
+        if (string.Equals(serviceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+        {
+            return _serviceManager.GetSupervisionFailureCount(ServiceId.Mailpit);
+        }
+
+        return Enum.TryParse<ServiceId>(serviceKey, ignoreCase: true, out var serviceId)
+            ? _serviceManager.GetSupervisionFailureCount(serviceId)
+            : 0;
+    }
+
+    private void ApplyKeepAliveRowMessages()
+    {
+        foreach (var service in Services)
+        {
+            ApplyKeepAliveRowMessage(service);
+        }
+    }
+
+    private void ApplyKeepAliveRowMessage(DashboardServiceRowViewModel service)
+    {
+        if (!IsKeepAliveEnabled(service))
+        {
+            ClearStaleKeepAliveRowMessage(service);
+            return;
+        }
+
+        if (!ExpectsToBeUp(service))
+        {
+            return;
+        }
+
+        var failures = GetSupervisionFailureCount(service.ServiceKey);
+        if (service.IsRunning && failures == 0)
+        {
+            ClearStaleKeepAliveRowMessage(service);
+            return;
+        }
+
+        if (service.StatusText is "Stopped" or "Error")
+        {
+            if (IsPortConflictRowMessage(service.Message))
+            {
+                var conflictBase = ManagedServiceStatusPolicy.StripKeepAliveDecorations(service.Message);
+                service.Message = IsKeepAliveEnabled(service)
+                    ? ManagedServiceStatusPolicy.FormatPortConflictKeepAliveMessage(conflictBase)
+                    : conflictBase;
+                return;
+            }
+
+            var baseMessage = ManagedServiceStatusPolicy.StripKeepAliveDecorations(service.Message);
+            if (!ShouldShowKeepAliveRecoveryMessage(service, failures))
+            {
+                service.Message = string.IsNullOrWhiteSpace(baseMessage) ? null : baseMessage;
+                return;
+            }
+
+            service.Message = ManagedServiceStatusPolicy.FormatKeepAliveRecoveryMessage(baseMessage, failures);
+            return;
+        }
+
+        if (service.IsBusy || service.StatusText is "Starting" or "Restarting")
+        {
+            if (service.ShowStartupProgress
+                && !string.IsNullOrWhiteSpace(service.Message)
+                && !ManagedServiceStatusPolicy.IsKeepAliveRecoverySuffix(service.Message))
+            {
+                return;
+            }
+
+            service.Message = failures > 0
+                ? $"Auto-restart attempt {failures}"
+                : ManagedServiceStatusPolicy.KeepAliveStartingHint;
+        }
+    }
+
+    private bool ShouldShowKeepAliveRecoveryMessage(DashboardServiceRowViewModel service, int failures)
+    {
+        if (failures > 0 || IsSupervisionRecoveryInFlight(service))
+        {
+            return true;
+        }
+
+        if (ManagedServiceStatusPolicy.IsStopFailedMessage(service.Message))
+        {
+            return false;
+        }
+
+        if (!Enum.TryParse<ServiceId>(service.ServiceKey, ignoreCase: true, out var serviceId))
+        {
+            return false;
+        }
+
+        return _serviceManager.IsSupervisionEligible(serviceId);
+    }
+
+    private bool IsSupervisionRecoveryInFlight(DashboardServiceRowViewModel service)
+    {
+        if (!Enum.TryParse<ServiceId>(service.ServiceKey, ignoreCase: true, out var serviceId))
+        {
+            return false;
+        }
+
+        return _serviceManager.IsSupervisionRecoveryInFlight(serviceId);
+    }
+
+    private static bool IsAutoRestartRowMessage(string message)
+        => ManagedServiceStatusPolicy.IsKeepAliveRecoverySuffix(message)
+           || message.StartsWith("Keep-alive", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsPortConflictRowMessage(string? message)
+        => ManagedServiceStatusPolicy.IsPortConflictMessage(message);
+
+    private static void ClearStaleKeepAliveRowMessage(DashboardServiceRowViewModel service)
+    {
+        if (service.Message is not null && IsAutoRestartRowMessage(service.Message))
+        {
+            service.Message = null;
+        }
+    }
+
+    /// <summary>
+    /// Enabled services expected to stay up: started manually/auto, or keep-alive with auto-start after boot.
+    /// </summary>
+    private bool ExpectsToBeUp(DashboardServiceRowViewModel service)
+    {
+        if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+        {
+            return _settingsStore.Load().TestDns.Enabled
+                && !_serviceManager.IsUserStoppedIntent(service.ServiceKey);
+        }
+
+        if (service.ExpectRunning)
+        {
+            return true;
+        }
+
+        if (_serviceManager.IsUserStoppedIntent(service.ServiceKey))
+        {
+            return false;
+        }
+
+        if (!service.IsSupervised || !_startupIsComplete)
+        {
+            return false;
+        }
+
+        return IsAutoStartEnabled(service.ServiceKey);
+    }
+
+    private bool IsAutoStartEnabled(string serviceKey)
+    {
+        var settings = _settingsStore.Load();
+        if (string.Equals(serviceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+        {
+            return settings.TestDns.Enabled && settings.TestDns.AutoStart;
+        }
+
+        if (string.Equals(serviceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+        {
+            return settings.Mailpit.Enabled && settings.Mailpit.AutoStart;
+        }
+
+        if (!Enum.TryParse<ServiceId>(serviceKey, ignoreCase: true, out var serviceId))
+        {
+            return false;
+        }
+
+        return settings.Services.TryGetValue(serviceId, out var serviceSettings)
+            && serviceSettings.Enabled
+            && serviceSettings.AutoStart;
+    }
+
+    private void SeedExpectRunningForMonitoredServices()
+    {
+        var settings = _settingsStore.Load();
+        foreach (var service in Services)
+        {
+            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase)
+                && settings.TestDns.Enabled
+                && settings.TestDns.AutoStart)
+            {
+                service.NoteStarted();
+                continue;
+            }
+
+            if (service.IsSupervised && IsAutoStartEnabled(service.ServiceKey))
+            {
+                service.NoteStarted();
+            }
+        }
+    }
+
+    private int CountServiceErrors()
+        => CollectStackHealthIssues().Count(i => i.Kind == "error");
+
+    private int CountStoppedNeedingAttention()
+        => CollectStackHealthIssues().Count(i => i.Kind == "stopped");
+
+    private int CountKeepAliveRecovering()
+        => CollectStackHealthIssues().Count(i => i.Kind is "starting" or "restarting");
+
+    private static System.Windows.Media.SolidColorBrush CreateHealthBrush(string hex) =>
+        new((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex)!);
+
+    private void ApplyServiceStatusesFromSnapshot(RuntimeStateSnapshot snapshot)
+    {
+        foreach (var service in Services)
+        {
+            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+            {
+                if (snapshot.TestDns is { } testDns)
+                {
+                    ApplyTestDnsRowStatus(service, testDns);
+                }
+
+                continue;
+            }
+
+            // During startup, service rows follow live-events from ServiceManager auto-start.
+            // Coalesced runtime snapshots can finish late and regress Running → Stopped.
+            if (!_startupIsComplete)
+            {
+                continue;
+            }
+
+            if (string.Equals(service.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+            {
+                if (snapshot.Mailpit is { } mailpit)
+                {
+                    ApplyDashboardServiceStatusFromLive(service, new ServiceInfo
+                    {
+                        Id = "mailpit",
+                        PortOpen = mailpit.Enabled && mailpit.Running,
+                        Status = mailpit.Enabled && mailpit.Running ? ServiceStatus.Running : ServiceStatus.Stopped,
+                        Pid = mailpit.Pid,
+                        Message = mailpit.Installed ? null : "Install Mailpit package first"
+                    }, "snapshot");
+                }
+
+                continue;
+            }
+
+            var liveInfo = snapshot.Services.FirstOrDefault(row =>
+                string.Equals(row.Id, service.ServiceKey, StringComparison.OrdinalIgnoreCase));
+            ApplyDashboardServiceStatusFromLive(service, liveInfo, "snapshot");
+        }
+
+        SeedExpectRunningFromSnapshot(snapshot);
+    }
+
+    /// <summary>
+    /// Safety net: mark rows as expected-up when snapshot shows an open port for supervised/auto-start services.
+    /// Does not affect keep-alive — UI <see cref="DashboardServiceRowViewModel.ExpectRunning"/> only.
+    /// </summary>
+    private void SeedExpectRunningFromSnapshot(RuntimeStateSnapshot snapshot)
+    {
         if (!_startupIsComplete)
         {
             return;
         }
 
-        _isSilentRefreshing = true;
+        var settings = _settingsStore.Load();
+        foreach (var service in Services)
+        {
+            if (service.ExpectRunning)
+            {
+                continue;
+            }
+
+            if (_serviceManager.IsUserStoppedIntent(service.ServiceKey))
+            {
+                continue;
+            }
+
+            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+            {
+                if (snapshot.TestDns is { Enabled: true, Running: true }
+                    && settings.TestDns.AutoStart)
+                {
+                    service.NoteStarted();
+                }
+
+                continue;
+            }
+
+            if (string.Equals(service.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+            {
+                if (snapshot.Mailpit is { Enabled: true, Running: true }
+                    && settings.Mailpit.Enabled
+                    && (settings.Mailpit.AutoStart || settings.Mailpit.Supervise))
+                {
+                    service.NoteStarted();
+                }
+
+                continue;
+            }
+
+            var liveInfo = snapshot.Services.FirstOrDefault(row =>
+                string.Equals(row.Id, service.ServiceKey, StringComparison.OrdinalIgnoreCase));
+            if (liveInfo?.PortOpen != true)
+            {
+                continue;
+            }
+
+            if (ShouldMarkExpectRunningFromSettings(service.ServiceKey, settings))
+            {
+                service.NoteStarted();
+            }
+        }
+    }
+
+    private static bool ShouldMarkExpectRunningFromSettings(string serviceKey, AppSettings settings)
+    {
+        if (!Enum.TryParse<ServiceId>(serviceKey, ignoreCase: true, out var serviceId))
+        {
+            return false;
+        }
+
+        if (!settings.Services.TryGetValue(serviceId, out var serviceSettings)
+            || !serviceSettings.Enabled)
+        {
+            return false;
+        }
+
+        return serviceSettings.AutoStart || serviceSettings.Supervise;
+    }
+
+    private void ApplyPhpListenersFromSnapshot(RuntimeStateSnapshot snapshot)
+    {
+        var settings = _settingsStore.Load();
+        var requiredVersionIds = ResolveRequiredPhpVersionIds();
+        var phpVersions = _phpConfigWriter.ListInstalledPhpVersions(settings, requiredVersionIds)
+            .ToDictionary(version => version.Id, StringComparer.OrdinalIgnoreCase);
+        var visibleStates = snapshot.PhpListeners
+            .Where(state => phpVersions.ContainsKey(state.VersionId))
+            .Where(state => state.IsRequired || state.IsRunning)
+            .ToList();
+        var stoppedRequired = new List<string>();
+
+        foreach (var stale in PhpListeners.Where(row =>
+                     visibleStates.All(state => !string.Equals(state.VersionId, row.VersionId, StringComparison.OrdinalIgnoreCase))).ToList())
+        {
+            PhpListeners.Remove(stale);
+        }
+
+        foreach (var state in visibleStates)
+        {
+            if (!phpVersions.TryGetValue(state.VersionId, out var version))
+            {
+                continue;
+            }
+
+            var existing = PhpListeners.FirstOrDefault(row =>
+                string.Equals(row.VersionId, state.VersionId, StringComparison.OrdinalIgnoreCase));
+            var wasRunning = existing?.IsRunning == true;
+            var isRunning = state.IsRunning;
+            var statusText = ResolvePhpListenerStatusText(state, existing, isRunning);
+
+            UpsertPhpListenerRow(existing, state, version, isRunning, statusText);
+
+            if (state.IsRequired && !isRunning && wasRunning)
+            {
+                stoppedRequired.Add(state.VersionId);
+            }
+        }
+
+        RaisePropertyChanged(nameof(HasPhpListeners));
+
+        if (stoppedRequired.Count > 0 && _startupIsComplete)
+        {
+            foreach (var versionId in stoppedRequired)
+            {
+                var row = PhpListeners.FirstOrDefault(r =>
+                    string.Equals(r.VersionId, versionId, StringComparison.OrdinalIgnoreCase));
+                if (row is not null)
+                {
+                    row.IsRunning = false;
+                    row.StatusText = "Recovering";
+                    row.StatusColor = ResolvePhpListenerStatusColor(false, "Recovering");
+                }
+            }
+
+            RequestRequiredPhpRecovery();
+        }
+    }
+
+    private static string ResolvePhpListenerStatusText(
+        RuntimePhpListenerState state,
+        DashboardPhpListenerViewModel? existing,
+        bool isRunning)
+    {
+        if (isRunning)
+        {
+            return state.StatusText;
+        }
+
+        if (existing is not null
+            && string.Equals(existing.StatusText, "Recovering", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Recovering";
+        }
+
+        return state.IsRequired ? "Stopped" : state.StatusText;
+    }
+
+    private static string ResolvePhpListenerStatusColor(bool isRunning, string statusText)
+        => isRunning ? "#8FD6B6"
+            : statusText is "Recovering" or "Starting" ? "#E9BD5B"
+            : statusText == "Error" ? "#EAAAB0"
+            : "#91A0B5";
+
+    private void UpsertPhpListenerRow(
+        DashboardPhpListenerViewModel? existing,
+        RuntimePhpListenerState state,
+        PhpVersionInfo version,
+        bool isRunning,
+        string statusText)
+    {
+        var logPath = Path.Combine(_paths.LogsRoot, $"php-cgi-{state.VersionId}.stderr.log");
+        var logExists = File.Exists(logPath);
+        var statusColor = ResolvePhpListenerStatusColor(isRunning, statusText);
+        var capturedVersion = state.VersionId;
+
+        if (existing is null)
+        {
+            var listener = new DashboardPhpListenerViewModel
+            {
+                VersionId = state.VersionId,
+                IsRequired = state.IsRequired,
+                Endpoint = state.Endpoint,
+                StatusColor = statusColor,
+                ShowLogButton = logExists || isRunning,
+                OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath), _ => File.Exists(logPath)),
+                StopCommand = new RelayCommand(_ => _ = StopPhpCgiAsync(capturedVersion), _ => isRunning),
+                RestartCommand = null!,
+                IsRunning = isRunning,
+                StatusText = statusText
+            };
+            listener.RestartCommand = new RelayCommand(
+                _ => _ = RestartPhpCgiAsync(capturedVersion),
+                _ => version.IsRequired && !listener.IsRestarting);
+            ApplyPhpListenerUptime(listener, isRunning);
+            PhpListeners.Add(listener);
+            return;
+        }
+
+        if (!string.Equals(existing.Endpoint, state.Endpoint, StringComparison.Ordinal))
+        {
+            existing.Endpoint = state.Endpoint;
+        }
+
+        if (existing.IsRunning != isRunning
+            || existing.StatusText != statusText
+            || existing.StatusColor != statusColor)
+        {
+            if (existing.IsRunning != isRunning || existing.StatusText != statusText)
+            {
+                _diagnostics.LogActivity(
+                    "Dashboard",
+                    $"PHP listener status: {state.VersionId} {existing.StatusText} → {statusText}");
+            }
+
+            existing.IsRunning = isRunning;
+            existing.StatusText = statusText;
+            existing.StatusColor = statusColor;
+        }
+
+        existing.ShowLogButton = logExists || isRunning;
+        existing.StopCommand.RaiseCanExecuteChanged();
+        existing.RestartCommand.RaiseCanExecuteChanged();
+        ApplyPhpListenerUptime(existing, isRunning);
+    }
+
+    private void RequestRequiredPhpRecovery()
+    {
+        _ = RecoverRequiredPhpAsync();
+    }
+
+    private async Task RecoverRequiredPhpAsync()
+    {
         try
         {
-            await UpdatePhpListenerStatusesAsync();
-            await _serviceManager.TryRecoverRequiredPhpAsync();
-            await UpdateProcessStatusesAsync();
-            await UpdateMailpitStatusAsync();
-            await SyncQuickLinksAsync();
+            await _serviceManager.TryRecoverRequiredPhpAsync(urgent: true).ConfigureAwait(true);
         }
-        finally
+        catch
         {
-            _isSilentRefreshing = false;
+            // Recovery is best-effort; the next snapshot will reflect the result.
         }
     }
 
-    private void OnServiceLiveStatusChanged(object? sender, ServiceInfo info)
+    private void ApplyProcessStatusesFromSnapshot(RuntimeStateSnapshot snapshot)
     {
-        _pendingLiveServiceUpdates[info.Id] = info;
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null)
+        var snapshotKey = string.Join('\n', snapshot.Processes.Select(process =>
+            $"{process.Id}|{process.Status}|{process.Available}|{process.Pid}"));
+        if (string.Equals(snapshotKey, _lastProcessStatusSnapshot, StringComparison.Ordinal))
         {
             return;
         }
 
-        if (Interlocked.Exchange(ref _liveServiceUpdateScheduled, 1) == 1)
+        _lastProcessStatusSnapshot = snapshotKey;
+
+        foreach (var process in snapshot.Processes)
         {
-            return;
-        }
-
-        dispatcher.BeginInvoke(ApplyPendingLiveServiceUpdates, DispatcherPriority.Background);
-    }
-
-    private void ApplyPendingLiveServiceUpdates()
-    {
-        Interlocked.Exchange(ref _liveServiceUpdateScheduled, 0);
-        var updates = _pendingLiveServiceUpdates.ToArray();
-        _pendingLiveServiceUpdates.Clear();
-        foreach (var (_, info) in updates)
-        {
-            ApplyLiveServiceInfo(info);
-        }
-    }
-
-    private void ApplyLiveServiceInfo(ServiceInfo info)
-    {
-        if (string.Equals(info.Id, "mailpit", StringComparison.OrdinalIgnoreCase))
-        {
-            ScheduleMailpitStatusUpdate();
-            return;
-        }
-
-        var service = Services.FirstOrDefault(row =>
-            string.Equals(row.ServiceKey, info.Id, StringComparison.OrdinalIgnoreCase));
-        if (service is null)
-        {
-            return;
-        }
-
-        service.BumpVersion();
-        if (service.IsRunning != (info.PortOpen == true))
-        {
-            _diagnostics.LogActivity("Dashboard",
-                $"Live service status: {info.Id} {service.StatusText} → {(info.PortOpen == true ? "Running" : "Stopped")} (PortOpen={info.PortOpen})");
-        }
-
-        ApplyDashboardServiceStatusFromLive(service, info);
-        NotifyAggregatePropertiesChanged();
-
-        if (info.Id == "nginx")
-        {
-            _ = SyncQuickLinksAsync();
-        }
-    }
-
-    private void OnMailpitStatusChanged(object? sender, EventArgs e)
-        => ScheduleMailpitStatusUpdate();
-
-    private void ScheduleMailpitStatusUpdate()
-    {
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null)
-        {
-            return;
-        }
-
-        if (Interlocked.Exchange(ref _mailpitUpdateScheduled, 1) == 1)
-        {
-            return;
-        }
-
-        dispatcher.BeginInvoke(
-            async () =>
+            var row = EnabledProcesses.FirstOrDefault(candidate => candidate.Id == process.Id);
+            if (row is null)
             {
-                Interlocked.Exchange(ref _mailpitUpdateScheduled, 0);
-                await UpdateMailpitStatusAsync().ConfigureAwait(true);
-                await SyncQuickLinksAsync().ConfigureAwait(true);
-            },
-            DispatcherPriority.Background);
-    }
+                continue;
+            }
 
-    private void OnPhpListenersChanged(object? sender, EventArgs e)
-    {
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null)
-        {
-            return;
+            if (row.StatusText != process.Status.ToString()
+                || row.IsRunning != (process.Status is ProcessStatus.Running or ProcessStatus.Restarting))
+            {
+                _diagnostics.LogActivity("Dashboard",
+                    $"Process status: {row.Name} {row.StatusText} → {process.Status}");
+            }
+
+            ApplyProcessStatus(row, process.Status, process.Available, process.Pid);
         }
-
-        if (!dispatcher.CheckAccess())
-        {
-            dispatcher.BeginInvoke(() => _ = RefreshPhpListenersAsync());
-            return;
-        }
-
-        _ = RefreshPhpListenersAsync();
     }
 
     private void OnProcessManagerChanged(object? sender, EventArgs e)
     {
-        Application.Current?.Dispatcher.BeginInvoke(() => SyncProcesses());
-    }
-
-    private async Task RefreshPhpListenersAsync()
-    {
-        if (_isSilentRefreshing || IsRefreshing)
-        {
-            Interlocked.Exchange(ref _pendingPhpListenerRefresh, 1);
-            return;
-        }
-
-        _isSilentRefreshing = true;
-        try
-        {
-            Interlocked.Exchange(ref _pendingPhpListenerRefresh, 0);
-            await SyncPhpListenersAsync().ConfigureAwait(true);
-            NotifyAggregatePropertiesChanged();
-        }
-        finally
-        {
-            _isSilentRefreshing = false;
-            if (Interlocked.Exchange(ref _pendingPhpListenerRefresh, 0) == 1)
-            {
-                _ = RefreshPhpListenersAsync();
-            }
-        }
+        Application.Current?.Dispatcher.BeginInvoke(SyncProcesses);
     }
 
     private async Task RefreshAsync(bool silent = false, bool resyncStructure = false)
@@ -526,16 +1643,23 @@ public sealed class DashboardViewModel : ViewModelBase
                 await SyncServiceRowsAsync();
                 await SyncProcessesAsync();
                 NotifyStructureChanged();
+                await _runtimeState.RefreshAsync();
                 await SyncPhpListenersAsync();
+                await RunOnUiAsync(() => ApplyFromRuntimeState(_runtimeState.LatestSnapshot)).ConfigureAwait(true);
             }
             else
             {
-                await UpdatePhpListenerStatusesAsync();
-                await UpdateProcessStatusesAsync();
+                await _runtimeState.RefreshAsync();
+                await RunOnUiAsync(() => ApplyFromRuntimeState(_runtimeState.LatestSnapshot)).ConfigureAwait(true);
             }
 
-            await UpdateServiceStatusesAsync();
             await SyncQuickLinksAsync();
+            var snapshot = _runtimeState.LatestSnapshot;
+            if (snapshot is not null)
+            {
+                await RunOnUiAsync(() => RefreshUptimeFromSnapshot(snapshot)).ConfigureAwait(true);
+            }
+
             NotifyAggregatePropertiesChanged();
         }
         catch (Exception ex) when (!silent)
@@ -561,85 +1685,16 @@ public sealed class DashboardViewModel : ViewModelBase
                 }
             }
 
+            if (Interlocked.Exchange(ref _pendingRuntimeApply, 0) == 1)
+            {
+                TryApplyLatestRuntimeState();
+            }
+
             if (Interlocked.Exchange(ref _pendingInstallTrackerResync, 0) == 1)
             {
                 _ = OnInstallTrackerChangedAsync();
             }
-
-            if (Interlocked.Exchange(ref _pendingPhpListenerRefresh, 0) == 1)
-            {
-                _ = RefreshPhpListenersAsync();
-            }
         }
-    }
-
-    private async Task UpdateServiceStatusesAsync()
-    {
-        // Snapshot each service's current version so we can detect whether
-        // a live event updated it while our background query was in-flight.
-        var versions = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        await RunOnUiAsync(() =>
-        {
-            foreach (var s in Services)
-            {
-                versions[s.ServiceKey] = s.UpdateVersion;
-            }
-        }).ConfigureAwait(false);
-
-        var live = await Task.Run(() => _serviceManager.ListLiveAsync().GetAwaiter().GetResult())
-            .ConfigureAwait(false);
-        var serviceRows = await RunOnUiAsync(() => Services.ToList()).ConfigureAwait(false);
-        foreach (var service in serviceRows)
-        {
-            if (string.Equals(service.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
-            {
-                await UpdateMailpitStatusAsync().ConfigureAwait(false);
-                continue;
-            }
-
-            // If a live event updated this row while our query was running,
-            // skip the stale full-refresh data.
-            if (versions.TryGetValue(service.ServiceKey, out var capturedVersion)
-                && capturedVersion != service.UpdateVersion)
-            {
-                _diagnostics.LogActivity("Dashboard",
-                    $"Skipping stale update for {service.ServiceKey} (live event was newer)");
-                continue;
-            }
-
-            var liveInfo = live.FirstOrDefault(row =>
-                string.Equals(row.Id, service.ServiceKey, StringComparison.OrdinalIgnoreCase));
-            if (service.IsRunning != (liveInfo?.PortOpen == true) || service.StatusText == "Loading")
-            {
-                _diagnostics.LogActivity("Dashboard",
-                    $"Service status change: {service.ServiceKey} {service.StatusText} → {(liveInfo?.PortOpen == true ? "Running" : "Stopped")} (PortOpen={liveInfo?.PortOpen})");
-            }
-
-            await RunOnUiAsync(() => ApplyDashboardServiceStatusFromLive(service, liveInfo)).ConfigureAwait(false);
-        }
-    }
-
-    private async Task UpdateMailpitStatusAsync()
-    {
-        var service = await RunOnUiAsync(() => Services.FirstOrDefault(row =>
-            string.Equals(row.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))).ConfigureAwait(false);
-        if (service is null)
-        {
-            return;
-        }
-
-        var mailpit = await _mailpitManager.GetStatusAsync().ConfigureAwait(false);
-        await RunOnUiAsync(() =>
-        {
-            ApplyDashboardServiceStatusFromLive(service, new ServiceInfo
-            {
-                Id = "mailpit",
-                PortOpen = mailpit.Enabled && mailpit.Running,
-                Status = mailpit.Enabled && mailpit.Running ? ServiceStatus.Running : ServiceStatus.Stopped,
-                Message = mailpit.Installed ? null : "Install Mailpit package first"
-            });
-            NotifyAggregatePropertiesChanged();
-        }).ConfigureAwait(false);
     }
 
     private static Task RunOnUiAsync(Action action)
@@ -686,6 +1741,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
         RaisePropertyChanged(nameof(ShowEmptyState));
         RaisePropertyChanged(nameof(ShowLoadingState));
+        RaisePropertyChanged(nameof(ShowHealthBadge));
         RaisePropertyChanged(nameof(HasPhpListeners));
         RaisePropertyChanged(nameof(HasEnabledProcesses));
     }
@@ -741,18 +1797,196 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
-    private static void ApplyDashboardServiceStatusFromLive(DashboardServiceRowViewModel service, ServiceInfo? liveInfo)
+    private void OnServiceLiveStatusChanged(object? sender, ServiceInfo info)
     {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            ApplyLiveServiceInfo(info);
+            return;
+        }
+
+        dispatcher.BeginInvoke(() => ApplyLiveServiceInfo(info), DispatcherPriority.Normal);
+    }
+
+    private void ApplyLiveServiceInfo(ServiceInfo info)
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        var service = Services.FirstOrDefault(row =>
+            string.Equals(row.ServiceKey, info.Id, StringComparison.OrdinalIgnoreCase));
+        if (service is null)
+        {
+            return;
+        }
+
+        ApplyDashboardServiceStatusFromLive(service, info, "live-event");
+        UpdateEnvironmentHealth();
+        ScanKeepAliveServiceNotifications();
+        NotifyAggregatePropertiesChanged();
+    }
+
+    private void OnServiceSupervisionAlert(object? sender, ServiceSupervisionAlertEventArgs e)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            HandleServiceSupervisionAlert(e);
+            return;
+        }
+
+        dispatcher.BeginInvoke(() => HandleServiceSupervisionAlert(e), DispatcherPriority.Normal);
+    }
+
+    private void HandleServiceSupervisionAlert(ServiceSupervisionAlertEventArgs e)
+    {
+        if (!_startupIsComplete || ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        var alertKey = $"{e.ServiceKey}:{e.FailureCount}";
+        if (!_supervisionAlertNotified.Add(alertKey))
+        {
+            return;
+        }
+
+        try
+        {
+            _services.GetRequiredService<IToastService>().Show(
+                "Keep-alive recovery",
+                $"{e.ServiceName} is still down after {e.FailureCount} restart attempts. Stackroot will keep trying — check Dashboard or logs.");
+        }
+        catch
+        {
+            // Toast is best-effort.
+        }
+
+        _activity.LogWarning(
+            "Services",
+            $"{e.ServiceName} keep-alive: {e.FailureCount} failed restart attempts — still retrying.");
+
+        UpdateEnvironmentHealth();
+    }
+
+    private void ScanKeepAliveServiceNotifications()
+    {
+        if (!_startupIsComplete || ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        foreach (var service in Services)
+        {
+            MaybeNotifyKeepAliveServiceDown(service);
+        }
+    }
+
+    private void MaybeNotifyKeepAliveServiceDown(DashboardServiceRowViewModel service)
+    {
+        if (!service.IsSupervised || !ExpectsToBeUp(service))
+        {
+            return;
+        }
+
+        if (!IsKeepAliveEnabled(service))
+        {
+            return;
+        }
+
+        if (!service.ExpectRunning || _serviceManager.IsUserStoppedIntent(service.ServiceKey))
+        {
+            _keepAliveDownNotified.Remove(service.ServiceKey);
+            return;
+        }
+
+        if (service.IsRunning || service.IsBusy || service.StatusText is "Starting" or "Restarting")
+        {
+            if (service.IsRunning && _keepAliveDownNotified.Remove(service.ServiceKey))
+            {
+                TryShowToast(
+                    "Keep-alive recovered",
+                    $"{service.Name} is running again.");
+            }
+
+            return;
+        }
+
+        if (service.StatusText is not ("Stopped" or "Error"))
+        {
+            return;
+        }
+
+        if (!_keepAliveDownNotified.Add(service.ServiceKey))
+        {
+            return;
+        }
+
+        var detail = service.StatusText == "Error" && !string.IsNullOrWhiteSpace(service.Message)
+            ? $" {service.Message}"
+            : string.Empty;
+
+        TryShowToast(
+            "Keep-alive service down",
+            $"{service.Name} stopped unexpectedly.{detail} Stackroot is trying to restart it.");
+
+        _activity.LogWarning(
+            "Services",
+            $"{service.Name} stopped unexpectedly — keep-alive restart in progress.");
+    }
+
+    private void TryShowToast(string title, string message)
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        try
+        {
+            _services.GetRequiredService<IToastService>().Show(title, message);
+        }
+        catch
+        {
+            // Toast is best-effort.
+        }
+    }
+
+    private void ApplyDashboardServiceStatusFromLive(
+        DashboardServiceRowViewModel service,
+        ServiceInfo? liveInfo,
+        string source)
+    {
+        var previousStatus = service.StatusText;
+
+        if (source == "snapshot" && ShouldIgnoreStaleSnapshot(service, liveInfo))
+        {
+            return;
+        }
+
+        if (source == "snapshot"
+            && string.Equals(service.StatusText, "Running", StringComparison.Ordinal)
+            && liveInfo is { Status: ServiceStatus.Starting })
+        {
+            return;
+        }
+
         if (service.IsBusy
             && string.Equals(service.StatusText, "Starting", StringComparison.Ordinal)
-            && liveInfo?.PortOpen != true)
+            && liveInfo?.PortOpen != true
+            && liveInfo?.Status != ServiceStatus.Starting
+            && string.IsNullOrWhiteSpace(liveInfo?.Message))
         {
             return;
         }
 
         if (service.IsBusy
             && string.Equals(service.StatusText, "Stopping", StringComparison.Ordinal)
-            && liveInfo is not { PortOpen: false })
+            && liveInfo is not { PortOpen: false }
+            && liveInfo?.Status != ServiceStatus.Stopped)
         {
             return;
         }
@@ -766,10 +2000,17 @@ public sealed class DashboardViewModel : ViewModelBase
 
         if (liveInfo is null)
         {
+            if (source == "snapshot")
+            {
+                return;
+            }
+
             if (service.Message is not null || service.IsRunning)
             {
                 service.Message = null;
                 ApplyDashboardServiceStatus(service, false);
+                ApplyServiceUptime(service, false, null);
+                LogServiceStatusChange(service, previousStatus);
             }
 
             return;
@@ -784,6 +2025,8 @@ public sealed class DashboardViewModel : ViewModelBase
                 service.IsRunning = false;
                 service.StatusText = "Error";
                 service.StatusColor = "#EAAAB0";
+                ApplyServiceUptime(service, false, null);
+                LogServiceStatusChange(service, previousStatus);
             }
 
             return;
@@ -791,24 +2034,142 @@ public sealed class DashboardViewModel : ViewModelBase
 
         if (liveInfo.Status == ServiceStatus.Starting)
         {
-            if (service.IsRunning || service.StatusText != "Starting" || service.Message != liveInfo.Message)
+            if (string.Equals(service.StatusText, "Running", StringComparison.Ordinal) && service.IsRunning)
             {
-                service.Message = liveInfo.Message;
+                return;
+            }
+
+            service.NoteStarted();
+            var applyMessage = !string.IsNullOrWhiteSpace(liveInfo.Message)
+                || string.IsNullOrWhiteSpace(service.Message);
+            if (service.IsRunning
+                || service.StatusText != "Starting"
+                || (applyMessage && service.Message != liveInfo.Message))
+            {
+                if (applyMessage)
+                {
+                    service.Message = liveInfo.Message;
+                }
+
+                service.SetStartupProgress(true);
                 service.IsRunning = false;
                 service.StatusText = "Starting";
                 service.StatusColor = "#E9BD5B";
+                ApplyServiceUptime(service, false, null);
+                LogServiceStatusChange(service, previousStatus);
             }
 
             return;
         }
 
         var isRunning = liveInfo.PortOpen == true;
+        if (isRunning)
+        {
+            service.NoteStarted();
+        }
+
         if (service.Message != liveInfo.Message)
         {
             service.Message = liveInfo.Message;
         }
 
         ApplyDashboardServiceStatus(service, isRunning);
+        ApplyServiceUptime(service, isRunning, liveInfo.Pid);
+        ApplyKeepAliveRowMessage(service);
+        if (isRunning)
+        {
+            _serviceLastStableRunningAt[service.ServiceKey] = DateTimeOffset.UtcNow;
+        }
+
+        LogServiceStatusChange(service, previousStatus);
+    }
+
+    private bool ShouldIgnoreStaleSnapshot(DashboardServiceRowViewModel service, ServiceInfo? liveInfo)
+    {
+        if (liveInfo is null)
+        {
+            return false;
+        }
+
+        // Never override a user's explicit stop with stale Running/Starting snapshot data.
+        if (_serviceManager.IsUserStoppedIntent(service.ServiceKey))
+        {
+            return liveInfo.PortOpen == true || liveInfo.Status == ServiceStatus.Starting;
+        }
+
+        if (liveInfo.Status == ServiceStatus.Error)
+        {
+            return false;
+        }
+
+        if (liveInfo.Status == ServiceStatus.Running && liveInfo.PortOpen == true)
+        {
+            return false;
+        }
+
+        // Ignore stale stopped snapshots only while a start/restart is still in progress.
+        if (liveInfo.Status == ServiceStatus.Stopped && liveInfo.PortOpen != true)
+        {
+            if (service.ShowStartupProgress
+                || string.Equals(service.StatusText, "Starting", StringComparison.Ordinal)
+                || string.Equals(service.StatusText, "Restarting", StringComparison.Ordinal)
+                || service.IsBusy)
+            {
+                return true;
+            }
+
+            if (service.IsRunning
+                && _serviceLastStableRunningAt.TryGetValue(service.ServiceKey, out var lastRunning)
+                && DateTimeOffset.UtcNow - lastRunning < ServiceSnapshotStabilization)
+            {
+                return true;
+            }
+        }
+
+        // Unstick rows: a running snapshot must override a stale Starting presentation.
+        if (string.Equals(service.StatusText, "Starting", StringComparison.Ordinal)
+            && liveInfo is { PortOpen: true })
+        {
+            return false;
+        }
+
+        if (string.Equals(service.StatusText, "Starting", StringComparison.Ordinal)
+            && liveInfo.Status == ServiceStatus.Starting
+            && !string.IsNullOrWhiteSpace(service.Message)
+            && !string.Equals(service.Message, liveInfo.Message, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void LogServiceStatusChange(DashboardServiceRowViewModel service, string previousStatus)
+    {
+        if (string.Equals(service.StatusText, previousStatus, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _diagnostics.LogActivity(
+            "Dashboard",
+            $"Service status: {service.ServiceKey} {previousStatus} → {service.StatusText}");
+    }
+
+    private static void ApplyServiceUptime(DashboardServiceRowViewModel service, bool isRunning, int? pid)
+    {
+        service.SetUptimeFromPid(isRunning ? pid : null);
+    }
+
+    private static void ApplyPhpListenerUptime(DashboardPhpListenerViewModel listener, bool isRunning)
+    {
+        listener.SyncUptimeFromListener(isRunning);
+    }
+
+    private static void ApplyProcessUptime(DashboardProcessRowViewModel row, ProcessStatus status, int? pid)
+    {
+        var isRunning = status is ProcessStatus.Running or ProcessStatus.Restarting;
+        row.SetUptimeFromPid(isRunning ? pid : null);
     }
 
     private static void ApplyDashboardServiceStatus(DashboardServiceRowViewModel service, bool isRunning)
@@ -824,9 +2185,53 @@ public sealed class DashboardViewModel : ViewModelBase
         }
 
         service.IsBusy = false;
+        service.SetStartupProgress(false);
         service.IsRunning = isRunning;
         service.StatusText = statusText;
         service.StatusColor = statusColor;
+        if (isRunning)
+        {
+            service.NoteStarted();
+        }
+    }
+
+    private void RefreshUptimeFromSnapshot(RuntimeStateSnapshot snapshot)
+    {
+        foreach (var service in Services)
+        {
+            if (!service.IsRunning)
+            {
+                ApplyServiceUptime(service, false, null);
+                continue;
+            }
+
+            if (string.Equals(service.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyServiceUptime(service, true, snapshot.Mailpit?.Pid);
+                continue;
+            }
+
+            var live = snapshot.Services.FirstOrDefault(row =>
+                string.Equals(row.Id, service.ServiceKey, StringComparison.OrdinalIgnoreCase));
+            ApplyServiceUptime(service, true, live?.Pid);
+        }
+
+        foreach (var listener in PhpListeners)
+        {
+            ApplyPhpListenerUptime(listener, listener.IsRunning);
+        }
+
+        foreach (var row in EnabledProcesses)
+        {
+            var process = snapshot.Processes.FirstOrDefault(candidate => candidate.Id == row.Id);
+            if (process is null)
+            {
+                ApplyProcessUptime(row, ProcessStatus.Stopped, null);
+                continue;
+            }
+
+            ApplyProcessUptime(row, process.Status, process.Pid);
+        }
     }
 
     private async Task SyncPhpListenersAsync()
@@ -840,12 +2245,25 @@ public sealed class DashboardViewModel : ViewModelBase
         foreach (var version in phpVersions)
         {
             var port = version.FastCgiPort ?? 0;
-            if (port <= 0) continue;
+            if (port <= 0)
+            {
+                continue;
+            }
+
             var endpoint = $"{host}:{port}";
-            var isRunning = await _serviceManager.IsPortOpenAsync(host, port).ConfigureAwait(false);
-            if (!isRunning) continue;
+            var listenerState = _runtimeState.LatestSnapshot?.PhpListeners.FirstOrDefault(row =>
+                string.Equals(row.VersionId, version.Id, StringComparison.OrdinalIgnoreCase));
+            var isRunning = listenerState?.IsRunning ?? _runtimeState.IsManagedPhpListenerRunning(version.Id);
+            if (!isRunning && !version.IsRequired)
+            {
+                continue;
+            }
+
+            var statusText = isRunning
+                ? "Running"
+                : (version.IsRequired ? "Stopped" : listenerState?.StatusText ?? "Stopped");
             var logPath = Path.Combine(_paths.LogsRoot, $"php-cgi-{version.Id}.stderr.log");
-            rows.Add((version, endpoint, true, "Running", logPath, File.Exists(logPath)));
+            rows.Add((version, endpoint, isRunning, statusText, logPath, File.Exists(logPath)));
         }
 
         await RunOnUiAsync(() =>
@@ -866,7 +2284,7 @@ public sealed class DashboardViewModel : ViewModelBase
                         VersionId = version.Id,
                         IsRequired = version.IsRequired,
                         Endpoint = endpoint,
-                        StatusColor = isRunning ? "#8FD6B6" : "#91A0B5",
+                        StatusColor = ResolvePhpListenerStatusColor(isRunning, statusText),
                         ShowLogButton = logExists || isRunning,
                         OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath), _ => File.Exists(logPath)),
                         StopCommand = new RelayCommand(_ => _ = StopPhpCgiAsync(capturedVersion), _ => isRunning),
@@ -878,6 +2296,7 @@ public sealed class DashboardViewModel : ViewModelBase
                         _ => _ = RestartPhpCgiAsync(capturedVersion),
                         _ => version.IsRequired && !listener.IsRestarting);
 
+                    ApplyPhpListenerUptime(listener, isRunning);
                     PhpListeners.Add(listener);
                     continue;
                 }
@@ -893,12 +2312,13 @@ public sealed class DashboardViewModel : ViewModelBase
                         $"PHP listener status: {version.Id} {existing.StatusText} → {statusText} (port open={isRunning})");
                     existing.IsRunning = isRunning;
                     existing.StatusText = statusText;
-                    existing.StatusColor = isRunning ? "#8FD6B6" : "#91A0B5";
+                    existing.StatusColor = ResolvePhpListenerStatusColor(isRunning, statusText);
                 }
 
                 existing.ShowLogButton = logExists || isRunning;
                 existing.StopCommand.RaiseCanExecuteChanged();
                 existing.RestartCommand.RaiseCanExecuteChanged();
+                ApplyPhpListenerUptime(existing, isRunning);
             }
 
             RaisePropertyChanged(nameof(HasPhpListeners));
@@ -907,58 +2327,6 @@ public sealed class DashboardViewModel : ViewModelBase
 
     private IReadOnlyList<string> ResolveRequiredPhpVersionIds() =>
         _serviceManager.ResolveRequiredPhpVersionIds();
-
-    private async Task UpdatePhpListenerStatusesAsync()
-    {
-        var settings = _settingsStore.Load();
-        var host = string.IsNullOrWhiteSpace(settings.Php.FpmHost) ? "127.0.0.1" : settings.Php.FpmHost;
-        var requiredVersionIds = ResolveRequiredPhpVersionIds();
-        var phpVersions = _phpConfigWriter.ListInstalledPhpVersions(settings, requiredVersionIds)
-            .ToDictionary(v => v.Id, StringComparer.OrdinalIgnoreCase);
-        var updates = new List<(DashboardPhpListenerViewModel Listener, string Endpoint, bool IsRunning, string StatusText)>();
-
-        foreach (var listener in PhpListeners)
-        {
-            if (!phpVersions.TryGetValue(listener.VersionId, out var version) || version.FastCgiPort is not int port)
-            {
-                continue;
-            }
-
-            var endpoint = $"{host}:{port}";
-            var isRunning = await _serviceManager.IsPortOpenAsync(host, port).ConfigureAwait(false);
-            var statusText = isRunning
-                ? "Running"
-                : version.IsRequired ? "Stopped" : "Not required";
-            updates.Add((listener, endpoint, isRunning, statusText));
-        }
-
-        await RunOnUiAsync(() =>
-        {
-            foreach (var (listener, endpoint, isRunning, statusText) in updates)
-            {
-                if (!isRunning)
-                {
-                    PhpListeners.Remove(listener);
-                    continue;
-                }
-
-                if (!string.Equals(listener.Endpoint, endpoint, StringComparison.Ordinal))
-                {
-                    listener.Endpoint = endpoint;
-                }
-
-                if (listener.IsRunning == isRunning && listener.StatusText == statusText)
-                {
-                    continue;
-                }
-
-                listener.IsRunning = isRunning;
-                listener.StatusText = statusText;
-                listener.StatusColor = isRunning ? "#8FD6B6" : "#91A0B5";
-                listener.StopCommand.RaiseCanExecuteChanged();
-            }
-        }).ConfigureAwait(true);
-    }
 
     private static void OpenPhpLog(string logPath)
     {
@@ -1077,18 +2445,24 @@ public sealed class DashboardViewModel : ViewModelBase
                     WorkDir = process.ResolvedCwd ?? process.WorkDir ?? string.Empty,
                     IsRunning = isActive,
                     IsFeatured = process.Featured == true,
+                    AutoStart = process.AutoStart,
+                    RestartDelaySeconds = process.RestartDelaySeconds,
+                    IsSupervised = process.Supervised != false,
                     ShowLogButton = process.HasLog == true || isActive || process.Status == ProcessStatus.Error,
                     OpenLogCommand = new RelayCommand(_ => OpenProcessLog(id, process.Name)),
                     StartCommand = new RelayCommand(_ => RefreshAfterProcessAction(id, () => _processManager.Start(id), "start"), _ => CanStartDashboardProcess(id)),
                     StopCommand = new RelayCommand(_ => RefreshAfterProcessAction(id, () => _processManager.Stop(id), "stop"), _ => CanStopDashboardProcess(id)),
                     RestartCommand = new RelayCommand(_ => _ = RefreshAfterProcessRestartAsync(id), _ => CanRestartDashboardProcess(id))
                 };
-                ApplyProcessStatus(row, process.Status, process.Available);
+                ApplyProcessStatus(row, process.Status, process.Available, process.Pid);
                 EnabledProcesses.Add(row);
                 continue;
             }
 
-            ApplyProcessStatus(existing, process.Status, process.Available);
+            ApplyProcessStatus(existing, process.Status, process.Available, process.Pid);
+            existing.AutoStart = process.AutoStart;
+            existing.RestartDelaySeconds = process.RestartDelaySeconds;
+            existing.IsSupervised = process.Supervised != false;
             existing.StartCommand.RaiseCanExecuteChanged();
             existing.StopCommand.RaiseCanExecuteChanged();
             existing.RestartCommand.RaiseCanExecuteChanged();
@@ -1118,43 +2492,11 @@ public sealed class DashboardViewModel : ViewModelBase
            && string.Equals(row.CommandLine, process.CommandLine ?? string.Empty, StringComparison.Ordinal)
            && string.Equals(row.WorkDir, process.ResolvedCwd ?? process.WorkDir ?? string.Empty, StringComparison.Ordinal)
            && row.IsFeatured == (process.Featured == true)
+           && row.AutoStart == process.AutoStart
+           && row.RestartDelaySeconds == process.RestartDelaySeconds
+           && row.IsSupervised == (process.Supervised != false)
            && row.ShowLogButton == (process.HasLog == true
                || process.Status is ProcessStatus.Running or ProcessStatus.Restarting or ProcessStatus.Error);
-
-    private async Task UpdateProcessStatusesAsync()
-    {
-        var snapshots = await Task.Run(() =>
-            _processManager.List()
-                .Where(process => process.Enabled)
-                .Select(process => (process.Id, process.Status, process.Available))
-                .ToList()).ConfigureAwait(true);
-
-        var snapshotKey = string.Join('\n', snapshots.Select(snapshot =>
-            $"{snapshot.Id}|{snapshot.Status}|{snapshot.Available}"));
-        if (string.Equals(snapshotKey, _lastProcessStatusSnapshot, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        _lastProcessStatusSnapshot = snapshotKey;
-
-        foreach (var snapshot in snapshots)
-        {
-            var row = EnabledProcesses.FirstOrDefault(r => r.Id == snapshot.Id);
-            if (row is null)
-            {
-                continue;
-            }
-
-            if (row.StatusText != snapshot.Status.ToString() || row.IsRunning != (snapshot.Status is ProcessStatus.Running or ProcessStatus.Restarting))
-            {
-                _diagnostics.LogActivity("Dashboard",
-                    $"Process status: {row.Name} {row.StatusText} → {snapshot.Status}");
-            }
-
-            ApplyProcessStatus(row, snapshot.Status, snapshot.Available);
-        }
-    }
 
     private void RebuildProcesses()
     {
@@ -1173,6 +2515,9 @@ public sealed class DashboardViewModel : ViewModelBase
                 WorkDir = process.ResolvedCwd ?? process.WorkDir ?? string.Empty,
                 IsRunning = isActive,
                 IsFeatured = process.Featured == true,
+                AutoStart = process.AutoStart,
+                RestartDelaySeconds = process.RestartDelaySeconds,
+                IsSupervised = process.Supervised != false,
                 ShowLogButton = process.HasLog == true || isActive || process.Status == ProcessStatus.Error,
                 OpenLogCommand = new RelayCommand(_ => OpenProcessLog(id, process.Name)),
                 StartCommand = new RelayCommand(_ => RefreshAfterProcessAction(id, () => _processManager.Start(id), "start"), _ => CanStartDashboardProcess(id)),
@@ -1180,7 +2525,7 @@ public sealed class DashboardViewModel : ViewModelBase
                 RestartCommand = new RelayCommand(_ => _ = RefreshAfterProcessRestartAsync(id), _ => CanRestartDashboardProcess(id))
             };
 
-            ApplyProcessStatus(row, process.Status, process.Available);
+            ApplyProcessStatus(row, process.Status, process.Available, process.Pid);
             EnabledProcesses.Add(row);
         }
     }
@@ -1298,7 +2643,11 @@ public sealed class DashboardViewModel : ViewModelBase
         return row is not null && row.ShowRestartButton;
     }
 
-    private static void ApplyProcessStatus(DashboardProcessRowViewModel row, ProcessStatus status, bool available)
+    private static void ApplyProcessStatus(
+        DashboardProcessRowViewModel row,
+        ProcessStatus status,
+        bool available,
+        int? pid = null)
     {
         string statusText;
         string statusColor;
@@ -1333,18 +2682,25 @@ public sealed class DashboardViewModel : ViewModelBase
             }
         }
 
-        if (row.StatusText == statusText && row.StatusColor == statusColor && row.IsRunning == isRunning && !row.IsBusy)
+        if (row.StatusText != statusText || row.StatusColor != statusColor || row.IsRunning != isRunning || row.IsBusy)
         {
-            return;
+            row.IsBusy = false;
+            row.StatusText = statusText;
+            row.StatusColor = statusColor;
+            row.IsRunning = isRunning;
+            row.StartCommand.RaiseCanExecuteChanged();
+            row.StopCommand.RaiseCanExecuteChanged();
+            row.RestartCommand.RaiseCanExecuteChanged();
         }
 
-        row.IsBusy = false;
-        row.StatusText = statusText;
-        row.StatusColor = statusColor;
-        row.IsRunning = isRunning;
-        row.StartCommand.RaiseCanExecuteChanged();
-        row.StopCommand.RaiseCanExecuteChanged();
-        row.RestartCommand.RaiseCanExecuteChanged();
+        if (!isRunning)
+        {
+            ApplyProcessUptime(row, status, null);
+        }
+        else if (pid is not null)
+        {
+            ApplyProcessUptime(row, status, pid);
+        }
     }
 
     private async Task SyncQuickLinksAsync()
@@ -1443,17 +2799,7 @@ public sealed class DashboardViewModel : ViewModelBase
         IsProcessBulkBusy = true;
         try
         {
-            var processIds = EnabledProcesses.Select(process => process.Id).ToList();
-            var results = await Task.Run(() =>
-            {
-                var stopped = new List<ProcessInfo>(processIds.Count);
-                foreach (var processId in processIds)
-                {
-                    stopped.Add(_processManager.Stop(processId));
-                }
-
-                return stopped;
-            }).ConfigureAwait(true);
+            var results = await Task.Run(() => _processManager.StopAll()).ConfigureAwait(true);
 
             _activityCoordinator.NotifyProcessActions(results, "stop");
             if (results.Count > 0)
@@ -1500,13 +2846,18 @@ public sealed class DashboardViewModel : ViewModelBase
                 continue;
             }
 
-            desired.Add(new ServiceShellItem(definition.Id.ToString().ToLowerInvariant(), definition, false));
+            desired.Add(new ServiceShellItem(definition.Id.ToString().ToLowerInvariant(), definition));
         }
 
         var mailpitSettings = settings.Mailpit;
         if (mailpitSettings.Enabled && _registryStore.IsInstalled(mailpitSettings.PackageId))
         {
-            desired.Add(new ServiceShellItem("mailpit", null, true));
+            desired.Add(new ServiceShellItem("mailpit", null, DashboardShellServiceKind.Mailpit));
+        }
+
+        if (settings.TestDns.Enabled)
+        {
+            desired.Add(new ServiceShellItem("testdns", null, DashboardShellServiceKind.TestDns));
         }
 
         return desired;
@@ -1524,12 +2875,15 @@ public sealed class DashboardViewModel : ViewModelBase
         foreach (var item in desired)
         {
             var key = item.Key;
-            if (Services.Any(row => string.Equals(row.ServiceKey, key, StringComparison.OrdinalIgnoreCase)))
+            var existing = Services.FirstOrDefault(row =>
+                string.Equals(row.ServiceKey, key, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
             {
+                ApplyServiceRowPresentation(existing, settings, item);
                 continue;
             }
 
-            if (item.IsMailpit)
+            if (item.Kind == DashboardShellServiceKind.Mailpit)
             {
                 Services.Add(new DashboardServiceRowViewModel
                 {
@@ -1544,6 +2898,25 @@ public sealed class DashboardViewModel : ViewModelBase
                     StartCommand = new RelayCommand(_ => _ = StartAsync("mailpit"), _ => CanStartService("mailpit")),
                     StopCommand = new RelayCommand(_ => _ = StopAsync("mailpit"), _ => CanStopService("mailpit")),
                     RestartCommand = new RelayCommand(_ => _ = RestartAsync("mailpit"), _ => CanStopService("mailpit"))
+                });
+                continue;
+            }
+
+            if (item.Kind == DashboardShellServiceKind.TestDns)
+            {
+                Services.Add(new DashboardServiceRowViewModel
+                {
+                    ServiceKey = "testdns",
+                    Name = "Test DNS",
+                    Description = "Wildcard .test resolution via 127.0.0.1:53",
+                    PortLabel = "53",
+                    IsSupervised = false,
+                    StatusText = "Loading",
+                    StatusColor = "#91A0B5",
+                    SettingsCommand = new RelayCommand(_ => OpenTestDnsSettings()),
+                    StartCommand = new RelayCommand(_ => _ = StartAsync("testdns"), _ => CanStartService("testdns")),
+                    StopCommand = new RelayCommand(_ => _ = StopAsync("testdns"), _ => CanStopService("testdns")),
+                    RestartCommand = new RelayCommand(_ => _ = RestartAsync("testdns"), _ => CanStopService("testdns"))
                 });
                 continue;
             }
@@ -1564,6 +2937,136 @@ public sealed class DashboardViewModel : ViewModelBase
                 StopCommand = new RelayCommand(_ => _ = StopAsync(capturedKey), _ => CanStopService(capturedKey)),
                 RestartCommand = new RelayCommand(_ => _ = RestartAsync(capturedKey), _ => CanStopService(capturedKey))
             });
+        }
+    }
+
+    /// <summary>
+    /// Refreshes keep-alive icon and related presentation after settings change (Dashboard or Services page).
+    /// </summary>
+    public void SyncServicePresentationFromSettings(ServiceId? serviceId = null, bool mailpit = false, bool testDns = false)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(() => SyncServicePresentationFromSettings(serviceId, mailpit, testDns));
+            return;
+        }
+
+        var settings = _settingsStore.Load();
+
+        if (testDns)
+        {
+            _ = RefreshAsync(resyncStructure: true);
+            UpdateEnvironmentHealth();
+            return;
+        }
+
+        if (mailpit || serviceId == ServiceId.Mailpit)
+        {
+            var row = Services.FirstOrDefault(item =>
+                string.Equals(item.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase));
+            if (row is not null)
+            {
+                ApplyMailpitRowPresentation(row, settings);
+                if (!row.IsSupervised)
+                {
+                    _keepAliveDownNotified.Remove(row.ServiceKey);
+                }
+            }
+
+            UpdateEnvironmentHealth();
+            return;
+        }
+
+        if (serviceId is not null)
+        {
+            var key = serviceId.Value.ToString().ToLowerInvariant();
+            var row = Services.FirstOrDefault(item =>
+                string.Equals(item.ServiceKey, key, StringComparison.OrdinalIgnoreCase));
+            if (row is not null
+                && settings.Services.TryGetValue(serviceId.Value, out var serviceSettings))
+            {
+                row.IsSupervised = serviceSettings.Supervise && serviceSettings.Enabled;
+                if (!row.IsSupervised)
+                {
+                    _keepAliveDownNotified.Remove(row.ServiceKey);
+                }
+            }
+        }
+        else
+        {
+            foreach (var row in Services)
+            {
+                if (string.Equals(row.ServiceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+                {
+                    ApplyMailpitRowPresentation(row, settings);
+                    continue;
+                }
+
+                if (Enum.TryParse<ServiceId>(row.ServiceKey, ignoreCase: true, out var parsedId)
+                    && settings.Services.TryGetValue(parsedId, out var serviceSettings))
+                {
+                    row.IsSupervised = serviceSettings.Supervise && serviceSettings.Enabled;
+                }
+            }
+        }
+
+        UpdateEnvironmentHealth();
+    }
+
+    private void ApplyMailpitRowPresentation(DashboardServiceRowViewModel row, AppSettings settings)
+    {
+        var mailpit = settings.Mailpit;
+        row.IsSupervised = mailpit.Supervise
+            && mailpit.Enabled
+            && _registryStore.IsInstalled(mailpit.PackageId);
+    }
+
+    private static void ApplyTestDnsRowStatus(DashboardServiceRowViewModel row, RuntimeTestDnsState state)
+    {
+        if (!state.Enabled)
+        {
+            row.MarkStopped();
+            return;
+        }
+
+        if (state.Running && state.NrptActive)
+        {
+            row.MarkRunning();
+            row.Message = null;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.Message))
+        {
+            row.MarkError(state.Message);
+            return;
+        }
+
+        row.MarkStopped();
+    }
+
+    private void ApplyServiceRowPresentation(
+        DashboardServiceRowViewModel row,
+        AppSettings settings,
+        ServiceShellItem item)
+    {
+        if (item.Kind == DashboardShellServiceKind.Mailpit)
+        {
+            ApplyMailpitRowPresentation(row, settings);
+            return;
+        }
+
+        if (item.Kind == DashboardShellServiceKind.TestDns)
+        {
+            row.IsSupervised = false;
+            return;
+        }
+
+        var definition = item.Definition!;
+        if (settings.Services.TryGetValue(definition.Id, out var serviceSettings))
+        {
+            row.IsSupervised = serviceSettings.Supervise && serviceSettings.Enabled;
         }
     }
 
@@ -1621,6 +3124,22 @@ public sealed class DashboardViewModel : ViewModelBase
                 RestartCommand = new RelayCommand(_ => _ = RestartAsync("mailpit"), _ => CanStopService("mailpit"))
             });
         }
+
+        if (settings.TestDns.Enabled)
+        {
+            Services.Add(new DashboardServiceRowViewModel
+            {
+                ServiceKey = "testdns",
+                Name = "Test DNS",
+                Description = "Wildcard .test resolution via 127.0.0.1:53",
+                PortLabel = "53",
+                IsSupervised = false,
+                SettingsCommand = new RelayCommand(_ => OpenTestDnsSettings()),
+                StartCommand = new RelayCommand(_ => _ = StartAsync("testdns"), _ => CanStartService("testdns")),
+                StopCommand = new RelayCommand(_ => _ = StopAsync("testdns"), _ => CanStopService("testdns")),
+                RestartCommand = new RelayCommand(_ => _ = RestartAsync("testdns"), _ => CanStopService("testdns"))
+            });
+        }
     }
 
     private bool CanStartService(string serviceKey)
@@ -1654,7 +3173,13 @@ public sealed class DashboardViewModel : ViewModelBase
 
         IsAllBusy = true;
         ErrorMessage = null;
-        var targets = Services.Where(s => !s.IsRunning).ToList();
+        var targets = Services.Where(s => !s.IsRunning && !s.IsBusy).ToList();
+        if (targets.Count == 0)
+        {
+            IsAllBusy = false;
+            NotifyAggregatePropertiesChanged();
+            return;
+        }
         try
         {
             foreach (var service in targets)
@@ -1678,14 +3203,34 @@ public sealed class DashboardViewModel : ViewModelBase
                     continue;
                 }
 
-                launchTasks.Add(_serviceManager.StartAsync(service.ServiceKey, default, ServiceStartMode.Background));
+                if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+                {
+                    launchTasks.Add(StartTestDnsFromDashboardAsync(service));
+                    continue;
+                }
+
+                launchTasks.Add(StartManagedServiceFromDashboardAsync(service, ServiceStartMode.WaitUntilReady));
             }
 
             await Task.WhenAll(launchTasks);
 
-            if (targets.Count > 0)
+            var runningCount = targets.Count(service => service.IsRunning);
+            var errorRows = targets.Where(service => string.Equals(service.StatusText, "Error", StringComparison.OrdinalIgnoreCase)).ToList();
+            var pendingCount = targets.Count - runningCount - errorRows.Count;
+
+            if (errorRows.Count == 0 && pendingCount == 0)
             {
-                _activity.LogSuccess("Services", SessionActivityMessages.ServiceBulkStarted(targets.Count));
+                _activity.LogSuccess("Services", SessionActivityMessages.ServiceBulkStarted(runningCount));
+            }
+            else
+            {
+                var summary = $"Service bulk start summary: {runningCount} running, {errorRows.Count} failed, {pendingCount} pending.";
+                _activity.LogWarning("Services", summary);
+                var firstError = errorRows.FirstOrDefault(row => !string.IsNullOrWhiteSpace(row.Message));
+                if (firstError is not null)
+                {
+                    ErrorMessage = firstError.Message;
+                }
             }
 
             var nginx = targets.FirstOrDefault(service =>
@@ -1724,6 +3269,61 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
+    private async Task StartManagedServiceFromDashboardAsync(
+        DashboardServiceRowViewModel item,
+        ServiceStartMode mode)
+    {
+        try
+        {
+            var resultInfo = await Task.Run(async () =>
+                    await _serviceManager.StartAsync(item.ServiceKey, default, mode).ConfigureAwait(false))
+                .ConfigureAwait(true);
+            if (resultInfo.PortOpen == true || resultInfo.Status == ServiceStatus.Running)
+            {
+                item.MarkRunning();
+            }
+            else if (resultInfo.Status == ServiceStatus.Starting)
+            {
+                ApplyDashboardServiceStatusFromLive(item, resultInfo, "manual");
+            }
+            else if (!string.IsNullOrWhiteSpace(resultInfo.Message))
+            {
+                item.MarkError(resultInfo.Message);
+            }
+            else
+            {
+                item.MarkStopped();
+            }
+        }
+        catch (Exception ex)
+        {
+            item.MarkError(ex.Message);
+        }
+    }
+
+    private async Task StartTestDnsFromDashboardAsync(DashboardServiceRowViewModel item)
+    {
+        try
+        {
+            var coordinator = _services.GetRequiredService<TestDnsCoordinator>();
+            await Task.Run(async () => await coordinator.EnableAsync().ConfigureAwait(false))
+                .ConfigureAwait(true);
+            var status = coordinator.GetStatus();
+            if (status.Running && status.NrptActive)
+            {
+                item.MarkRunning();
+            }
+            else if (!string.IsNullOrWhiteSpace(status.Message))
+            {
+                item.MarkError(status.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            item.MarkError(ex.Message);
+        }
+    }
+
     private async Task StopAllAsync()
     {
         if (IsAllBusy)
@@ -1736,6 +3336,12 @@ public sealed class DashboardViewModel : ViewModelBase
         var targets = Services.Where(s => s.IsRunning).ToList();
         try
         {
+            foreach (var service in targets)
+            {
+                service.NoteUserStopped();
+                _serviceManager.MarkUserStoppedIntent(service.ServiceKey);
+            }
+
             foreach (var service in targets)
             {
                 await StopAsync(service.ServiceKey);
@@ -1805,6 +3411,12 @@ public sealed class DashboardViewModel : ViewModelBase
                 return;
             }
 
+            if (string.Equals(serviceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+            {
+                await StartTestDnsFromDashboardAsync(item).ConfigureAwait(true);
+                return;
+            }
+
             if (string.Equals(serviceKey, "nginx", StringComparison.OrdinalIgnoreCase))
             {
                 await PrepareWebStackForNginxAsync().ConfigureAwait(true);
@@ -1819,7 +3431,7 @@ public sealed class DashboardViewModel : ViewModelBase
             }
             else if (resultInfo.Status == ServiceStatus.Starting)
             {
-                ApplyDashboardServiceStatusFromLive(item, resultInfo);
+                ApplyDashboardServiceStatusFromLive(item, resultInfo, "manual");
             }
             else if (!string.IsNullOrWhiteSpace(resultInfo.Message))
             {
@@ -1848,6 +3460,12 @@ public sealed class DashboardViewModel : ViewModelBase
         item.IsBusy = true;
         item.StatusText = "Stopping";
         item.StatusColor = "#E9BD5B";
+        item.NoteUserStopped();
+        if (TryParseServiceId(serviceKey, out _))
+        {
+            _serviceManager.MarkUserStoppedIntent(serviceKey);
+        }
+
         try
         {
             if (string.Equals(serviceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
@@ -1858,18 +3476,24 @@ public sealed class DashboardViewModel : ViewModelBase
                 return;
             }
 
+            if (string.Equals(serviceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+            {
+                var coordinator = _services.GetRequiredService<TestDnsCoordinator>();
+                await Task.Run(async () => await coordinator.StopRuntimeAsync().ConfigureAwait(false))
+                    .ConfigureAwait(true);
+                item.MarkStopped();
+                return;
+            }
+
             if (!TryParseServiceId(serviceKey, out var serviceId))
             {
                 return;
             }
 
-            await Task.Run(async () => await _serviceManager.StopAsync(serviceKey).ConfigureAwait(false))
+            var result = await Task.Run(async () =>
+                    await _serviceManager.StopAsync(serviceKey).ConfigureAwait(false))
                 .ConfigureAwait(true);
-            var live = _serviceManager.TryBuildLiveInfo(serviceKey);
-            if (live is { PortOpen: false })
-            {
-                item.MarkStopped();
-            }
+            ApplyDashboardServiceStatusFromLive(item, result, "manual");
         }
         catch (Exception ex)
         {
@@ -1877,18 +3501,10 @@ public sealed class DashboardViewModel : ViewModelBase
         }
         finally
         {
-            var live = _serviceManager.TryBuildLiveInfo(serviceKey);
-            if (live is not null)
-            {
-                ApplyDashboardServiceStatusFromLive(item, live);
-            }
-            else if (item.IsBusy)
-            {
-                item.MarkStopped();
-            }
-
+            item.IsBusy = false;
             item.RefreshCommandStates();
             NotifyAggregatePropertiesChanged();
+            UpdateEnvironmentHealth();
         }
     }
 
@@ -1907,12 +3523,34 @@ public sealed class DashboardViewModel : ViewModelBase
         {
             try
             {
+                if (string.Equals(serviceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+                {
+                    var coordinator = _services.GetRequiredService<TestDnsCoordinator>();
+                    await Task.Run(async () =>
+                            await coordinator.RestartRuntimeAsync().ConfigureAwait(false))
+                        .ConfigureAwait(true);
+
+                    var status = coordinator.GetStatus();
+                    if (status.Running && status.NrptActive)
+                    {
+                        item.MarkRunning();
+                        _activity.Complete(activityId, "Services", SessionActivityMessages.ServiceAction(label, "restarted", true));
+                    }
+                    else
+                    {
+                        item.MarkError(status.Message ?? "Test DNS did not start");
+                        _activity.Fail(activityId, "Services", SessionActivityMessages.ServiceAction(label, "restart", false, item.Message));
+                    }
+
+                    return;
+                }
+
                 var resultInfo = await Task.Run(async () =>
                         await _serviceManager.RestartAsync(serviceKey).ConfigureAwait(false))
                     .ConfigureAwait(true);
 
                 var live = _serviceManager.TryBuildLiveInfo(serviceKey) ?? resultInfo;
-                ApplyDashboardServiceStatusFromLive(item, live);
+                ApplyDashboardServiceStatusFromLive(item, live, "manual");
 
                 if (item.StatusText is "Running" or "Ready")
                 {
@@ -1963,6 +3601,8 @@ public sealed class DashboardViewModel : ViewModelBase
         var restartAfterSave = false;
         dialogVm.SettingsSaved += (_, _) =>
         {
+            SyncServicePresentationFromSettings(id);
+
             if (dialogVm.ClosedAfterSave)
             {
                 var serviceRow = Services.FirstOrDefault(row =>
@@ -1999,6 +3639,38 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
+    private void OpenTestDnsSettings()
+    {
+        var coordinator = _services.GetService<TestDnsCoordinator>();
+        var dialogVm = new TestDnsSettingsDialogViewModel(_settingsStore, coordinator);
+        var owner = Application.Current?.MainWindow;
+        var dialog = new TestDnsSettingsDialog
+        {
+            DataContext = dialogVm,
+            Owner = owner
+        };
+
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+
+        SettingsSaveFeedback.DeferredSettingsSave? deferred = null;
+        dialogVm.SettingsSaved += (_, _) =>
+        {
+            SyncServicePresentationFromSettings(testDns: true);
+
+            deferred = new SettingsSaveFeedback.DeferredSettingsSave(
+                "Saving Test DNS settings…",
+                dialogVm.StatusMessage,
+                async () => await RefreshAsync(resyncStructure: true));
+        };
+
+        dialog.ShowDialog();
+
+        if (deferred is { } save)
+        {
+            _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save);
+        }
+    }
+
     private void OpenMailpitSettings()
     {
         var dialogVm = new MailpitSettingsDialogViewModel(_settingsStore);
@@ -2014,6 +3686,8 @@ public sealed class DashboardViewModel : ViewModelBase
         SettingsSaveFeedback.DeferredSettingsSave? deferred = null;
         dialogVm.SettingsSaved += (_, _) =>
         {
+            SyncServicePresentationFromSettings(mailpit: true);
+
             deferred = new SettingsSaveFeedback.DeferredSettingsSave(
                 "Saving Mailpit settings…",
                 dialogVm.StatusMessage,
@@ -2076,6 +3750,11 @@ public sealed class DashboardViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(serviceKey))
         {
             return "Service";
+        }
+
+        if (string.Equals(serviceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Test DNS";
         }
 
         return char.ToUpperInvariant(serviceKey[0]) + serviceKey[1..];

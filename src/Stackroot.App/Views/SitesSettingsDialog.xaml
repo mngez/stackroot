@@ -35,15 +35,6 @@
                        FontSize="12"
                        Text="When enabled, Stackroot writes 127.0.0.1 entries for your local domains. Requires administrator privileges if access is denied."
                        TextWrapping="Wrap" />
-
-            <CheckBox Margin="0,16,0,0"
-                      Content="Resolve .test domains locally (wildcard DNS)"
-                      IsChecked="{Binding TestDnsEnabled}" />
-            <TextBlock Margin="24,6,0,0"
-                       Foreground="{StaticResource StackrootTextMutedBrush}"
-                       FontSize="12"
-                       Text="Optional. Routes only .test names to Stackroot DNS on 127.0.0.1. Supports wildcards like *.app.test. Other domains and internet traffic are unchanged. Disabled by default; may require administrator approval once."
-                       TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0,18,0,0">

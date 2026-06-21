@@ -1,3 +1,4 @@
+using System.Threading;
 using Stackroot.Core.Abstractions;
 
 namespace Stackroot.Core.Supervisor;
@@ -20,6 +21,14 @@ public sealed class GlobalProcessManager
     }
 
     public event EventHandler? Changed;
+
+    private int _userStopAllRequested;
+
+    public void NotifyUserStopAllRequested()
+        => Interlocked.Exchange(ref _userStopAllRequested, 1);
+
+    public void ClearUserStopAllRequested()
+        => Interlocked.Exchange(ref _userStopAllRequested, 0);
 
     public IReadOnlyList<ProcessInfo> List(string? siteId = null)
     {
@@ -87,6 +96,7 @@ public sealed class GlobalProcessManager
 
     public ProcessInfo Start(string id)
     {
+        ClearUserStopAllRequested();
         var process = _store.GetById(id) ?? throw new KeyNotFoundException($"Process not found: {id}");
         var target = ToRunTarget(process);
         var snapshot = _supervisor.Start(target);
@@ -112,6 +122,7 @@ public sealed class GlobalProcessManager
 
     public IReadOnlyList<ProcessInfo> StartAll(string? siteId = null)
     {
+        ClearUserStopAllRequested();
         var results = new List<ProcessInfo>();
         foreach (var process in _store.List().Where(p => p.Enabled))
         {
@@ -178,6 +189,11 @@ public sealed class GlobalProcessManager
         foreach (var process in _store.List().Where(static p => p.Enabled && p.AutoStart))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (Volatile.Read(ref _userStopAllRequested) != 0)
+            {
+                break;
+            }
+
             try
             {
                 var snapshot = _supervisor.Start(ToRunTarget(process));
@@ -204,6 +220,7 @@ public sealed class GlobalProcessManager
 
     public IReadOnlyList<ProcessInfo> StopAll(string? siteId = null)
     {
+        NotifyUserStopAllRequested();
         _supervisor.StopAll();
         var results = new List<ProcessInfo>();
         foreach (var process in _store.List())

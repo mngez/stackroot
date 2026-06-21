@@ -11,7 +11,7 @@ using Stackroot.Core.Windows;
 
 namespace Stackroot.Core.Services;
 
-public sealed class ServiceManager
+public sealed class ServiceManager : IDisposable
 {
     private readonly StackrootPaths _paths;
     private readonly InstallRegistryStore _registry;
@@ -20,18 +20,42 @@ public sealed class ServiceManager
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly PackageCatalogStore _catalog;
     private readonly NginxWebStackCoordinator? _webStackCoordinator;
-    private readonly Dictionary<ServiceId, ServiceInfo> _services = [];
-    private readonly Dictionary<ServiceId, string> _lastErrors = [];
+    private readonly ConcurrentDictionary<ServiceId, ServiceInfo> _services = new();
+    private readonly ConcurrentDictionary<ServiceId, string> _lastErrors = new();
     private readonly HashSet<ServiceId> _starting = [];
     private readonly object _startingSync = new();
     private readonly ConcurrentDictionary<string, DateTimeOffset> _phpRecoveryAttemptedAt = new(StringComparer.OrdinalIgnoreCase);
+    private int _phpRecoveryInFlight;
+    private static readonly TimeSpan PhpRecoveryRetryCooldown = TimeSpan.FromSeconds(30);
     private readonly ConcurrentDictionary<ServiceId, DateTime> _supervisionCooldowns = new();
     private readonly ConcurrentDictionary<ServiceId, int> _supervisionFailures = new();
     private readonly ConcurrentDictionary<ServiceId, bool> _supervisionEligible = new();
+    /// <summary>User explicitly stopped — keep-alive must not restart until manual Start.</summary>
+    private readonly ConcurrentDictionary<ServiceId, byte> _userStoppedServices = new();
+    private readonly ConcurrentDictionary<ServiceId, byte> _supervisionRestartInFlight = new();
+    private readonly ConcurrentDictionary<ServiceId, DateTime> _supervisionRecoveredAt = new();
+    private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _unexpectedStopHandledAt = new();
+    private readonly object _unexpectedStopSync = new();
+    private const int MaxSupervisionFailures = 10;
+    private const int MaxConcurrentSupervisionRestarts = 2;
+
+    private readonly SemaphoreSlim _supervisionRestartSlots = new(MaxConcurrentSupervisionRestarts, MaxConcurrentSupervisionRestarts);
+    private readonly object _supervisionRestartCtsSync = new();
+    private CancellationTokenSource? _supervisionRestartCts;
+    private static readonly TimeSpan SupervisionRecoveryGrace = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan UnexpectedStopDedupeWindow = TimeSpan.FromSeconds(5);
     private System.Timers.Timer? _supervisionTimer;
     private bool _supervisionStarted;
+    private int _supervisionTickInFlight;
+    private bool _disposed;
 
     public event EventHandler<ServiceInfo>? LiveStatusChanged;
+
+    /// <summary>
+    /// Fired when keep-alive restart attempts reach a milestone (every 10 failures).
+    /// Supervision continues retrying — this is for user notification only.
+    /// </summary>
+    public event EventHandler<ServiceSupervisionAlertEventArgs>? SupervisionAlert;
 
     public event EventHandler? PhpListenersChanged;
 
@@ -140,15 +164,47 @@ public sealed class ServiceManager
         return await StartAsync(id, cancellationToken, ServiceStartMode.WaitUntilReady).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Live service rows from Stackroot-owned processes (netstat + install path). No TCP probes.
+    /// </summary>
     public Task<IReadOnlyList<ServiceInfo>> ListLiveAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var settings = _settingsStore.Load();
         var rows = new List<ServiceInfo>();
 
         foreach (var definition in SettingsDefaults.ServiceDefinitions)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            rows.Add(BuildLiveInfo(definition.Id));
+            if (definition.Id == ServiceId.TestDns)
+            {
+                continue;
+            }
+
+            rows.Add(BuildLiveInfo(definition.Id, settings));
+        }
+
+        return Task.FromResult<IReadOnlyList<ServiceInfo>>(rows);
+    }
+
+    /// <summary>
+    /// Fast runtime poll — process-alive on cached PIDs; full reconcile only when a tracked process died.
+    /// </summary>
+    public Task<IReadOnlyList<ServiceInfo>> ListLiveQuickAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var settings = _settingsStore.Load();
+        var rows = new List<ServiceInfo>();
+
+        foreach (var definition in SettingsDefaults.ServiceDefinitions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (definition.Id == ServiceId.TestDns)
+            {
+                continue;
+            }
+
+            rows.Add(BuildQuickLiveInfo(definition.Id, settings));
         }
 
         return Task.FromResult<IReadOnlyList<ServiceInfo>>(rows);
@@ -166,6 +222,11 @@ public sealed class ServiceManager
 
     private void NotifyLiveStatusChanged(string id, ServiceInfo? snapshot = null)
     {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
         var info = snapshot ?? TryBuildLiveInfo(id);
         if (info is null)
         {
@@ -175,9 +236,9 @@ public sealed class ServiceManager
         LiveStatusChanged?.Invoke(this, info);
     }
 
-    private ServiceInfo BuildLiveInfo(ServiceId serviceId)
+    private ServiceInfo BuildLiveInfo(ServiceId serviceId, AppSettings? settings = null)
     {
-        var settings = _settingsStore.Load();
+        settings ??= _settingsStore.Load();
         var definition = SettingsDefaults.ServiceDefinitions.First(d => d.Id == serviceId);
         var serviceSettings = GetServiceSettings(settings, serviceId, definition.DefaultPort, definition.DefaultSslPort, definition.PackageId);
         var packageId = serviceSettings.PackageId ?? definition.PackageId;
@@ -195,15 +256,7 @@ public sealed class ServiceManager
         }
         else
         {
-            var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
-            ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
-                serviceId,
-                definition,
-                serviceSettings,
-                _paths,
-                _registry,
-                trackedPid);
-            portOpen = ownedPids.Count > 0;
+            return BuildProcessServiceLiveInfo(serviceId, definition, serviceSettings, installed, settings);
         }
 
         var status = portOpen ? ServiceStatus.Running : ServiceStatus.Stopped;
@@ -222,7 +275,7 @@ public sealed class ServiceManager
         else if (IsStarting(serviceId) && !portOpen)
         {
             status = ServiceStatus.Starting;
-            message = null;
+            message = _services.GetValueOrDefault(serviceId)?.Message;
         }
         else if (!portOpen && !string.IsNullOrWhiteSpace(message))
         {
@@ -231,11 +284,11 @@ public sealed class ServiceManager
 
         if (portOpen)
         {
-            _lastErrors.Remove(serviceId);
+            _lastErrors.TryRemove(serviceId, out _);
             message = null;
         }
 
-        return new ServiceInfo
+        var info = new ServiceInfo
         {
             Id = ToServiceKey(serviceId),
             Name = definition.Name,
@@ -249,6 +302,159 @@ public sealed class ServiceManager
                 ?? (ownedPids is { Count: > 0 } ? ownedPids[0] : null),
             Message = message
         };
+
+        return info;
+    }
+
+    private bool IsWithinSupervisionRecoveryGrace(ServiceId serviceId)
+        => _supervisionRecoveredAt.TryGetValue(serviceId, out var recoveredAt)
+           && DateTime.UtcNow - recoveredAt < SupervisionRecoveryGrace;
+
+    private ServiceInfo BuildProcessServiceLiveInfo(
+        ServiceId serviceId,
+        ServiceDefinition definition,
+        ServicePortSettings serviceSettings,
+        bool installed,
+        AppSettings settings)
+    {
+        if (IsStarting(serviceId))
+        {
+            return BuildStarting(definition, serviceSettings);
+        }
+
+        var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
+        var previous = _services.GetValueOrDefault(serviceId);
+        if (IsWithinSupervisionRecoveryGrace(serviceId) && previous is { PortOpen: true })
+        {
+            return BuildRunning(
+                definition,
+                serviceSettings,
+                previous.Pid ?? trackedPid);
+        }
+
+        var wasRunning = previous is { PortOpen: true } or { Status: ServiceStatus.Running };
+        var ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            trackedPid);
+
+        if (!IsStarting(serviceId))
+        {
+            TryReattachOwnedListeners(
+                serviceId,
+                definition,
+                serviceSettings,
+                ref ownedPids,
+                out var ownedPidsAliveVerified);
+            if (!ownedPidsAliveVerified && ownedPids.Count > 0)
+            {
+                ownedPids = PruneDeadOwnedPids(ownedPids, serviceSettings.Port);
+            }
+        }
+
+        if (_supervisionRestartInFlight.ContainsKey(serviceId)
+            && ownedPids.Count == 0
+            && !IsWithinSupervisionRecoveryGrace(serviceId))
+        {
+            return BuildStarting(definition, serviceSettings);
+        }
+
+        var isServing = ManagedServiceStatusPolicy.IsStackrootServing(ownedPids.Count);
+        if (!isServing
+            && !IsStarting(serviceId)
+            && ManagedServiceStatusPolicy.ShouldClearTrackedService(previous, ownedPids.Count))
+        {
+            _services.TryRemove(serviceId, out _);
+        }
+
+        // Clear stale stop-failure errors when the user explicitly stopped the service.
+        if (!isServing && IsUserStoppedIntent(serviceId))
+        {
+            _lastErrors.TryRemove(serviceId, out _);
+        }
+
+        var status = isServing ? ServiceStatus.Running : ServiceStatus.Stopped;
+        string? message = _lastErrors.GetValueOrDefault(serviceId);
+
+        if (!serviceSettings.Enabled)
+        {
+            status = ServiceStatus.Stopped;
+            message = "Disabled in settings";
+        }
+        else if (!installed && !string.IsNullOrWhiteSpace(definition.PackageId))
+        {
+            status = ServiceStatus.Stopped;
+            message = $"Install {definition.Name} package first";
+        }
+        else if (IsStarting(serviceId) && !isServing)
+        {
+            status = ServiceStatus.Starting;
+            message = _services.GetValueOrDefault(serviceId)?.Message;
+        }
+        else if (!isServing && ManagedServiceStatusPolicy.IsPortConflictMessage(message))
+        {
+            status = ServiceStatus.Error;
+        }
+        else if (!isServing && !string.IsNullOrWhiteSpace(message))
+        {
+            status = ServiceStatus.Error;
+        }
+
+        if (isServing)
+        {
+            _lastErrors.TryRemove(serviceId, out _);
+            message = null;
+        }
+
+        var info = new ServiceInfo
+        {
+            Id = ToServiceKey(serviceId),
+            Name = definition.Name,
+            Status = status,
+            Port = serviceSettings.Port,
+            SslPort = serviceSettings.SslPort,
+            PortOpen = isServing,
+            Installed = installed,
+            Enabled = serviceSettings.Enabled,
+            Pid = ownedPids is { Count: > 0 } ? ownedPids[0] : previous?.Pid,
+            Message = message
+        };
+
+        if (isServing)
+        {
+            _services[serviceId] = info;
+        }
+
+        if (!IsStarting(serviceId)
+            && !_supervisionRestartInFlight.ContainsKey(serviceId)
+            && !IsWithinSupervisionRecoveryGrace(serviceId)
+            && wasRunning
+            && !isServing
+            && !IsUserStoppedIntent(serviceId))
+        {
+            var now = DateTimeOffset.UtcNow;
+            lock (_unexpectedStopSync)
+            {
+                if (_unexpectedStopHandledAt.TryGetValue(serviceId, out var lastHandled)
+                    && now - lastHandled < UnexpectedStopDedupeWindow)
+                {
+                    return info;
+                }
+
+                _unexpectedStopHandledAt[serviceId] = now;
+            }
+
+            _diagnostics.LogActivity(
+                "ServiceManager",
+                $"Service '{info.Id}' stopped unexpectedly — notifying live listeners");
+            NotifyLiveStatusChanged(info.Id, info);
+            TryScheduleSupervisionRestart(serviceId, "unexpected stop", confirmedDown: true);
+        }
+
+        return info;
     }
 
     public Task<ServiceInfo> StartAsync(
@@ -267,7 +473,8 @@ public sealed class ServiceManager
             return Task.FromResult(Fail(id, id, "Service not found"));
         }
 
-        _lastErrors.Remove(serviceId);
+        _lastErrors.TryRemove(serviceId, out _);
+        ClearUserStoppedIntent(serviceId);
 
         if (mode == ServiceStartMode.Background)
         {
@@ -373,8 +580,7 @@ public sealed class ServiceManager
             return Fail(id, id, "Service not found");
         }
 
-        // User manually stopped — remove from supervision eligibility
-        _supervisionEligible.TryRemove(serviceId, out _);
+        MarkUserStoppedIntent(serviceId);
 
         ServiceInfo? notification = null;
         try
@@ -387,18 +593,18 @@ public sealed class ServiceManager
                 ? serviceSettings
                 : serviceSettings with { Port = effectivePort };
 
-            _lastErrors.Remove(serviceId);
+            _lastErrors.TryRemove(serviceId, out _);
 
             if (!StackrootManagedProcessResolver.IsServicePackageInstalled(definition, stopSettings, _registry))
             {
-                _services.Remove(serviceId);
+                _services.TryRemove(serviceId, out _);
                 notification = await BuildStoppedAsync(definition, stopSettings).ConfigureAwait(false);
                 return notification;
             }
 
             if (definition.Runtime == ServiceRuntime.Library)
             {
-                _services.Remove(serviceId);
+                _services.TryRemove(serviceId, out _);
                 notification = await BuildStoppedAsync(definition, stopSettings).ConfigureAwait(false);
                 return notification;
             }
@@ -414,7 +620,7 @@ public sealed class ServiceManager
 
             if (ownedPids.Count == 0 && trackedPid is null or <= 0)
             {
-                _services.Remove(serviceId);
+                _services.TryRemove(serviceId, out _);
                 notification = await BuildStoppedAsync(definition, stopSettings).ConfigureAwait(false);
                 return notification;
             }
@@ -435,7 +641,7 @@ public sealed class ServiceManager
 
                 StackrootManagedProcessResolver.TryKillPids(ownedPids);
                 await StopAllPhpCgiAsync(cancellationToken).ConfigureAwait(false);
-                _services.Remove(serviceId);
+                _services.TryRemove(serviceId, out _);
                 notification = await BuildStoppedAsync(definition, stopSettings).ConfigureAwait(false);
                 return notification;
             }
@@ -451,7 +657,7 @@ public sealed class ServiceManager
                     cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
-            _services.Remove(serviceId);
+            _services.TryRemove(serviceId, out _);
             notification = await BuildStoppedAsync(definition, stopSettings).ConfigureAwait(false);
             _diagnostics.LogActivity("ServiceManager", $"Stopped service '{id}' ({notification.Status})");
             return notification;
@@ -545,17 +751,17 @@ public sealed class ServiceManager
             definition.DefaultSslPort,
             definition.PackageId);
 
-        _lastErrors.Remove(serviceId);
+        _lastErrors.TryRemove(serviceId, out _);
 
         if (!StackrootManagedProcessResolver.IsServicePackageInstalled(definition, serviceSettings, _registry))
         {
-            _services.Remove(serviceId);
+            _services.TryRemove(serviceId, out _);
             return;
         }
 
         if (definition.Runtime == ServiceRuntime.Library)
         {
-            _services.Remove(serviceId);
+            _services.TryRemove(serviceId, out _);
             return;
         }
 
@@ -570,7 +776,7 @@ public sealed class ServiceManager
 
         if (ownedPids.Count == 0 && trackedPid is null or <= 0)
         {
-            _services.Remove(serviceId);
+            _services.TryRemove(serviceId, out _);
             return;
         }
 
@@ -594,7 +800,7 @@ public sealed class ServiceManager
 
         cancellationToken.ThrowIfCancellationRequested();
         StackrootManagedProcessResolver.TryKillPids(ownedPids);
-        _services.Remove(serviceId);
+        _services.TryRemove(serviceId, out _);
 
         if (serviceSettings.Port > 0)
         {
@@ -625,6 +831,7 @@ public sealed class ServiceManager
 
     public async Task AutoStartEnabledServicesAsync(CancellationToken cancellationToken = default)
     {
+        var autoStartWatch = Stopwatch.StartNew();
         var settings = _settingsStore.Load();
         foreach (var definition in SettingsDefaults.ServiceDefinitions)
         {
@@ -650,16 +857,97 @@ public sealed class ServiceManager
                 continue;
             }
 
-            if (definition.Runtime != ServiceRuntime.Library && await PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port))
+            var alreadyServing = false;
+            if (definition.Runtime != ServiceRuntime.Library
+                && serviceSettings.Port > 0
+                && !TryEvaluateStartPortBinding(
+                    definition.Id,
+                    definition,
+                    serviceSettings,
+                    out _,
+                    out alreadyServing,
+                    out var conflictMessage))
+            {
+                _lastErrors[definition.Id] = conflictMessage!;
+                if (serviceSettings.Supervise && !IsUserStoppedIntent(definition.Id))
+                {
+                    _supervisionEligible.TryAdd(definition.Id, true);
+                }
+
+                NotifyLiveStatusChanged(ToServiceKey(definition.Id));
+                continue;
+            }
+
+            if (definition.Runtime != ServiceRuntime.Library
+                && serviceSettings.Port > 0
+                && alreadyServing)
             {
                 continue;
             }
 
-            await StartAsync(ToServiceKey(definition.Id), cancellationToken, ServiceStartMode.WaitUntilReady)
+            if (IsUserStoppedIntent(definition.Id))
+            {
+                continue;
+            }
+
+            var serviceKey = ToServiceKey(definition.Id);
+            await StartAsync(serviceKey, cancellationToken, ServiceStartMode.WaitUntilReady)
                 .ConfigureAwait(false);
         }
 
+        _diagnostics.LogActivity("ServiceManager", $"Auto-start complete in {autoStartWatch.ElapsedMilliseconds}ms");
+    }
+
+    /// <summary>
+    /// Seeds eligibility and starts keep-alive supervision after deferred startup
+    /// (including web-stack finalize) so reload/restart during init is not treated as a crash.
+    /// </summary>
+    public void ActivateServiceSupervision()
+    {
+        var settings = _settingsStore.Load();
+        SeedSupervisionEligibility(settings);
         StartSupervision();
+    }
+
+    public void SyncNginxLiveStatus(NginxControl.NginxReloadResult reloadResult)
+    {
+        if (!reloadResult.Ok)
+        {
+            return;
+        }
+
+        var settings = _settingsStore.Load();
+        var definition = SettingsDefaults.ServiceDefinitions.First(d => d.Id == ServiceId.Nginx);
+        var serviceSettings = GetServiceSettings(
+            settings,
+            ServiceId.Nginx,
+            definition.DefaultPort,
+            definition.DefaultSslPort,
+            definition.PackageId);
+        var packageId = serviceSettings.PackageId ?? definition.PackageId;
+        var installed = string.IsNullOrWhiteSpace(packageId) || _registry.GetById(packageId) is not null;
+
+        var info = new ServiceInfo
+        {
+            Id = ToServiceKey(ServiceId.Nginx),
+            Name = definition.Name,
+            Status = ServiceStatus.Running,
+            Port = serviceSettings.Port,
+            SslPort = serviceSettings.SslPort,
+            PortOpen = true,
+            Installed = installed,
+            Enabled = serviceSettings.Enabled,
+            Pid = reloadResult.Pid
+        };
+
+        _services[ServiceId.Nginx] = info;
+        _lastErrors.TryRemove(ServiceId.Nginx, out _);
+        if (serviceSettings.Enabled && serviceSettings.Supervise && info.PortOpen == true)
+        {
+            _supervisionEligible.TryAdd(ServiceId.Nginx, true);
+        }
+
+        NotifyLiveStatusChanged(info.Id, info);
     }
 
     public Task StopAllPhpCgiAsync(CancellationToken cancellationToken = default)
@@ -769,53 +1057,80 @@ public sealed class ServiceManager
         return EnsureRequiredPhpFastCgiAsync(cancellationToken);
     }
 
-    public async Task TryRecoverRequiredPhpAsync(CancellationToken cancellationToken = default)
+    public Task TryRecoverRequiredPhpAsync(CancellationToken cancellationToken = default, bool urgent = false)
+        => TryRecoverRequiredPhpCoreAsync(cancellationToken, urgent);
+
+    private async Task TryRecoverRequiredPhpCoreAsync(CancellationToken cancellationToken, bool urgent)
     {
-        var settings = _settingsStore.Load();
-        var versionIds = ResolveRequiredPhpVersionIds();
-        var host = ResolvePhpFastCgiHost();
-        var recovered = false;
-
-        foreach (var versionId in versionIds)
+        if (Interlocked.CompareExchange(ref _phpRecoveryInFlight, 1, 0) != 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var port = ResolvePhpPlannedPort(versionId);
-            if (port is null or <= 0)
-            {
-                continue;
-            }
-
-            if (await IsPhpListenerRunningAsync(versionId, cancellationToken).ConfigureAwait(false))
-            {
-                _phpRecoveryAttemptedAt.TryRemove(versionId, out _);
-                continue;
-            }
-
-            if (_phpRecoveryAttemptedAt.TryGetValue(versionId, out var lastAttempt)
-                && DateTimeOffset.UtcNow - lastAttempt < TimeSpan.FromSeconds(30))
-            {
-                continue;
-            }
-
-            _phpRecoveryAttemptedAt[versionId] = DateTimeOffset.UtcNow;
-            _diagnostics.LogActivity("PHP", $"Recovering php-cgi on {host}:{port} for {versionId}…");
-
-            var result = await EnsurePhpFastCgiAsync([versionId], cancellationToken).ConfigureAwait(false);
-            if (result.Success)
-            {
-                recovered = true;
-                _diagnostics.LogActivity("PHP", $"Recovered php-cgi for {versionId}.");
-            }
-            else if (!string.IsNullOrWhiteSpace(result.Message))
-            {
-                _diagnostics.LogUserError("PHP", result.Message);
-            }
+            return;
         }
 
-        if (recovered)
+        try
         {
-            PhpListenersChanged?.Invoke(this, EventArgs.Empty);
+            var settings = _settingsStore.Load();
+            var versionIds = ResolveRequiredPhpVersionIds();
+            var host = ResolvePhpFastCgiHost();
+            var recovered = false;
+
+            foreach (var versionId in versionIds)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var port = ResolvePhpPlannedPort(versionId);
+                if (port is null or <= 0)
+                {
+                    continue;
+                }
+
+                if (await IsPhpListenerRunningAsync(versionId, cancellationToken).ConfigureAwait(false))
+                {
+                    _phpRecoveryAttemptedAt.TryRemove(versionId, out _);
+                    continue;
+                }
+
+                if (PhpCgiRuntime.TryGetManagedListenerPid(versionId, out var managedPid)
+                    && ServiceProcessTools.IsProcessAlive(managedPid))
+                {
+                    _phpRecoveryAttemptedAt.TryRemove(versionId, out _);
+                    continue;
+                }
+
+                if (!urgent
+                    && _phpRecoveryAttemptedAt.TryGetValue(versionId, out var lastAttempt)
+                    && DateTimeOffset.UtcNow - lastAttempt < PhpRecoveryRetryCooldown)
+                {
+                    continue;
+                }
+
+                _diagnostics.LogActivity("PHP", $"Recovering php-cgi on {host}:{port} for {versionId}…");
+
+                var result = await EnsurePhpFastCgiAsync([versionId], cancellationToken).ConfigureAwait(false);
+                if (result.Success)
+                {
+                    recovered = true;
+                    _phpRecoveryAttemptedAt.TryRemove(versionId, out _);
+                    _diagnostics.LogActivity("PHP", $"Recovered php-cgi for {versionId}.");
+                }
+                else
+                {
+                    _phpRecoveryAttemptedAt[versionId] = DateTimeOffset.UtcNow;
+                    if (!string.IsNullOrWhiteSpace(result.Message))
+                    {
+                        _diagnostics.LogUserError("PHP", result.Message);
+                    }
+                }
+            }
+
+            if (recovered)
+            {
+                PhpListenersChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _phpRecoveryInFlight, 0);
         }
     }
 
@@ -845,6 +1160,177 @@ public sealed class ServiceManager
         return _services.Values.ToList();
     }
 
+    /// <summary>
+    /// Tracked rows for lightweight callers — process-alive only, no netstat sweep.
+    /// </summary>
+    public IReadOnlyList<ServiceInfo> ListCachedLiveSnapshot()
+        => ListLiveQuickAsync().GetAwaiter().GetResult();
+
+    private ServiceInfo BuildQuickLiveInfo(ServiceId serviceId, AppSettings settings)
+    {
+        var definition = SettingsDefaults.ServiceDefinitions.First(d => d.Id == serviceId);
+        var serviceSettings = GetServiceSettings(
+            settings,
+            serviceId,
+            definition.DefaultPort,
+            definition.DefaultSslPort,
+            definition.PackageId);
+        var packageId = serviceSettings.PackageId ?? definition.PackageId;
+        var installed = string.IsNullOrWhiteSpace(packageId) || _registry.GetById(packageId) is not null;
+
+        if (definition.Runtime == ServiceRuntime.Library)
+        {
+            return BuildLiveInfo(serviceId, settings);
+        }
+
+        if (IsStarting(serviceId))
+        {
+            return BuildStarting(definition, serviceSettings);
+        }
+
+        if (!serviceSettings.Enabled || !installed)
+        {
+            return BuildCachedStoppedInfo(definition, serviceSettings);
+        }
+
+        var previous = _services.GetValueOrDefault(serviceId);
+        if (previous is { PortOpen: true, Pid: int pid })
+        {
+            if (ServiceProcessTools.IsProcessAlive(pid))
+            {
+                return previous;
+            }
+
+            return BuildLiveInfo(serviceId, settings);
+        }
+
+        if (previous?.PortOpen == true)
+        {
+            return BuildLiveInfo(serviceId, settings);
+        }
+
+        return BuildCachedStoppedInfo(definition, serviceSettings);
+    }
+
+    private ServiceInfo BuildCachedStoppedInfo(ServiceDefinition definition, ServicePortSettings serviceSettings)
+    {
+        var packageId = serviceSettings.PackageId ?? definition.PackageId;
+        var installed = string.IsNullOrWhiteSpace(packageId) || _registry.GetById(packageId) is not null;
+        if (IsUserStoppedIntent(definition.Id))
+        {
+            _lastErrors.TryRemove(definition.Id, out _);
+        }
+
+        string? message = _lastErrors.GetValueOrDefault(definition.Id);
+        var status = ServiceStatus.Stopped;
+
+        if (!serviceSettings.Enabled)
+        {
+            message = "Disabled in settings";
+        }
+        else if (!installed && !string.IsNullOrWhiteSpace(definition.PackageId))
+        {
+            message = $"Install {definition.Name} package first";
+        }
+        else if (!string.IsNullOrWhiteSpace(message))
+        {
+            status = ServiceStatus.Error;
+        }
+
+        return new ServiceInfo
+        {
+            Id = ToServiceKey(definition.Id),
+            Name = definition.Name,
+            Status = status,
+            Port = serviceSettings.Port,
+            SslPort = serviceSettings.SslPort,
+            PortOpen = false,
+            Installed = installed,
+            Enabled = serviceSettings.Enabled,
+            Message = message
+        };
+    }
+
+    public IReadOnlyList<int> ResolvePerformanceMemoryPids(string serviceKey)
+    {
+        if (!TryParseServiceId(serviceKey, out var serviceId))
+        {
+            return [];
+        }
+
+        var definition = SettingsDefaults.ServiceDefinitions.FirstOrDefault(row => row.Id == serviceId);
+        if (definition is null)
+        {
+            return [];
+        }
+
+        var settings = _settingsStore.Load();
+        var serviceSettings = GetServiceSettings(
+            settings,
+            serviceId,
+            definition.DefaultPort,
+            definition.DefaultSslPort,
+            definition.PackageId);
+        var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
+        var owned = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            trackedPid);
+
+        var memoryPids = new HashSet<int>();
+        foreach (var pid in owned)
+        {
+            foreach (var treePid in ProcessMemoryTools.CollectProcessTree(pid))
+            {
+                memoryPids.Add(treePid);
+            }
+        }
+
+        if (trackedPid is > 0)
+        {
+            foreach (var treePid in ProcessMemoryTools.CollectProcessTree(trackedPid.Value))
+            {
+                memoryPids.Add(treePid);
+            }
+        }
+
+        return memoryPids.Count > 0 ? memoryPids.ToList() : [];
+    }
+
+    public IReadOnlyList<PhpListenerPerformanceInfo> ListManagedPhpListenerPerformanceTargets()
+    {
+        var host = ResolvePhpFastCgiHost();
+        var listeners = new List<PhpListenerPerformanceInfo>();
+
+        foreach (var (versionId, port) in PhpCgiRuntime.ActiveListeners())
+        {
+            if (!PhpCgiRuntime.TryGetManagedListenerPid(versionId, out var pid))
+            {
+                continue;
+            }
+
+            var package = _registry.GetById(versionId);
+            var name = package is null || string.IsNullOrWhiteSpace(package.Version)
+                ? versionId
+                : $"PHP {package.Version}";
+
+            listeners.Add(new PhpListenerPerformanceInfo
+            {
+                Id = versionId,
+                Name = name,
+                Endpoint = $"{host}:{port}",
+                Status = "Running",
+                Pid = pid,
+                MemoryPids = [pid]
+            });
+        }
+
+        return listeners;
+    }
+
     private async Task<ServiceInfo> StartNginxCoreAsync(CancellationToken cancellationToken)
     {
         var settings = _settingsStore.Load();
@@ -871,11 +1357,15 @@ public sealed class ServiceManager
 
         // If nginx is already running from a previous session, skip the
         // expensive PHP FastCGI startup — it should already be running.
-        if (await PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port))
+        if (TryEvaluateStartPortBinding(
+                ServiceId.Nginx,
+                definition,
+                serviceSettings,
+                out var existingPids,
+                out var nginxAlreadyServing,
+                out var nginxConflictMessage))
         {
-            var existingPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
-                ServiceId.Nginx, definition, serviceSettings, _paths, _registry);
-            if (existingPids.Count > 0)
+            if (nginxAlreadyServing && existingPids.Count > 0)
             {
                 _diagnostics.LogActivity("ServiceManager", "nginx already running — skipping config + PHP");
                 var nginxInfo = BuildRunning(definition, serviceSettings, existingPids[0]);
@@ -883,12 +1373,29 @@ public sealed class ServiceManager
                 return nginxInfo;
             }
         }
+        else if (nginxConflictMessage is not null)
+        {
+            return Fail(
+                ToServiceKey(ServiceId.Nginx),
+                definition.Name,
+                nginxConflictMessage,
+                serviceSettings.Port);
+        }
 
+        var nginxWatch = Stopwatch.StartNew();
+        ReportStartProgress(ServiceId.Nginx, "Starting web stack…", nginxWatch);
         NginxRuntime.setupNginxRuntime(_paths, installed.InstallPath);
-        ReportStartProgress(ServiceId.Nginx, "Preparing HTTPS certificates and nginx config…");
+        ReportStartProgress(ServiceId.Nginx, "Preparing HTTPS certificates and nginx config…", nginxWatch);
         if (_webStackCoordinator is not null)
         {
-            await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+            if (_webStackCoordinator.WasMainConfigPreparedRecently(TimeSpan.FromMinutes(2)))
+            {
+                _diagnostics.LogActivity("ServiceManager", "Skipping duplicate PrepareForNginx — stack step already prepared config");
+            }
+            else
+            {
+                await _webStackCoordinator.PrepareForNginxAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         else
         {
@@ -897,14 +1404,14 @@ public sealed class ServiceManager
 
         var siteStore = new SiteStore(_paths.DataRoot, _settingsStore);
         _ = siteStore.List();
-        ReportStartProgress(ServiceId.Nginx, "Starting PHP FastCGI listeners…");
+        ReportStartProgress(ServiceId.Nginx, "Starting PHP FastCGI listeners…", nginxWatch);
         var php = await EnsureStackPhpCgiAsync(cancellationToken);
         if (!php.Success)
         {
             return Fail(ToServiceKey(ServiceId.Nginx), definition.Name, php.Message ?? "Failed to start php-cgi listeners", serviceSettings.Port);
         }
 
-        ReportStartProgress(ServiceId.Nginx, "Starting nginx…");
+        ReportStartProgress(ServiceId.Nginx, "Starting nginx…", nginxWatch);
         var reloadResult = await NginxControl.ReloadOrStartWithSslRepairAsync(
             _paths,
             installed.InstallPath,
@@ -917,7 +1424,7 @@ public sealed class ServiceManager
                 _diagnostics.LogActivity(
                     "ServiceManager",
                     "nginx config references missing HTTPS certificates — regenerating SSL material and retrying.");
-                ReportStartProgress(ServiceId.Nginx, "Repairing HTTPS certificates…");
+                ReportStartProgress(ServiceId.Nginx, "Repairing HTTPS certificates…", nginxWatch);
             },
             cancellationToken).ConfigureAwait(false);
 
@@ -954,24 +1461,23 @@ public sealed class ServiceManager
             return Fail(ToServiceKey(serviceId), definition.Name, "Service is disabled in settings", serviceSettings.Port);
         }
 
-        if (await PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port).ConfigureAwait(false))
-        {
-            var ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+        if (!TryEvaluateStartPortBinding(
                 serviceId,
                 definition,
                 serviceSettings,
-                _paths,
-                _registry);
+                out var ownedPids,
+                out var alreadyServing,
+                out var conflictMessage))
+        {
+            return Fail(
+                ToServiceKey(serviceId),
+                definition.Name,
+                conflictMessage ?? ManagedServiceStatusPolicy.FormatPortConflictMessage(serviceSettings.Port),
+                serviceSettings.Port);
+        }
 
-            if (ownedPids.Count == 0)
-            {
-                return Fail(
-                    ToServiceKey(serviceId),
-                    definition.Name,
-                    $"Port {serviceSettings.Port} is already in use by another application",
-                    serviceSettings.Port);
-            }
-
+        if (alreadyServing)
+        {
             var alreadyRunning = BuildRunning(definition, serviceSettings, ownedPids[0]);
             _services[serviceId] = alreadyRunning;
             if (serviceId is ServiceId.Mysql or ServiceId.Mariadb)
@@ -1077,7 +1583,7 @@ public sealed class ServiceManager
                 $"{ToServiceKey(serviceId)}: waiting for port {serviceSettings.Port} (up to {portAttempts * portDelayMs / 1000}s)");
         }
 
-        var ready = await WaitForServicePortAsync(process, serviceId, serviceSettings, portAttempts, portDelayMs, cancellationToken);
+        var ready = await WaitForServicePortAsync(process, serviceId, definition, serviceSettings, portAttempts, portDelayMs, cancellationToken);
         if (!ready)
         {
             if (!process.HasExited)
@@ -1086,21 +1592,50 @@ public sealed class ServiceManager
             }
             else if (serviceId is ServiceId.Mysql or ServiceId.Mariadb)
             {
-                var ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+                var cleanupPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
                     serviceId,
                     definition,
                     serviceSettings,
                     _paths,
                     _registry,
                     process.Id);
-                StackrootManagedProcessResolver.TryKillPids(ownedPids);
+                StackrootManagedProcessResolver.TryKillPids(cleanupPids);
             }
 
-            var failureMessage = BuildPortWaitFailureMessage(serviceId, serviceSettings);
+            var failureMessage = StackrootManagedProcessResolver.HasForeignListener(
+                    serviceId,
+                    definition,
+                    serviceSettings,
+                    _paths,
+                    _registry)
+                ? ManagedServiceStatusPolicy.FormatPortConflictMessage(serviceSettings.Port)
+                : BuildPortWaitFailureMessage(serviceId, serviceSettings);
             return Fail(ToServiceKey(serviceId), definition.Name, failureMessage, serviceSettings.Port);
         }
 
-        var info = BuildRunning(definition, serviceSettings, ResolveRunningPid(process, serviceSettings));
+        ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+        var ownedAfterStart = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            process.HasExited ? null : process.Id);
+        if (ownedAfterStart.Count == 0)
+        {
+            if (!process.HasExited)
+            {
+                ProcessKiller.TryKill(process.Id);
+            }
+
+            return Fail(
+                ToServiceKey(serviceId),
+                definition.Name,
+                ManagedServiceStatusPolicy.FormatPortConflictMessage(serviceSettings.Port),
+                serviceSettings.Port);
+        }
+
+        var info = BuildRunning(definition, serviceSettings, ownedAfterStart[0]);
         _services[serviceId] = info;
         if (serviceId is ServiceId.Mysql or ServiceId.Mariadb)
         {
@@ -1173,15 +1708,23 @@ public sealed class ServiceManager
         return info;
     }
 
-    private async Task<ServiceInfo> BuildStoppedAsync(ServiceDefinition definition, ServicePortSettings serviceSettings)
+    private Task<ServiceInfo> BuildStoppedAsync(ServiceDefinition definition, ServicePortSettings serviceSettings)
     {
-        var portOpen = await PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port).ConfigureAwait(false);
-        if (portOpen)
+        if (serviceSettings.Port > 0)
         {
-            return Fail(ToServiceKey(definition.Id), definition.Name, "Failed to stop - port is still listening", serviceSettings.Port);
+            ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+            var listeners = ServiceProcessTools.FindPidsListeningOnPort(serviceSettings.Port);
+            if (listeners.Count > 0 && !IsUserStoppedIntent(definition.Id))
+            {
+                return Task.FromResult(Fail(
+                    ToServiceKey(definition.Id),
+                    definition.Name,
+                    "Failed to stop - port is still listening",
+                    serviceSettings.Port));
+            }
         }
 
-        return new ServiceInfo
+        return Task.FromResult(new ServiceInfo
         {
             Id = ToServiceKey(definition.Id),
             Name = definition.Name,
@@ -1190,7 +1733,7 @@ public sealed class ServiceManager
             SslPort = serviceSettings.SslPort,
             PortOpen = false,
             Enabled = serviceSettings.Enabled
-        };
+        });
     }
 
     private static ServicePortSettings GetServiceSettings(AppSettings settings, ServiceId id, int defaultPort, int? defaultSslPort, string? packageId)
@@ -1527,11 +2070,174 @@ public sealed class ServiceManager
         return id.ToString().ToLowerInvariant();
     }
 
+    private static IReadOnlyList<int> PruneDeadOwnedPids(IReadOnlyList<int> ownedPids, int port)
+    {
+        if (ownedPids.Count == 0)
+        {
+            return ownedPids;
+        }
+
+        var alive = ownedPids.Where(ServiceProcessTools.IsProcessAlive).ToList();
+        if (alive.Count != ownedPids.Count)
+        {
+            ProcessPortTools.InvalidatePortCache(port);
+        }
+
+        return alive;
+    }
+
+    private bool TryEvaluateStartPortBinding(
+        ServiceId serviceId,
+        ServiceDefinition definition,
+        ServicePortSettings serviceSettings,
+        out IReadOnlyList<int> ownedPids,
+        out bool alreadyServing,
+        out string? conflictMessage)
+    {
+        conflictMessage = null;
+        alreadyServing = false;
+        ownedPids = [];
+        if (definition.Runtime == ServiceRuntime.Library || serviceSettings.Port <= 0)
+        {
+            return true;
+        }
+
+        // Fast path: if nothing is listening, skip expensive netstat sweep.
+        var portProbe = PortProbe.ProbePortAsync(serviceSettings.Host, serviceSettings.Port, timeoutMs: 400)
+            .GetAwaiter()
+            .GetResult();
+        if (portProbe != PortProbeResult.Open)
+        {
+            return true;
+        }
+
+        // Port is open — verify Stackroot ownership before deciding.
+        ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+        var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
+        ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            trackedPid);
+        if (StackrootManagedProcessResolver.HasForeignListener(
+                serviceId,
+                definition,
+                serviceSettings,
+                _paths,
+                _registry))
+        {
+            conflictMessage = ManagedServiceStatusPolicy.FormatPortConflictMessage(serviceSettings.Port);
+            return false;
+        }
+
+        alreadyServing = ManagedServiceStatusPolicy.IsStackrootServing(ownedPids.Count);
+        if (alreadyServing)
+        {
+            return true;
+        }
+
+        // Double-check: port was open to TCP but we still don't own it.
+        ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+        ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            trackedPid);
+        if (!ManagedServiceStatusPolicy.IsStackrootServing(ownedPids.Count))
+        {
+            conflictMessage = ManagedServiceStatusPolicy.FormatPortConflictMessage(serviceSettings.Port);
+            return false;
+        }
+
+        alreadyServing = true;
+        return true;
+    }
+
+    private bool TryReattachOwnedListeners(
+        ServiceId serviceId,
+        ServiceDefinition definition,
+        ServicePortSettings serviceSettings,
+        ref IReadOnlyList<int> ownedPids,
+        out bool ownedPidsAliveVerified)
+    {
+        ownedPidsAliveVerified = false;
+        if (definition.Runtime == ServiceRuntime.Library || serviceSettings.Port <= 0)
+        {
+            return false;
+        }
+
+        if (ownedPids.Count > 0)
+        {
+            var alive = ownedPids.Where(ServiceProcessTools.IsProcessAlive).ToList();
+            ownedPidsAliveVerified = true;
+            if (alive.Count == 0)
+            {
+                ownedPids = [];
+                _services.TryRemove(serviceId, out _);
+                ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+                return false;
+            }
+
+            if (alive.Count != ownedPids.Count)
+            {
+                ownedPids = alive;
+                ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+            }
+
+            return true;
+        }
+
+        ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+        var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
+        ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+            serviceId,
+            definition,
+            serviceSettings,
+            _paths,
+            _registry,
+            trackedPid);
+        if (ownedPids.Count == 0)
+        {
+            return false;
+        }
+
+        ownedPidsAliveVerified = true;
+        _lastErrors.TryRemove(serviceId, out _);
+        _services[serviceId] = BuildRunning(definition, serviceSettings, ownedPids[0]);
+        _diagnostics.LogActivity(
+            "ServiceManager",
+            $"Reattached running {ToServiceKey(serviceId)} (pid {ownedPids[0]})");
+        NotifyLiveStatusChanged(ToServiceKey(serviceId));
+        return true;
+    }
+
     private ServiceInfo Fail(string id, string name, string message, int? port = null)
     {
         if (TryParseServiceId(id, out var serviceId))
         {
             _lastErrors[serviceId] = message;
+            if (ManagedServiceStatusPolicy.IsPortConflictMessage(message))
+            {
+                var settings = _settingsStore.Load();
+                var definition = SettingsDefaults.ServiceDefinitions.FirstOrDefault(d => d.Id == serviceId);
+                if (definition is not null)
+                {
+                    var serviceSettings = GetServiceSettings(
+                        settings,
+                        serviceId,
+                        definition.DefaultPort,
+                        definition.DefaultSslPort,
+                        definition.PackageId);
+                    if (serviceSettings.Enabled && serviceSettings.Supervise && !IsUserStoppedIntent(serviceId))
+                    {
+                        _supervisionEligible.TryAdd(serviceId, true);
+                    }
+                }
+            }
         }
 
         var info = new ServiceInfo
@@ -1603,6 +2309,7 @@ public sealed class ServiceManager
     private async Task<bool> WaitForServicePortAsync(
         Process process,
         ServiceId serviceId,
+        ServiceDefinition definition,
         ServicePortSettings serviceSettings,
         int attempts,
         int delayMs,
@@ -1628,13 +2335,33 @@ public sealed class ServiceManager
 
             if (await PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port))
             {
+                ProcessPortTools.InvalidatePortCache(serviceSettings.Port);
+                if (StackrootManagedProcessResolver.HasForeignListener(
+                        serviceId,
+                        definition,
+                        serviceSettings,
+                        _paths,
+                        _registry))
+                {
+                    return false;
+                }
+
+                var trackedPid = process.HasExited ? null : (int?)process.Id;
+                var owned = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+                    serviceId,
+                    definition,
+                    serviceSettings,
+                    _paths,
+                    _registry,
+                    trackedPid);
+                if (owned.Count == 0)
+                {
+                    return false;
+                }
+
                 if (allowsDaemonParentExit && process.HasExited)
                 {
-                    var listenerPid = ServiceProcessTools.FindPidsListeningOnPort(serviceSettings.Port).FirstOrDefault();
-                    if (listenerPid > 0)
-                    {
-                        _jobManager.AssignProcess(listenerPid);
-                    }
+                    _jobManager.AssignProcess(owned[0]);
                 }
 
                 return true;
@@ -1688,7 +2415,12 @@ public sealed class ServiceManager
     {
         lock (_startingSync)
         {
-            return _starting.Add(serviceId);
+            if (_starting.Add(serviceId))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -1704,6 +2436,7 @@ public sealed class ServiceManager
     {
         if (_supervisionStarted) return;
         _supervisionStarted = true;
+        EnsureSupervisionRestartCancellation();
         _supervisionTimer = new System.Timers.Timer(5_000);
         _supervisionTimer.Elapsed += (_, _) => SupervisionTick();
         _supervisionTimer.AutoReset = true;
@@ -1713,11 +2446,59 @@ public sealed class ServiceManager
 
     private void StopSupervision()
     {
+        CancelSupervisionRestarts();
+
         if (_supervisionTimer is null) return;
         _supervisionTimer.Stop();
         _supervisionTimer.Dispose();
         _supervisionTimer = null;
         _supervisionStarted = false;
+    }
+
+    private void EnsureSupervisionRestartCancellation()
+    {
+        lock (_supervisionRestartCtsSync)
+        {
+            if (_supervisionRestartCts is null || _supervisionRestartCts.IsCancellationRequested)
+            {
+                _supervisionRestartCts?.Dispose();
+                _supervisionRestartCts = new CancellationTokenSource();
+            }
+        }
+    }
+
+    private CancellationToken SupervisionRestartToken
+    {
+        get
+        {
+            lock (_supervisionRestartCtsSync)
+            {
+                EnsureSupervisionRestartCancellation();
+                return _supervisionRestartCts!.Token;
+            }
+        }
+    }
+
+    private void CancelSupervisionRestarts()
+    {
+        lock (_supervisionRestartCtsSync)
+        {
+            if (_supervisionRestartCts is null)
+            {
+                return;
+            }
+
+            try
+            {
+                _supervisionRestartCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+
+            _supervisionRestartCts.Dispose();
+            _supervisionRestartCts = null;
+        }
     }
 
     private void SupervisionTick()
@@ -1727,90 +2508,420 @@ public sealed class ServiceManager
             return;
         }
 
-        var settings = _settingsStore.Load();
-        foreach (var definition in SettingsDefaults.ServiceDefinitions)
+        if (Interlocked.CompareExchange(ref _supervisionTickInFlight, 1, 0) != 0)
         {
-            if (!Implemented.Contains(definition.Id)) continue;
-            if (definition.Runtime == ServiceRuntime.Library) continue;
+            return;
+        }
 
-            var serviceSettings = GetServiceSettings(
-                settings, definition.Id, definition.DefaultPort,
-                definition.DefaultSslPort, definition.PackageId);
+        _ = RunSupervisionTickAsync();
+    }
 
-            if (!serviceSettings.Enabled || !serviceSettings.Supervise) continue;
-
-            var packageId = serviceSettings.PackageId ?? definition.PackageId;
-            if (!string.IsNullOrWhiteSpace(packageId) && _registry.GetById(packageId) is null) continue;
-
-            // Don't interfere with a service that's already starting
-            if (IsStarting(definition.Id)) continue;
-
-            // Port check
-            try
+    private Task RunSupervisionTickAsync()
+    {
+        try
+        {
+            var settings = _settingsStore.Load();
+            foreach (var definition in SettingsDefaults.ServiceDefinitions)
             {
-                if (PortProbe.IsPortOpenAsync(serviceSettings.Host, serviceSettings.Port)
-                    .GetAwaiter().GetResult())
+                if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
                 {
-                    // Service is alive — mark eligible and reset failure count
+                    return Task.CompletedTask;
+                }
+
+                if (!Implemented.Contains(definition.Id)) continue;
+                if (definition.Runtime == ServiceRuntime.Library) continue;
+
+                var serviceSettings = GetServiceSettings(
+                    settings, definition.Id, definition.DefaultPort,
+                    definition.DefaultSslPort, definition.PackageId);
+
+                if (!serviceSettings.Enabled) continue;
+
+                var packageId = serviceSettings.PackageId ?? definition.PackageId;
+                if (!string.IsNullOrWhiteSpace(packageId) && _registry.GetById(packageId) is null) continue;
+
+                if (IsStarting(definition.Id)) continue;
+
+                if (_services.GetValueOrDefault(definition.Id) is { PortOpen: true, Pid: int alivePid } trackedRunning
+                    && alivePid > 0)
+                {
+                    if (ServiceProcessTools.IsProcessAlive(alivePid))
+                    {
+                        if (serviceSettings.Supervise
+                            && !IsUserStoppedIntent(definition.Id))
+                        {
+                            _supervisionEligible.TryAdd(definition.Id, true);
+                            _supervisionFailures.TryRemove(definition.Id, out _);
+                        }
+
+                        continue;
+                    }
+
+                    if (!IsUserStoppedIntent(definition.Id)
+                        && !IsWithinSupervisionRecoveryGrace(definition.Id)
+                        && !_supervisionRestartInFlight.ContainsKey(definition.Id))
+                    {
+                        _ = BuildLiveInfo(definition.Id, settings);
+                    }
+                }
+                else if (_services.GetValueOrDefault(definition.Id) is { PortOpen: true } trackedRunningNoPid)
+                {
+                    if (IsUserStoppedIntent(definition.Id))
+                    {
+                        continue;
+                    }
+
+                    var healthPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+                        definition.Id,
+                        definition,
+                        serviceSettings,
+                        _paths,
+                        _registry,
+                        trackedRunningNoPid.Pid);
+                    healthPids = PruneDeadOwnedPids(healthPids, serviceSettings.Port);
+                    if (healthPids.Count == 0
+                        && !IsWithinSupervisionRecoveryGrace(definition.Id)
+                        && !_supervisionRestartInFlight.ContainsKey(definition.Id))
+                    {
+                        _ = BuildLiveInfo(definition.Id, settings);
+                    }
+                }
+
+                if (!serviceSettings.Supervise || IsUserStoppedIntent(definition.Id)) continue;
+
+                var trackedPid = _services.GetValueOrDefault(definition.Id)?.Pid;
+                var ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+                    definition.Id,
+                    definition,
+                    serviceSettings,
+                    _paths,
+                    _registry,
+                    trackedPid);
+                if (ownedPids.Count == 0)
+                {
+                    TryReattachOwnedListeners(
+                        definition.Id,
+                        definition,
+                        serviceSettings,
+                        ref ownedPids,
+                        out _);
+                }
+
+                if (ownedPids.Count > 0)
+                {
+                    ownedPids = PruneDeadOwnedPids(ownedPids, serviceSettings.Port);
+                }
+
+                if (ownedPids.Count > 0 && !IsUserStoppedIntent(definition.Id))
+                {
                     _supervisionEligible.TryAdd(definition.Id, true);
                     _supervisionFailures.TryRemove(definition.Id, out _);
                     continue;
                 }
+
+                if (!_supervisionEligible.ContainsKey(definition.Id))
+                {
+                    continue;
+                }
+
+                if (StackrootManagedProcessResolver.HasForeignListener(
+                        definition.Id,
+                        definition,
+                        serviceSettings,
+                        _paths,
+                        _registry))
+                {
+                    _diagnostics.LogActivity(
+                        "ServiceManager",
+                        $"Supervision: skipping {ToServiceKey(definition.Id)} restart — foreign listener on port {serviceSettings.Port}");
+                    continue;
+                }
+
+                TryScheduleSupervisionRestart(
+                    definition.Id,
+                    "supervision tick");
             }
-            catch
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _supervisionTickInFlight, 0);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void TryScheduleSupervisionRestart(
+        ServiceId serviceId,
+        string trigger,
+        bool confirmedDown = false)
+    {
+        if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+        {
+            return;
+        }
+
+        if (IsStarting(serviceId) || _supervisionRestartInFlight.ContainsKey(serviceId))
+        {
+            return;
+        }
+
+        if (IsUserStoppedIntent(serviceId))
+        {
+            return;
+        }
+
+        if (IsWithinSupervisionRecoveryGrace(serviceId))
+        {
+            return;
+        }
+
+        var settings = _settingsStore.Load();
+        var definition = SettingsDefaults.ServiceDefinitions.FirstOrDefault(d => d.Id == serviceId);
+        if (definition is null
+            || definition.Runtime == ServiceRuntime.Library
+            || !Implemented.Contains(serviceId))
+        {
+            return;
+        }
+
+        var serviceSettings = GetServiceSettings(
+            settings,
+            serviceId,
+            definition.DefaultPort,
+            definition.DefaultSslPort,
+            definition.PackageId);
+
+        if (!serviceSettings.Enabled || !serviceSettings.Supervise)
+        {
+            return;
+        }
+
+        if (!_supervisionEligible.ContainsKey(serviceId))
+        {
+            return;
+        }
+
+        var packageId = serviceSettings.PackageId ?? definition.PackageId;
+        if (!string.IsNullOrWhiteSpace(packageId) && _registry.GetById(packageId) is null)
+        {
+            return;
+        }
+
+        if (!confirmedDown)
+        {
+            var trackedPid = _services.GetValueOrDefault(serviceId)?.Pid;
+            var ownedPids = StackrootManagedProcessResolver.ResolveOwnedListenerPids(
+                serviceId,
+                definition,
+                serviceSettings,
+                _paths,
+                _registry,
+                trackedPid);
+            if (StackrootManagedProcessResolver.HasForeignListener(
+                    serviceId,
+                    definition,
+                    serviceSettings,
+                    _paths,
+                    _registry))
             {
-                continue;
+                _diagnostics.LogActivity(
+                    "ServiceManager",
+                    $"Supervision: skipping {ToServiceKey(serviceId)} restart — foreign listener on port {serviceSettings.Port}");
+                return;
             }
+        }
 
-            // Service is down — check cooldown
-            var now = DateTime.UtcNow;
-            if (_supervisionCooldowns.TryGetValue(definition.Id, out var cooldownUntil)
-                && now < cooldownUntil)
-            {
-                continue;
-            }
+        var now = DateTime.UtcNow;
+        if (_supervisionCooldowns.TryGetValue(serviceId, out var cooldownUntil) && now < cooldownUntil)
+        {
+            return;
+        }
 
-            // Only restart services that were actually started (auto or manually)
-            if (!_supervisionEligible.ContainsKey(definition.Id)) continue;
+        if (!_supervisionRestartInFlight.TryAdd(serviceId, 0))
+        {
+            return;
+        }
 
-            // Calculate backoff: 5s → 15s → 45s → 120s → 300s max
-            var failures = _supervisionFailures.AddOrUpdate(definition.Id, 1, (_, c) => c + 1);
-            var delaySec = Math.Min(5 * (int)Math.Pow(3, Math.Min(failures - 1, 4)), 300);
-            _supervisionCooldowns[definition.Id] = now.AddSeconds(delaySec);
-
-            var id = ToServiceKey(definition.Id);
+        var failures = _supervisionFailures.AddOrUpdate(serviceId, 1, (_, count) => count + 1);
+        if (failures >= MaxSupervisionFailures)
+        {
             _diagnostics.LogActivity(
                 "ServiceManager",
-                $"Supervision: restarting {id} (failure #{failures}, next cooldown {delaySec}s)");
-
-            // Restart in background — don't block the timer
-            _ = Task.Run(async () =>
+                $"Supervision: {ToServiceKey(serviceId)} restart failed ({failures}×) — keep-alive will retry after cooldown");
+            if (failures % MaxSupervisionFailures == 0)
             {
-                try
-                {
-                    if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
-                    {
-                        return;
-                    }
+                RaiseSupervisionAlert(serviceId, definition.Name, failures);
+            }
+        }
 
-                    var info = await StartAndWaitAsync(definition.Id, id, CancellationToken.None)
-                        .ConfigureAwait(false);
-                    if (info.PortOpen == true)
-                    {
-                        _diagnostics.LogActivity("ServiceManager",
-                            $"Supervision: {id} recovered successfully");
-                        _supervisionFailures.TryRemove(definition.Id, out _);
-                    }
-                }
-                catch (Exception ex)
+        var id = ToServiceKey(serviceId);
+        var delaySec = Math.Min(5 * (int)Math.Pow(3, Math.Min(failures - 1, 4)), 300);
+        _supervisionCooldowns[serviceId] = now.AddSeconds(delaySec);
+
+        _diagnostics.LogActivity(
+            "ServiceManager",
+            $"Supervision: restarting {id} after {trigger} (failure #{failures}, next cooldown {delaySec}s)");
+
+        if (!TryMarkStarting(serviceId))
+        {
+            _supervisionRestartInFlight.TryRemove(serviceId, out _);
+            return;
+        }
+
+        NotifyLiveStatusChanged(id, BuildStarting(definition, serviceSettings));
+
+        _ = Task.Run(async () =>
+        {
+            ServiceInfo? result = null;
+            var slotAcquired = false;
+            var restartToken = SupervisionRestartToken;
+            try
+            {
+                if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
                 {
-                    _diagnostics.LogException("ServiceManager.Supervision", ex);
+                    return;
                 }
-            });
+
+                await _supervisionRestartSlots
+                    .WaitAsync(restartToken)
+                    .ConfigureAwait(false);
+                slotAcquired = true;
+
+                if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
+                {
+                    return;
+                }
+
+                result = await StartCoreAsync(serviceId, restartToken).ConfigureAwait(false);
+                LogStartResult(id, result);
+                if (result.PortOpen == true || result.Status == ServiceStatus.Running)
+                {
+                    _supervisionEligible.TryAdd(serviceId, true);
+                }
+
+                if (result.PortOpen == true)
+                {
+                    _diagnostics.LogActivity(
+                        "ServiceManager",
+                        $"Supervision: {id} recovered successfully");
+                    _supervisionFailures.TryRemove(serviceId, out _);
+                    _supervisionCooldowns.TryRemove(serviceId, out _);
+                    _supervisionRecoveredAt[serviceId] = DateTime.UtcNow;
+                    _unexpectedStopHandledAt.TryRemove(serviceId, out _);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Queued supervision restart cancelled during shutdown.
+            }
+            catch (Exception ex)
+            {
+                _diagnostics.LogException("ServiceManager.Supervision", ex);
+            }
+            finally
+            {
+                if (slotAcquired)
+                {
+                    _supervisionRestartSlots.Release();
+                }
+
+                UnmarkStarting(serviceId);
+                NotifyLiveStatusChanged(id, result);
+                _supervisionRestartInFlight.TryRemove(serviceId, out _);
+            }
+        });
+    }
+
+    private void SeedSupervisionEligibility(AppSettings settings)
+    {
+        foreach (var definition in SettingsDefaults.ServiceDefinitions)
+        {
+            if (!Implemented.Contains(definition.Id) || definition.Runtime == ServiceRuntime.Library)
+            {
+                continue;
+            }
+
+            var serviceSettings = GetServiceSettings(
+                settings,
+                definition.Id,
+                definition.DefaultPort,
+                definition.DefaultSslPort,
+                definition.PackageId);
+            if (!serviceSettings.Enabled || !serviceSettings.Supervise || IsUserStoppedIntent(definition.Id))
+            {
+                continue;
+            }
+
+            var live = BuildLiveInfo(definition.Id, settings);
+            if (live.PortOpen == true)
+            {
+                _supervisionEligible.TryAdd(definition.Id, true);
+                continue;
+            }
+
+            if (ManagedServiceStatusPolicy.IsPortConflictMessage(_lastErrors.GetValueOrDefault(definition.Id)))
+            {
+                _supervisionEligible.TryAdd(definition.Id, true);
+            }
         }
     }
 
-    private void ReportStartProgress(ServiceId serviceId, string message)
+    private void MarkUserStoppedIntent(ServiceId serviceId)
+    {
+        _userStoppedServices.TryAdd(serviceId, 0);
+        _supervisionEligible.TryRemove(serviceId, out _);
+        _supervisionFailures.TryRemove(serviceId, out _);
+        _supervisionCooldowns.TryRemove(serviceId, out _);
+        _supervisionRestartInFlight.TryRemove(serviceId, out _);
+    }
+
+    private void ClearUserStoppedIntent(ServiceId serviceId)
+        => _userStoppedServices.TryRemove(serviceId, out _);
+
+    private bool IsUserStoppedIntent(ServiceId serviceId)
+        => _userStoppedServices.ContainsKey(serviceId);
+
+    public int GetSupervisionFailureCount(ServiceId serviceId)
+        => _supervisionFailures.GetValueOrDefault(serviceId);
+
+    public bool IsSupervisionEligible(ServiceId serviceId)
+        => _supervisionEligible.ContainsKey(serviceId);
+
+    public bool IsSupervisionRecoveryInFlight(ServiceId serviceId)
+        => _supervisionRestartInFlight.ContainsKey(serviceId) || IsStarting(serviceId);
+
+    public bool IsUserStoppedIntent(string serviceKey)
+        => TryParseServiceId(serviceKey, out var serviceId) && IsUserStoppedIntent(serviceId);
+
+    public void MarkUserStoppedIntent(string serviceKey)
+    {
+        if (TryParseServiceId(serviceKey, out var serviceId))
+        {
+            MarkUserStoppedIntent(serviceId);
+        }
+    }
+
+    private void RaiseSupervisionAlert(ServiceId serviceId, string serviceName, int failureCount)
+    {
+        try
+        {
+            SupervisionAlert?.Invoke(
+                this,
+                new ServiceSupervisionAlertEventArgs
+                {
+                    ServiceId = serviceId,
+                    ServiceKey = ToServiceKey(serviceId),
+                    ServiceName = serviceName,
+                    FailureCount = failureCount
+                });
+        }
+        catch
+        {
+            // Alert delivery is best-effort.
+        }
+    }
+
+    private void ReportStartProgress(ServiceId serviceId, string message, Stopwatch? elapsed = null)
     {
         if (!IsStarting(serviceId))
         {
@@ -1842,4 +2953,48 @@ public sealed class ServiceManager
         _services[serviceId] = info;
         NotifyLiveStatusChanged(info.Id, info);
     }
+
+    public void PrepareForShutdown()
+    {
+        StopSupervision();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        StopSupervision();
+        _supervisionRestartSlots.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
+
+public sealed class ServiceSupervisionAlertEventArgs : EventArgs
+{
+    public ServiceId ServiceId { get; init; }
+
+    public string ServiceKey { get; init; } = string.Empty;
+
+    public string ServiceName { get; init; } = string.Empty;
+
+    public int FailureCount { get; init; }
+}
+
+public sealed class PhpListenerPerformanceInfo
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Name { get; init; } = string.Empty;
+
+    public string Endpoint { get; init; } = string.Empty;
+
+    public string Status { get; init; } = string.Empty;
+
+    public int? Pid { get; init; }
+
+    public IReadOnlyList<int> MemoryPids { get; init; } = [];
 }

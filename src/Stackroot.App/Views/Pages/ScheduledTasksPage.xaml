@@ -9,6 +9,7 @@
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -30,8 +31,22 @@
             </StackPanel>
         </DockPanel>
 
+        <StackPanel Grid.Row="1"
+                    Margin="0,14,0,0"
+                    Orientation="Horizontal">
+            <TextBlock VerticalAlignment="Center"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Margin="0,0,8,0"
+                       Text="Site filter:" />
+            <ComboBox Width="280"
+                      DisplayMemberPath="Label"
+                      SelectedValuePath="Id"
+                      SelectedValue="{Binding SiteFilter}"
+                      ItemsSource="{Binding SiteFilterOptions}" />
+        </StackPanel>
+
         <!-- Task list -->
-        <ScrollViewer Grid.Row="1" Margin="0,14,0,24" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" Margin="0,14,0,24" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding Tasks}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -62,6 +77,9 @@
                                     </WrapPanel>
                                     <WrapPanel Margin="0,2,0,0">
                                         <TextBlock FontSize="11"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{Binding SiteLabel}" />
+                                        <TextBlock Margin="12,0,0,0" FontSize="11"
                                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    FontFamily="Consolas"
                                                    Text="{Binding Command}"

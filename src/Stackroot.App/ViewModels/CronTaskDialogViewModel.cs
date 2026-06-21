@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Stackroot.App.Commands;
 using Stackroot.App.Scheduling;
+using Stackroot.Core.Sites.Management;
 
 namespace Stackroot.App.ViewModels;
 
@@ -13,9 +14,11 @@ public sealed class CronFieldOption
 
 public sealed class CronTaskDialogViewModel : ViewModelBase
 {
+    private readonly SiteManager _siteManager;
     private string _label = string.Empty;
     private string _command = string.Empty;
     private string _workingDirectory = string.Empty;
+    private string? _siteId = string.Empty;
     private bool _captureLog;
     private string _cronExpression = "* * * * *";
     private bool _syncingCron;
@@ -25,8 +28,18 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
     private CronFieldOption _selectedMonth = null!;
     private CronFieldOption _selectedWeekday = null!;
 
-    public CronTaskDialogViewModel(ScheduledTaskModel? existing = null)
+    public CronTaskDialogViewModel(SiteManager siteManager, ScheduledTaskModel? existing = null)
     {
+        _siteManager = siteManager;
+
+        Sites = new ObservableCollection<SiteOptionViewModel>(
+        [
+            new SiteOptionViewModel(string.Empty, "None — app-wide task"),
+            ..siteManager.List()
+                .OrderBy(site => site.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(site => new SiteOptionViewModel(site.Id, $"{site.Name} ({site.Domain})"))
+        ]);
+
         MinuteOptions =
         [
             new() { Label = "Every minute", Value = "*" },
@@ -71,11 +84,13 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
             _label = existing.Label;
             _command = existing.Command;
             _workingDirectory = existing.WorkingDirectory;
+            _siteId = existing.SiteId ?? string.Empty;
             _captureLog = existing.CaptureLog;
             _cronExpression = existing.CronExpression;
             RaisePropertyChanged(nameof(TaskLabel));
             RaisePropertyChanged(nameof(TaskCommand));
             RaisePropertyChanged(nameof(WorkingDirectory));
+            RaisePropertyChanged(nameof(SiteId));
             RaisePropertyChanged(nameof(CaptureLog));
             RaisePropertyChanged(nameof(CronExpression));
             RaisePropertyChanged(nameof(CronPreview));
@@ -94,6 +109,7 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
     public ObservableCollection<CronFieldOption> DayOptions { get; }
     public ObservableCollection<CronFieldOption> MonthOptions { get; }
     public ObservableCollection<CronFieldOption> WeekdayOptions { get; }
+    public ObservableCollection<SiteOptionViewModel> Sites { get; }
 
     public CronFieldOption SelectedMinute
     {
@@ -151,6 +167,28 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
     public string TaskLabel { get => _label; set { SetProperty(ref _label, value); SaveCommand.RaiseCanExecuteChanged(); } }
     public string TaskCommand { get => _command; set { SetProperty(ref _command, value); SaveCommand.RaiseCanExecuteChanged(); } }
     public string WorkingDirectory { get => _workingDirectory; set { SetProperty(ref _workingDirectory, value); SaveCommand.RaiseCanExecuteChanged(); } }
+
+    public string? SiteId
+    {
+        get => _siteId;
+        set
+        {
+            if (!SetProperty(ref _siteId, value))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                var site = _siteManager.Get(value);
+                if (site is not null && string.IsNullOrWhiteSpace(_workingDirectory))
+                {
+                    WorkingDirectory = site.Path;
+                }
+            }
+        }
+    }
+
     public bool CaptureLog { get => _captureLog; set => SetProperty(ref _captureLog, value); }
 
     public bool IsValid => !string.IsNullOrWhiteSpace(TaskLabel)
@@ -210,7 +248,8 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
             Command = TaskCommand.Trim(),
             CronExpression = CronExpression,
             WorkingDirectory = WorkingDirectory.Trim(),
-            CaptureLog = CaptureLog
+            CaptureLog = CaptureLog,
+            SiteId = string.IsNullOrWhiteSpace(_siteId) ? null : _siteId.Trim()
         };
     }
 }

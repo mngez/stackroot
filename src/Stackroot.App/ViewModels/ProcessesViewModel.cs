@@ -10,6 +10,7 @@ using Stackroot.App.Views;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Sites.Management;
 using Stackroot.Core.Supervisor;
+using Stackroot.Core.Windows;
 
 namespace Stackroot.App.ViewModels;
 
@@ -23,7 +24,7 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
     private readonly IServiceProvider _services;
     private readonly SessionActivityCoordinator _activityCoordinator;
     private readonly SessionActivityReporter _activity;
-    private readonly DispatcherTimer _pollTimer;
+    private readonly RuntimeStateService _runtimeState;
     private string? _siteFilter;
     private string? _errorMessage;
     private bool _isBulkBusy;
@@ -39,7 +40,8 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
         SiteManager siteManager,
         IServiceProvider services,
         SessionActivityCoordinator activityCoordinator,
-        SessionActivityReporter activity)
+        SessionActivityReporter activity,
+        RuntimeStateService runtimeState)
     {
         _processManager = processManager;
         _store = store;
@@ -47,6 +49,7 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
         _services = services;
         _activityCoordinator = activityCoordinator;
         _activity = activity;
+        _runtimeState = runtimeState;
 
         Processes = new ObservableCollection<ProcessRowViewModel>();
         SiteFilterOptions = new ObservableCollection<SiteFilterOptionViewModel>();
@@ -65,15 +68,32 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
         ToggleAutoStartCommand = new RelayCommand(row => ToggleField(row as ProcessRowViewModel, p => p with { AutoStart = !p.AutoStart }));
         ToggleFeaturedCommand = new RelayCommand(row => ToggleField(row as ProcessRowViewModel, p => p with { Featured = !(p.Featured == true) }));
 
-        _pollTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(5)
-        };
-        _pollTimer.Tick += (_, _) => Refresh(quiet: true);
+        _runtimeState.StateUpdated += OnRuntimeStateUpdated;
 
         RebuildSiteFilterOptions();
         _ = RefreshAsync();
-        _pollTimer.Start();
+    }
+
+    public void BeginLoading()
+    {
+        _runtimeState.SetDetailedPolling(enabled: true);
+    }
+
+    public void EndLoading()
+    {
+        _runtimeState.SetDetailedPolling(enabled: false);
+    }
+
+    private void OnRuntimeStateUpdated(object? sender, EventArgs e)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            Refresh(quiet: true);
+            return;
+        }
+
+        dispatcher.BeginInvoke(() => Refresh(quiet: true), DispatcherPriority.Background);
     }
 
     public ObservableCollection<ProcessRowViewModel> Processes { get; }
@@ -165,6 +185,7 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
             var snapshot = BuildProcessSnapshot(processes);
             if (quiet && string.Equals(snapshot, _lastQuietSnapshot, StringComparison.Ordinal))
             {
+                UpdateUptimeTexts(processes);
                 return;
             }
 
@@ -172,11 +193,9 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
 
             var rows = processes.Select(ToRow).ToList();
 
-            Processes.Clear();
-            foreach (var row in rows)
-            {
-                Processes.Add(row);
-            }
+            SyncProcessRows(rows);
+
+            UpdateUptimeTexts(processes);
 
             ErrorMessage = null;
             RaisePropertyChanged(nameof(HasProcesses));
@@ -201,7 +220,7 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        _pollTimer.Stop();
+        _runtimeState.StateUpdated -= OnRuntimeStateUpdated;
     }
 
     private void RebuildSiteFilterOptions()
@@ -214,9 +233,18 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
             SiteFilterOptions.Add(new SiteFilterOptionViewModel(string.Empty, "All sites"));
             SiteFilterOptions.Add(new SiteFilterOptionViewModel(GlobalSiteFilter, "App-wide only"));
 
+            var siteIdsWithProcesses = _processManager.List()
+                .Select(process => process.SiteId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             foreach (var site in _siteManager.List().OrderBy(site => site.Name, StringComparer.OrdinalIgnoreCase))
             {
-                SiteFilterOptions.Add(new SiteFilterOptionViewModel(site.Id, $"{site.Name} ({site.Domain})"));
+                if (siteIdsWithProcesses.Contains(site.Id))
+                {
+                    SiteFilterOptions.Add(new SiteFilterOptionViewModel(site.Id, $"{site.Name} ({site.Domain})"));
+                }
             }
 
             if (!SiteFilterOptions.Any(option => string.Equals(option.Id, selected, StringComparison.Ordinal)))
@@ -599,6 +627,48 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
         RestartCommand.RaiseCanExecuteChanged();
     }
 
+    private void SyncProcessRows(IReadOnlyList<ProcessRowViewModel> incoming)
+    {
+        var incomingIds = incoming.Select(row => row.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var i = Processes.Count - 1; i >= 0; i--)
+        {
+            if (!incomingIds.Contains(Processes[i].Id))
+            {
+                Processes.RemoveAt(i);
+            }
+        }
+
+        for (var index = 0; index < incoming.Count; index++)
+        {
+            var row = incoming[index];
+            var existingIndex = -1;
+            for (var i = 0; i < Processes.Count; i++)
+            {
+                if (string.Equals(Processes[i].Id, row.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingIndex = i;
+                    break;
+                }
+            }
+
+            if (existingIndex >= 0)
+            {
+                var existing = Processes[existingIndex];
+                existing.ApplyLiveUpdate(row);
+                if (existingIndex != index)
+                {
+                    Processes.RemoveAt(existingIndex);
+                    Processes.Insert(index, existing);
+                }
+            }
+            else
+            {
+                Processes.Insert(index, row);
+            }
+        }
+    }
+
     private static string BuildProcessSnapshot(IReadOnlyList<ProcessInfo> processes) =>
         string.Join('\n', processes.Select(process =>
             string.Join('|',
@@ -616,7 +686,7 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
     private ProcessRowViewModel ToRow(ProcessInfo process)
     {
         var site = !string.IsNullOrWhiteSpace(process.SiteId) ? _siteManager.Get(process.SiteId) : null;
-        return new ProcessRowViewModel
+        var row = new ProcessRowViewModel
         {
             Id = process.Id,
             Name = process.Name,
@@ -640,7 +710,22 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
             CanStart = process.Enabled && process.Available,
             ShowLog = process.HasLog == true || process.Status is ProcessStatus.Running or ProcessStatus.Error
         };
+
+        row.SetUptimeFromPid(process.Status is ProcessStatus.Running or ProcessStatus.Restarting ? process.Pid : null);
+        return row;
     }
+
+    private static void UpdateUptimeTexts(IReadOnlyList<ProcessInfo> processes, IEnumerable<ProcessRowViewModel> rows)
+    {
+        foreach (var row in rows)
+        {
+            var process = processes.FirstOrDefault(candidate => candidate.Id == row.Id);
+            row.SetUptimeFromPid(process?.Status is ProcessStatus.Running or ProcessStatus.Restarting ? process.Pid : null);
+        }
+    }
+
+    private void UpdateUptimeTexts(IReadOnlyList<ProcessInfo> processes) =>
+        UpdateUptimeTexts(processes, Processes);
 
     private static string FormatStatus(ProcessInfo process)
     {
@@ -689,37 +774,171 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
         };
 }
 
-public sealed class ProcessRowViewModel : ViewModelBase
+public sealed class ProcessRowViewModel : ViewModelBase, IUptimeTooltipTarget
 {
     private bool _isBusy;
+    private string _uptimeText = string.Empty;
+    private int? _uptimePid;
+    private string _statusText = "Stopped";
+    private string _statusColor = "#91A0B5";
+    private string _indicatorColor = "#91A0B5";
+    private string _rowBorderBrush = "#263348";
+    private string _pid = "-";
+    private string _message = string.Empty;
+    private bool _isActive;
+    private bool _isLive;
+    private bool _canStart;
+    private bool _showLog;
 
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string SiteLabel { get; init; } = string.Empty;
     public string RuntimeLabel { get; init; } = string.Empty;
-    public string StatusText { get; init; } = ProcessStatus.Stopped.ToString();
-    public string StatusColor { get; init; } = "#91A0B5";
-    public string IndicatorColor { get; init; } = "#91A0B5";
-    public string RowBorderBrush { get; init; } = "#263348";
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (SetProperty(ref _statusText, value))
+            {
+                RaisePropertyChanged(nameof(StatusBrush));
+            }
+        }
+    }
+
+    public string StatusColor
+    {
+        get => _statusColor;
+        set
+        {
+            if (SetProperty(ref _statusColor, value))
+            {
+                RaisePropertyChanged(nameof(StatusBrush));
+            }
+        }
+    }
+
+    public string IndicatorColor
+    {
+        get => _indicatorColor;
+        set
+        {
+            if (SetProperty(ref _indicatorColor, value))
+            {
+                RaisePropertyChanged(nameof(IndicatorBrush));
+            }
+        }
+    }
+
+    public string RowBorderBrush
+    {
+        get => _rowBorderBrush;
+        set
+        {
+            if (SetProperty(ref _rowBorderBrush, value))
+            {
+                RaisePropertyChanged(nameof(RowBorder));
+            }
+        }
+    }
+
     public System.Windows.Media.Brush StatusBrush => CreateBrush(StatusColor);
     public System.Windows.Media.Brush IndicatorBrush => CreateBrush(IndicatorColor);
     public System.Windows.Media.Brush RowBorder => CreateBrush(RowBorderBrush);
-    public string Pid { get; init; } = "-";
+
+    public string Pid
+    {
+        get => _pid;
+        set => SetProperty(ref _pid, value);
+    }
+
     public string CommandLine { get; init; } = string.Empty;
     public string WorkDir { get; init; } = string.Empty;
-    public string Message { get; init; } = string.Empty;
+
+    public string Message
+    {
+        get => _message;
+        set => SetProperty(ref _message, value);
+    }
+
     public bool Enabled { get; init; }
     public bool AutoStart { get; init; }
     public bool Featured { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsLive { get; init; }
-    public bool CanStart { get; init; }
-    public bool ShowLog { get; init; }
+
+    public bool IsActive
+    {
+        get => _isActive;
+        set => SetProperty(ref _isActive, value);
+    }
+
+    public bool IsLive
+    {
+        get => _isLive;
+        set => SetProperty(ref _isLive, value);
+    }
+
+    public bool CanStart
+    {
+        get => _canStart;
+        set => SetProperty(ref _canStart, value);
+    }
+
+    public bool ShowLog
+    {
+        get => _showLog;
+        set => SetProperty(ref _showLog, value);
+    }
+
     public string PinGlyph => Featured ? "\uE735" : "\uE734";
     public System.Windows.Media.Brush PinColor => Featured
         ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE9, 0xBD, 0x5B))
         : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x91, 0xA0, 0xB5));
     public bool ShowBusyIndicator => IsBusy;
+
+    public void ApplyLiveUpdate(ProcessRowViewModel source)
+    {
+        StatusText = source.StatusText;
+        StatusColor = source.StatusColor;
+        IndicatorColor = source.IndicatorColor;
+        RowBorderBrush = source.RowBorderBrush;
+        Pid = source.Pid;
+        Message = source.Message;
+        IsActive = source.IsActive;
+        IsLive = source.IsLive;
+        CanStart = source.CanStart;
+        ShowLog = source.ShowLog;
+        SetUptimeFromPid(source.LiveUptimePid);
+    }
+
+    internal int? LiveUptimePid => _uptimePid;
+
+    public string UptimeText
+    {
+        get => _uptimeText;
+        set
+        {
+            if (SetProperty(ref _uptimeText, value))
+            {
+                RaisePropertyChanged(nameof(UptimeToolTip));
+            }
+        }
+    }
+
+    public string? UptimeToolTip => ProcessUptime.FormatToolTip(UptimeText);
+
+    public void SetUptimeFromPid(int? pid)
+    {
+        _uptimePid = pid is > 0 ? pid : null;
+        RefreshUptimeDisplay();
+    }
+
+    public void RefreshUptimeDisplay()
+    {
+        UptimeText = _uptimePid is > 0
+            ? ProcessUptime.FormatFromPid(_uptimePid) ?? string.Empty
+            : string.Empty;
+    }
 
     public bool IsBusy
     {

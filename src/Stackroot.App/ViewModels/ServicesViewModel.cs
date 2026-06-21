@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
@@ -6,6 +5,7 @@ using System.Windows.Threading;
 using Stackroot.App.Helpers;
 using Stackroot.App.Commands;
 using Stackroot.App.Services;
+using Stackroot.Engine.Runtime;
 using Stackroot.App.Views;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.AdminTools;
@@ -33,6 +33,7 @@ public sealed class ServicesViewModel : ViewModelBase
     private readonly PhpMyAdminManager _phpMyAdminManager;
     private readonly PhpRedisAdminManager _phpRedisAdminManager;
     private readonly MailpitManager _mailpitManager;
+    private readonly TestDnsCoordinator _testDnsCoordinator;
     private readonly AppDomainConfigWriter _appDomainConfigWriter;
     private readonly NginxWebStackRebuilder _nginxWebStackRebuilder;
     private readonly StackrootPaths _paths;
@@ -40,12 +41,13 @@ public sealed class ServicesViewModel : ViewModelBase
     private readonly InstallProgressTracker _installTracker;
     private readonly SessionActivityReporter _activity;
     private readonly SessionActivityCoordinator _activityCoordinator;
+    private readonly RuntimeStateService _runtimeState;
+    private readonly DashboardViewModel _dashboard;
     private bool _isRefreshing;
     private bool _isRebuilding;
     private bool _initialized;
     private int _refreshVersion;
-    private int _liveServiceUpdateScheduled;
-    private readonly ConcurrentDictionary<string, ServiceInfo> _pendingLiveServiceUpdates = new(StringComparer.OrdinalIgnoreCase);
+    private int _pageVisible;
     private string? _stackNotice;
 
     public ServicesViewModel(
@@ -58,13 +60,16 @@ public sealed class ServicesViewModel : ViewModelBase
         PhpMyAdminManager phpMyAdminManager,
         PhpRedisAdminManager phpRedisAdminManager,
         MailpitManager mailpitManager,
+        TestDnsCoordinator testDnsCoordinator,
         AppDomainConfigWriter appDomainConfigWriter,
         NginxWebStackRebuilder nginxWebStackRebuilder,
         StackrootPaths paths,
         IProcessJobManager jobManager,
         InstallProgressTracker installTracker,
         SessionActivityReporter activity,
-        SessionActivityCoordinator activityCoordinator)
+        SessionActivityCoordinator activityCoordinator,
+        RuntimeStateService runtimeState,
+        DashboardViewModel dashboard)
     {
         _serviceManager = serviceManager;
         _settingsStore = settingsStore;
@@ -75,6 +80,7 @@ public sealed class ServicesViewModel : ViewModelBase
         _phpMyAdminManager = phpMyAdminManager;
         _phpRedisAdminManager = phpRedisAdminManager;
         _mailpitManager = mailpitManager;
+        _testDnsCoordinator = testDnsCoordinator;
         _appDomainConfigWriter = appDomainConfigWriter;
         _nginxWebStackRebuilder = nginxWebStackRebuilder;
         _paths = paths;
@@ -82,9 +88,12 @@ public sealed class ServicesViewModel : ViewModelBase
         _installTracker = installTracker;
         _activity = activity;
         _activityCoordinator = activityCoordinator;
+        _runtimeState = runtimeState;
+        _dashboard = dashboard;
 
         _mailpitManager.StatusChanged += (_, _) => _ = RefreshMailpitStatusAsync();
-        _serviceManager.LiveStatusChanged += OnServiceLiveStatusChanged;
+        _testDnsCoordinator.StatusChanged += (_, _) => _ = RefreshTestDnsStatusAsync();
+        _runtimeState.StateUpdated += OnRuntimeStateUpdated;
 
         Groups = [];
         RefreshCommand = new RelayCommand(_ => _ = RefreshAsync(force: true), _ => !IsRefreshing && !IsRebuilding);
@@ -97,7 +106,15 @@ public sealed class ServicesViewModel : ViewModelBase
 
     public void BeginLoading()
     {
-        // State is warmed at app startup; live events keep statuses current.
+        Interlocked.Increment(ref _pageVisible);
+    }
+
+    public void EndLoading()
+    {
+        if (Interlocked.Decrement(ref _pageVisible) < 0)
+        {
+            Interlocked.Exchange(ref _pageVisible, 0);
+        }
     }
 
     public void RefreshAfterDeferredStartup()
@@ -183,6 +200,12 @@ public sealed class ServicesViewModel : ViewModelBase
 
             foreach (var definition in definitions)
             {
+                if (definition.Id == ServiceId.TestDns)
+                {
+                    AddTestDnsServiceRow(group, settings);
+                    continue;
+                }
+
                 if (!settings.Services.TryGetValue(definition.Id, out var serviceSettings))
                 {
                     serviceSettings = SettingsDefaults.DefaultServices()[definition.Id];
@@ -192,9 +215,12 @@ public sealed class ServicesViewModel : ViewModelBase
                 var hasInstalledVersion = _registryStore.List(packageType).Count > 0;
                 var activePackageId = serviceSettings.PackageId ?? definition.PackageId;
                 var installed = !string.IsNullOrWhiteSpace(activePackageId) && _registryStore.IsInstalled(activePackageId);
-                var enabled = definition.Id == ServiceId.Mailpit
-                    ? settings.Mailpit.Enabled
-                    : serviceSettings.Enabled;
+                var enabled = definition.Id switch
+                {
+                    ServiceId.Mailpit => settings.Mailpit.Enabled,
+                    ServiceId.TestDns => settings.TestDns.Enabled,
+                    _ => serviceSettings.Enabled
+                };
 
                 ServiceEntryViewModel? row = null;
                 row = new ServiceEntryViewModel
@@ -239,6 +265,37 @@ public sealed class ServicesViewModel : ViewModelBase
         }
     }
 
+    private void AddTestDnsServiceRow(ServiceGroupViewModel group, AppSettings settings)
+    {
+        var definition = SettingsDefaults.ServiceDefinitions.First(d => d.Id == ServiceId.TestDns);
+        var serviceSettings = settings.Services[ServiceId.TestDns];
+        ServiceEntryViewModel? row = null;
+        row = new ServiceEntryViewModel
+        {
+            Definition = definition,
+            Settings = serviceSettings,
+            StartCommand = new RelayCommand(
+                _ => _ = StartAsync(ServiceId.TestDns),
+                _ => CanStart(row)),
+            StopCommand = new RelayCommand(
+                _ => _ = StopAsync(ServiceId.TestDns),
+                _ => CanStop(row)),
+            RestartCommand = new RelayCommand(
+                _ => _ = RestartAsync(ServiceId.TestDns),
+                _ => CanRestart(row)),
+            InstallCommand = null,
+            VersionsCommand = null,
+            SettingsCommand = new RelayCommand(
+                _ => OpenTestDnsSettings(row!),
+                _ => CanOpenSettings(row)),
+            Enabled = settings.TestDns.Enabled,
+            HasInstalledVersion = true,
+            Installed = true,
+            ActivePackageLabel = "Built-in"
+        };
+        group.Items.Add(row);
+    }
+
     private static bool CanStart(ServiceEntryViewModel? item)
     {
         return item is not null
@@ -270,7 +327,10 @@ public sealed class ServicesViewModel : ViewModelBase
 
     private static bool CanOpenVersions(ServiceEntryViewModel? item)
     {
-        return item is not null && !item.IsBusy && !item.IsInstalling;
+        return item is not null
+            && item.Definition.Id != ServiceId.TestDns
+            && !item.IsBusy
+            && !item.IsInstalling;
     }
 
     private static bool CanOpenSettings(ServiceEntryViewModel? item)
@@ -342,6 +402,12 @@ public sealed class ServicesViewModel : ViewModelBase
             return;
         }
 
+        if (id == ServiceId.TestDns)
+        {
+            OpenTestDnsSettings(item);
+            return;
+        }
+
         var settings = _settingsStore.Load().Services[id];
         var dialogVm = new ServiceSettingsDialogViewModel(
             _settingsStore,
@@ -366,6 +432,7 @@ public sealed class ServicesViewModel : ViewModelBase
             item.Enabled = item.Settings.Enabled;
             item.ActivePackageLabel = ResolvePackageLabel(item.Settings.PackageId ?? item.Definition.PackageId);
             item.RefreshCommandStates();
+            _dashboard.SyncServicePresentationFromSettings(id);
 
             if (dialogVm.ClosedAfterSave)
             {
@@ -462,6 +529,28 @@ public sealed class ServicesViewModel : ViewModelBase
             var snapshots = new List<ServiceRefreshSnapshot>(definitions.Count);
             foreach (var definition in definitions)
             {
+                if (definition.Id == ServiceId.TestDns)
+                {
+                    var testDnsStatus = _testDnsCoordinator.GetStatus();
+                    settings.Services.TryGetValue(ServiceId.TestDns, out var testDnsServiceSettings);
+                    testDnsServiceSettings ??= SettingsDefaults.DefaultServices()[ServiceId.TestDns];
+                    snapshots.Add(new ServiceRefreshSnapshot(
+                        ServiceId.TestDns,
+                        testDnsServiceSettings,
+                        settings.TestDns.Enabled,
+                        true,
+                        true,
+                        "Built-in",
+                        testDnsStatus.Running && testDnsStatus.NrptActive,
+                        testDnsStatus.Message,
+                        testDnsStatus.Running && testDnsStatus.NrptActive
+                            ? "127.0.0.1:53 · NRPT .test"
+                            : null,
+                        null,
+                        []));
+                    continue;
+                }
+
                 settings.Services.TryGetValue(definition.Id, out var serviceSettings);
                 serviceSettings ??= SettingsDefaults.DefaultServices()[definition.Id];
 
@@ -491,7 +580,12 @@ public sealed class ServicesViewModel : ViewModelBase
                 snapshots.Add(new ServiceRefreshSnapshot(
                     definition.Id,
                     serviceSettings,
-                    definition.Id == ServiceId.Mailpit ? settings.Mailpit.Enabled : serviceSettings.Enabled,
+                    definition.Id switch
+                    {
+                        ServiceId.Mailpit => settings.Mailpit.Enabled,
+                        ServiceId.TestDns => settings.TestDns.Enabled,
+                        _ => serviceSettings.Enabled
+                    },
                     installed.Count > 0,
                     !string.IsNullOrWhiteSpace(activePackageId) && _registryStore.IsInstalled(activePackageId),
                     string.IsNullOrWhiteSpace(activePackageId)
@@ -543,31 +637,44 @@ public sealed class ServicesViewModel : ViewModelBase
         }
     }
 
-    private void OnServiceLiveStatusChanged(object? sender, ServiceInfo info)
+    private void OnRuntimeStateUpdated(object? sender, EventArgs e)
     {
-        _pendingLiveServiceUpdates[info.Id] = info;
+        if (Volatile.Read(ref _pageVisible) <= 0)
+        {
+            return;
+        }
+
+        var snapshot = _runtimeState.LatestSnapshot;
+        if (snapshot is null)
+        {
+            return;
+        }
+
         var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher is null)
+        if (dispatcher is null || dispatcher.CheckAccess())
         {
+            ApplyRuntimeStateSnapshot(snapshot);
             return;
         }
 
-        if (Interlocked.Exchange(ref _liveServiceUpdateScheduled, 1) == 1)
-        {
-            return;
-        }
-
-        dispatcher.BeginInvoke(ApplyPendingLiveServiceUpdates, DispatcherPriority.Background);
+        dispatcher.BeginInvoke(() => ApplyRuntimeStateSnapshot(snapshot), DispatcherPriority.Background);
     }
 
-    private void ApplyPendingLiveServiceUpdates()
+    private void ApplyRuntimeStateSnapshot(RuntimeStateSnapshot snapshot)
     {
-        Interlocked.Exchange(ref _liveServiceUpdateScheduled, 0);
-        var updates = _pendingLiveServiceUpdates.ToArray();
-        _pendingLiveServiceUpdates.Clear();
-        foreach (var (_, info) in updates)
+        foreach (var info in snapshot.Services)
         {
             ApplyLiveServiceInfo(info);
+        }
+
+        if (snapshot.Mailpit is not null)
+        {
+            _ = RefreshMailpitStatusAsync();
+        }
+
+        if (snapshot.TestDns is not null)
+        {
+            _ = RefreshTestDnsStatusAsync();
         }
     }
 
@@ -576,6 +683,12 @@ public sealed class ServicesViewModel : ViewModelBase
         if (string.Equals(info.Id, "mailpit", StringComparison.OrdinalIgnoreCase))
         {
             _ = RefreshMailpitStatusAsync();
+            return;
+        }
+
+        if (string.Equals(info.Id, "testdns", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = RefreshTestDnsStatusAsync();
             return;
         }
 
@@ -654,6 +767,31 @@ public sealed class ServicesViewModel : ViewModelBase
 
         item.RefreshCommandStates();
         item.NotifyRunningStateChanged();
+    }
+
+    private async Task RefreshTestDnsStatusAsync()
+    {
+        var item = FindItem(ServiceId.TestDns);
+        if (item is null)
+        {
+            return;
+        }
+
+        var settings = _settingsStore.Load();
+        var status = _testDnsCoordinator.GetStatus();
+        await RunOnUiAsync(() =>
+        {
+            item.Settings = settings.Services[ServiceId.TestDns];
+            item.Enabled = settings.TestDns.Enabled;
+            item.Installed = true;
+            item.HasInstalledVersion = true;
+            item.DetailsOverride = status.Running && status.NrptActive
+                ? "127.0.0.1:53 · NRPT .test"
+                : null;
+            ServiceStatusPresenter.Apply(item, status.Running && status.NrptActive, status.Message);
+            item.RefreshCommandStates();
+            item.NotifyRunningStateChanged();
+        }).ConfigureAwait(false);
     }
 
     private async Task RefreshMailpitStatusAsync()
@@ -1029,10 +1167,25 @@ public sealed class ServicesViewModel : ViewModelBase
                 ServiceId.Redis => await _serviceManager.StartRedisAsync(),
                 ServiceId.Memcached or ServiceId.Postgresql or ServiceId.Mongodb or ServiceId.Mysql or ServiceId.Mariadb =>
                     await _serviceManager.StartAsync(id.ToString().ToLowerInvariant()),
+                ServiceId.TestDns => await StartTestDnsAsync(item),
                 _ => new ServiceInfo { Message = "Start is not wired for this service yet." }
             };
 
-            if (!string.IsNullOrWhiteSpace(result.Message) && result.Status != ServiceStatus.Running)
+            if (id == ServiceId.TestDns)
+            {
+                if (item.IsRunning)
+                {
+                    item.StatusText = "Running";
+                    item.StatusColor = "#8FD6B6";
+                    item.Message = null;
+                }
+                else if (!string.IsNullOrWhiteSpace(item.Message))
+                {
+                    item.StatusText = "Error";
+                    item.StatusColor = "#EAAAB0";
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(result.Message) && result.Status != ServiceStatus.Running)
             {
                 item.Message = result.Message;
                 item.StatusText = "Error";
@@ -1129,6 +1282,12 @@ public sealed class ServicesViewModel : ViewModelBase
                 case ServiceId.Mariadb:
                     await _serviceManager.StopAsync(id.ToString().ToLowerInvariant());
                     break;
+                case ServiceId.TestDns:
+                    await _testDnsCoordinator.StopRuntimeAsync();
+                    item.StatusText = "Stopped";
+                    item.StatusColor = "#91A0B5";
+                    item.Message = null;
+                    return;
                 default:
                     item.Message = "Stop is not wired for this service yet.";
                     break;
@@ -1165,6 +1324,31 @@ public sealed class ServicesViewModel : ViewModelBase
         {
             try
             {
+                if (id == ServiceId.TestDns)
+                {
+                    await Task.Run(async () =>
+                            await _testDnsCoordinator.RestartRuntimeAsync().ConfigureAwait(false))
+                        .ConfigureAwait(true);
+
+                    var status = _testDnsCoordinator.GetStatus();
+                    if (status.Running && status.NrptActive)
+                    {
+                        item.StatusText = "Running";
+                        item.StatusColor = "#8FD6B6";
+                        item.Message = null;
+                        _activity.Complete(activityId, "Services", SessionActivityMessages.ServiceAction(item.Name, "restarted", true));
+                    }
+                    else
+                    {
+                        item.Message = status.Message ?? "Test DNS did not start";
+                        item.StatusText = "Error";
+                        item.StatusColor = "#EAAAB0";
+                        _activity.Fail(activityId, "Services", SessionActivityMessages.ServiceAction(item.Name, "restart", false, item.Message));
+                    }
+
+                    return;
+                }
+
                 var result = await Task.Run(async () =>
                         await _serviceManager.RestartAsync(serviceKey).ConfigureAwait(false))
                     .ConfigureAwait(true);
@@ -1325,6 +1509,60 @@ public sealed class ServicesViewModel : ViewModelBase
         return dispatcher.InvokeAsync(action).Task;
     }
 
+    private async Task<ServiceInfo> StartTestDnsAsync(ServiceEntryViewModel item)
+    {
+        try
+        {
+            await _testDnsCoordinator.EnableAsync().ConfigureAwait(false);
+            var status = _testDnsCoordinator.GetStatus();
+            if (status.Running && status.NrptActive)
+            {
+                return new ServiceInfo { Id = "testdns", Status = ServiceStatus.Running, PortOpen = true };
+            }
+
+            item.Message = status.Message;
+            return new ServiceInfo { Id = "testdns", Message = status.Message ?? "Test DNS did not start" };
+        }
+        catch (Exception ex)
+        {
+            item.Message = ex.Message;
+            return new ServiceInfo { Id = "testdns", Message = ex.Message };
+        }
+    }
+
+    private void OpenTestDnsSettings(ServiceEntryViewModel item)
+    {
+        var dialogVm = new TestDnsSettingsDialogViewModel(_settingsStore, _testDnsCoordinator);
+        var owner = Application.Current?.MainWindow;
+        var dialog = new TestDnsSettingsDialog
+        {
+            DataContext = dialogVm,
+            Owner = owner
+        };
+
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+
+        SettingsSaveFeedback.DeferredSettingsSave? deferred = null;
+        dialogVm.SettingsSaved += (_, _) =>
+        {
+            item.Settings = _settingsStore.Load().Services[ServiceId.TestDns];
+            item.Enabled = _settingsStore.Load().TestDns.Enabled;
+            _dashboard.SyncServicePresentationFromSettings(testDns: true);
+
+            deferred = new SettingsSaveFeedback.DeferredSettingsSave(
+                "Saving Test DNS settings…",
+                dialogVm.StatusMessage,
+                async () => await RefreshAsync(force: true));
+        };
+
+        dialog.ShowDialog();
+
+        if (deferred is { } save)
+        {
+            _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save);
+        }
+    }
+
     private void OpenMailpitSettings(ServiceEntryViewModel item)
     {
         var dialogVm = new MailpitSettingsDialogViewModel(_settingsStore);
@@ -1342,6 +1580,8 @@ public sealed class ServicesViewModel : ViewModelBase
         {
             item.Settings = _settingsStore.Load().Services[ServiceId.Mailpit];
             item.Enabled = _settingsStore.Load().Mailpit.Enabled;
+            _dashboard.SyncServicePresentationFromSettings(mailpit: true);
+
             deferred = new SettingsSaveFeedback.DeferredSettingsSave(
                 "Saving Mailpit settings…",
                 dialogVm.StatusMessage,

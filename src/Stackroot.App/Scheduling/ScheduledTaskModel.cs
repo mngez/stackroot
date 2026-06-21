@@ -12,4 +12,7 @@ public sealed class ScheduledTaskModel
     public string? LastRunAt { get; set; }
     public string? LastLogPath { get; set; }
     public string? LastError { get; set; }
+
+    /// <summary>Null or empty = app-wide task (not tied to a site).</summary>
+    public string? SiteId { get; set; }
 }

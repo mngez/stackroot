@@ -16,6 +16,26 @@
             <TextBlock Text="General Settings"
                        FontSize="28"
                        FontWeight="SemiBold" />
+            <Border Margin="0,12,0,0"
+                    Padding="12"
+                    Background="#33E88A92"
+                    BorderBrush="{StaticResource StackrootDangerTextBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Visibility="{Binding ShowCorruptedSettingsBanner, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding CorruptedSettingsBannerText}"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource StackrootDangerTextBrush}" />
+                    <Button Margin="0,10,0,0"
+                            HorizontalAlignment="Left"
+                            Padding="12,6"
+                            Command="{Binding RestoreFromBackupCommand}"
+                            Visibility="{Binding ShowRestoreBackupButton, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Restore from backup" />
+                    </Button>
+                </StackPanel>
+            </Border>
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
                        Text="Configure base paths, app behavior, and environment defaults" />
@@ -135,6 +155,44 @@
                     <CheckBox Margin="0,16,0,0"
                               Content="Launch Stackroot when Windows starts"
                               IsChecked="{Binding LaunchAtStartup}" />
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox VerticalAlignment="Center"
+                                  Content="Show RAM and CPU in the shell header"
+                                  IsChecked="{Binding ShellMetricsEnabled}" />
+                        <StackPanel Grid.Column="1"
+                                    Margin="12,0,0,0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding ShowShellMetricsCpuRefresh, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       Text="CPU every" />
+                            <TextBox Width="52"
+                                     Padding="8,4"
+                                     VerticalAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     Text="{Binding ShellMetricsCpuRefreshSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       Text="sec" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="{Binding ShellMetricsCpuRefreshHint}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding ShowShellMetricsCpuRefresh, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="Lightweight summary with a link to the Performance page. Turn off for a cleaner header."
+                               TextWrapping="Wrap" />
+
                     <CheckBox Margin="0,16,0,0"
                               Content="Enable site thumbnails (downloads ~300 MB Chromium browser on first use)"
                               IsChecked="{Binding ThumbnailsEnabled}" />

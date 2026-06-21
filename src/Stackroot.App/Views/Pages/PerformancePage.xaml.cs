@@ -9,6 +9,10 @@ public partial class PerformancePage : System.Windows.Controls.UserControl
         DataContext = viewModel;
         InitializeComponent();
         Loaded += (_, _) => viewModel.BeginLoading();
-        Unloaded += (_, _) => viewModel.EndLoading();
+        Unloaded += (_, _) =>
+        {
+            viewModel.EndLoading();
+            viewModel.Dispose();
+        };
     }
 }

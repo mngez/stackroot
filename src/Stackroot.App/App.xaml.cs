@@ -20,6 +20,8 @@ using Stackroot.Core.IO;
 using Stackroot.Core.IO.Migrations;
 using Stackroot.Core.Observability;
 using Stackroot.Core.Services;
+using Stackroot.Core.Settings;
+using Stackroot.Core.Sites.Management;
 using Stackroot.Core.Windows;
 
 namespace Stackroot.App;
@@ -182,6 +184,7 @@ public partial class App : System.Windows.Application
         var collection = new ServiceCollection();
         ConfigureServices(collection);
         _services = collection.BuildServiceProvider();
+        StackrootDiagnosticsHooks.Wire(_services);
     }
 
     private void InitializeApplicationCore()
@@ -200,6 +203,10 @@ public partial class App : System.Windows.Application
 
         _errorLogger = _services.GetRequiredService<AppErrorLogger>();
         _diagnostics = _services.GetRequiredService<IDiagnosticsReporter>();
+
+        var settingsStore = _services.GetRequiredService<SettingsStore>();
+        _services.GetRequiredService<SettingsLoadState>().Initialize(settingsStore);
+
         UiInteractionDiagnostics.Register(_diagnostics);
         MariaDbCredentialSync.ActivityLog = message => _diagnostics.LogActivity("MariaDb", message);
 
@@ -282,6 +289,7 @@ public partial class App : System.Windows.Application
         MainWindow = _services.GetRequiredService<MainWindow>();
         MainWindow.Show();
         MainWindow.Activate();
+        _services.GetRequiredService<DashboardViewModel>().BeginLoading();
         Current.Dispatcher.BeginInvoke(
             () => _services.GetRequiredService<ServicesViewModel>(),
             System.Windows.Threading.DispatcherPriority.Background);
@@ -305,14 +313,14 @@ public partial class App : System.Windows.Application
         }
         finally
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            if (_services is not null)
             {
-                _diagnostics.LogActivity("App", "Core startup finished — deferred tasks continue in background");
-                if (_services is not null)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
+                    _diagnostics.LogActivity("App", "Core startup finished — deferred tasks continue in background");
                     _ = _services.GetRequiredService<DashboardViewModel>().RefreshAfterStartupAsync();
-                }
-            });
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            }
         }
     }
 
@@ -326,9 +334,12 @@ public partial class App : System.Windows.Application
         // Notify user that startup is complete
         try
         {
-            _services.GetRequiredService<IToastService>().Show(
-                "Stackroot",
-                "All services started — your environment is ready.");
+            var scheduler = _services.GetRequiredService<TaskSchedulerService>();
+            scheduler.Start();
+            var readyMessage = scheduler.IsStarted
+                ? "All services started — your environment is ready. Cron scheduler running."
+                : "All services started — your environment is ready.";
+            _services.GetRequiredService<IToastService>().Show("Stackroot", readyMessage);
         }
         catch { /* toast is best-effort */ }
 
@@ -336,10 +347,22 @@ public partial class App : System.Windows.Application
         // timer may now perform PHP recovery etc.
         _services.GetRequiredService<DashboardViewModel>().NotifyStartupCompleted();
 
-        // Start the cron scheduler
-        _services.GetRequiredService<TaskSchedulerService>().Start();
-        try { _services.GetRequiredService<IToastService>().Show("Scheduled Tasks", "Cron scheduler is running."); }
-        catch { /* toast is best-effort */ }
+        _services.GetRequiredService<ServiceManager>().ActivateServiceSupervision();
+
+        // Cron scheduler started above (before toast)
+
+        _ = Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                var siteManager = _services.GetRequiredService<SiteManager>();
+                _services.GetRequiredService<ShellViewModel>().RefreshSiteNavFromStore(siteManager);
+            }
+            catch
+            {
+                // Featured nav is best-effort.
+            }
+        }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
 
         // Dispatch dashboard refresh first, then stagger services refresh to
         // avoid freezing the UI momentarily when both run their synchronous

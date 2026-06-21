@@ -773,9 +773,7 @@ public sealed class SitesViewModel : ViewModelBase
 
     {
 
-        var dialogVm = new SitesSettingsDialogViewModel(
-            _settingsStore,
-            _services.GetService<TestDnsCoordinator>());
+        var dialogVm = new SitesSettingsDialogViewModel(_settingsStore);
 
         var owner = Application.Current?.MainWindow;
 

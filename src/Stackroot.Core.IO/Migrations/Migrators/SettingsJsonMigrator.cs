@@ -35,6 +35,15 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 3:
                 EnableNginxSsl(obj);
                 break;
+            case 4:
+                MigrateTestDnsFromSites(obj);
+                break;
+            case 5:
+                EnsureShellMetricsEnabled(obj);
+                break;
+            case 6:
+                EnsureShellMetricsCpuRefreshSeconds(obj);
+                break;
         }
     }
 
@@ -68,6 +77,29 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         return true;
     }
 
+    private static void MigrateTestDnsFromSites(JsonObject root)
+    {
+        var legacyEnabled = false;
+        if (root["sites"] is JsonObject sites && sites["testDnsEnabled"] is JsonValue legacyFlag)
+        {
+            legacyEnabled = legacyFlag.GetValue<bool>();
+            sites.Remove("testDnsEnabled");
+        }
+
+        var testDns = root["testDns"] as JsonObject ?? new JsonObject();
+        if (testDns["enabled"] is null)
+        {
+            testDns["enabled"] = legacyEnabled;
+        }
+
+        if (testDns["autoStart"] is null)
+        {
+            testDns["autoStart"] = legacyEnabled || testDns["enabled"]?.GetValue<bool>() == true;
+        }
+
+        root["testDns"] = testDns;
+    }
+
     private static void EnableNginxSsl(JsonObject root)
     {
         if (root["services"] is not JsonObject services)
@@ -84,6 +116,32 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         if (nginx["sslPort"] is null)
         {
             nginx["sslPort"] = 443;
+        }
+    }
+
+    private static void EnsureShellMetricsEnabled(JsonObject root)
+    {
+        if (root["general"] is not JsonObject general)
+        {
+            return;
+        }
+
+        if (general["shellMetricsEnabled"] is null)
+        {
+            general["shellMetricsEnabled"] = true;
+        }
+    }
+
+    private static void EnsureShellMetricsCpuRefreshSeconds(JsonObject root)
+    {
+        if (root["general"] is not JsonObject general)
+        {
+            return;
+        }
+
+        if (general["shellMetricsCpuRefreshSeconds"] is null)
+        {
+            general["shellMetricsCpuRefreshSeconds"] = ShellMetricsDefaults.CpuRefreshSeconds;
         }
     }
 

@@ -32,16 +32,6 @@ internal static class StackrootManagedProcessResolver
     {
         var owned = new HashSet<int>();
 
-        if (trackedPid is > 0 && ServiceProcessTools.IsProcessAlive(trackedPid.Value))
-        {
-            owned.Add(trackedPid.Value);
-        }
-
-        if (definition.Runtime == ServiceRuntime.Library)
-        {
-            return owned.ToList();
-        }
-
         var packageId = serviceSettings.PackageId ?? definition.PackageId;
         if (string.IsNullOrWhiteSpace(packageId))
         {
@@ -50,6 +40,18 @@ internal static class StackrootManagedProcessResolver
 
         var installed = registry.GetById(packageId);
         if (installed is null)
+        {
+            return owned.ToList();
+        }
+
+        if (trackedPid is > 0
+            && ServiceProcessTools.IsProcessAlive(trackedPid.Value)
+            && IsOwnedListenerPid(serviceId, trackedPid.Value, installed.InstallPath, paths))
+        {
+            owned.Add(trackedPid.Value);
+        }
+
+        if (definition.Runtime == ServiceRuntime.Library)
         {
             return owned.ToList();
         }
@@ -70,6 +72,11 @@ internal static class StackrootManagedProcessResolver
 
         foreach (var pid in ServiceProcessTools.FindPidsListeningOnPort(serviceSettings.Port))
         {
+            if (!ServiceProcessTools.IsProcessAlive(pid))
+            {
+                continue;
+            }
+
             if (IsOwnedListenerPid(serviceId, pid, installed.InstallPath, paths))
             {
                 owned.Add(pid);
@@ -79,11 +86,57 @@ internal static class StackrootManagedProcessResolver
         return owned.ToList();
     }
 
+    public static bool HasForeignListener(
+        ServiceId serviceId,
+        ServiceDefinition definition,
+        ServicePortSettings serviceSettings,
+        StackrootPaths paths,
+        InstallRegistryStore registry)
+        => GetForeignListenerPids(serviceId, definition, serviceSettings, paths, registry).Count > 0;
+
+    public static IReadOnlyList<int> GetForeignListenerPids(
+        ServiceId serviceId,
+        ServiceDefinition definition,
+        ServicePortSettings serviceSettings,
+        StackrootPaths paths,
+        InstallRegistryStore registry)
+    {
+        var packageId = serviceSettings.PackageId ?? definition.PackageId;
+        if (string.IsNullOrWhiteSpace(packageId) || serviceSettings.Port <= 0)
+        {
+            return [];
+        }
+
+        var installed = registry.GetById(packageId);
+        if (installed is null)
+        {
+            return [];
+        }
+
+        var foreign = new List<int>();
+        foreach (var pid in ServiceProcessTools.FindPidsListeningOnPort(serviceSettings.Port))
+        {
+            if (!ServiceProcessTools.IsProcessAlive(pid))
+            {
+                continue;
+            }
+
+            if (!IsOwnedListenerPid(serviceId, pid, installed.InstallPath, paths))
+            {
+                foreign.Add(pid);
+            }
+        }
+
+        return foreign;
+    }
+
     public static IReadOnlyList<int> ResolveOwnedPhpCgiPidsOnPort(int port, string phpInstallPath, int? trackedPid = null)
     {
         var owned = new HashSet<int>();
 
-        if (trackedPid is > 0 && ServiceProcessTools.IsProcessAlive(trackedPid.Value))
+        if (trackedPid is > 0
+            && ServiceProcessTools.IsProcessAlive(trackedPid.Value)
+            && IsPhpCgiFromInstall(trackedPid.Value, phpInstallPath))
         {
             owned.Add(trackedPid.Value);
         }
@@ -125,13 +178,15 @@ internal static class StackrootManagedProcessResolver
     {
         var owned = new HashSet<int>();
 
-        if (trackedPid is > 0 && ServiceProcessTools.IsProcessAlive(trackedPid.Value))
+        if (trackedPid is > 0
+            && ServiceProcessTools.IsProcessAlive(trackedPid.Value)
+            && IsNginxFromInstall(trackedPid.Value, nginxInstallPath))
         {
             owned.Add(trackedPid.Value);
         }
 
         var masterPid = ReadNginxMasterPid(paths);
-        if (masterPid is > 0)
+        if (masterPid is > 0 && IsNginxFromInstall(masterPid.Value, nginxInstallPath))
         {
             owned.Add(masterPid.Value);
         }
@@ -173,16 +228,13 @@ internal static class StackrootManagedProcessResolver
         int pid,
         string installPath,
         StackrootPaths paths)
-    {
-        _ = paths;
-        if (!ServiceProcessTools.IsExecutableUnderInstallPath(pid, installPath))
-        {
-            return false;
-        }
+        => MatchesServiceProcessName(serviceId, pid)
+           && ServiceProcessTools.IsExecutableUnderInstallPath(pid, installPath);
 
-        return serviceId switch
+    private static bool MatchesServiceProcessName(ServiceId serviceId, int pid) =>
+        serviceId switch
         {
-            ServiceId.Nginx => IsNginxFromInstall(pid, installPath),
+            ServiceId.Nginx => ServiceProcessTools.ProcessNameContains(pid, "nginx"),
             ServiceId.Redis => ServiceProcessTools.ProcessNameContains(pid, "redis"),
             ServiceId.Memcached => ServiceProcessTools.ProcessNameContains(pid, "memcached"),
             ServiceId.Mysql or ServiceId.Mariadb => ServiceProcessTools.ProcessNameContains(pid, "mysqld"),
@@ -190,7 +242,6 @@ internal static class StackrootManagedProcessResolver
             ServiceId.Mongodb => ServiceProcessTools.ProcessNameContains(pid, "mongod"),
             _ => true
         };
-    }
 
     private static bool IsPhpCgiFromInstall(int pid, string phpInstallPath) =>
         ServiceProcessTools.ProcessNameContains(pid, "php-cgi") &&

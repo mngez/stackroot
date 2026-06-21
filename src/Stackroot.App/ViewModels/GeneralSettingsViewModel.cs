@@ -20,6 +20,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private readonly StackrootBinManager _binManager;
     private readonly AppDomainConfigWriter _appDomainConfigWriter;
     private readonly SessionActivityReporter _activity;
+    private readonly SettingsLoadState _settingsLoadState;
+    private readonly ShellViewModel _shell;
     private readonly DispatcherTimer _autoSaveTimer;
     private readonly SemaphoreSlim _saveSync = new(1, 1);
     private int _saveVersion;
@@ -34,25 +36,57 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private int _logRetentionDays = 30;
     private bool _addBinToPath;
     private bool _thumbnailsEnabled;
+    private bool _shellMetricsEnabled = true;
+    private int _shellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds;
     private bool _launchAtStartup;
     private string _statusMessage = string.Empty;
+    private bool _showCorruptedSettingsBanner;
+    private string _corruptedSettingsBannerText = string.Empty;
+
+    public bool ShowCorruptedSettingsBanner
+    {
+        get => _showCorruptedSettingsBanner;
+        private set => SetProperty(ref _showCorruptedSettingsBanner, value);
+    }
+
+    public string CorruptedSettingsBannerText
+    {
+        get => _corruptedSettingsBannerText;
+        private set => SetProperty(ref _corruptedSettingsBannerText, value);
+    }
+
+    public bool ShowRestoreBackupButton
+    {
+        get => _showRestoreBackupButton;
+        private set => SetProperty(ref _showRestoreBackupButton, value);
+    }
+
+    private bool _showRestoreBackupButton;
 
     public GeneralSettingsViewModel(
         SettingsStore settingsStore,
         SiteManager siteManager,
         StackrootBinManager binManager,
         AppDomainConfigWriter appDomainConfigWriter,
-        SessionActivityReporter activity)
+        SessionActivityReporter activity,
+        SettingsLoadState settingsLoadState,
+        ShellViewModel shell)
     {
         _settingsStore = settingsStore;
         _siteManager = siteManager;
         _binManager = binManager;
         _appDomainConfigWriter = appDomainConfigWriter;
         _activity = activity;
+        _settingsLoadState = settingsLoadState;
+        _shell = shell;
+        ShowCorruptedSettingsBanner = settingsLoadState.ShowCorruptedSettingsBanner;
+        CorruptedSettingsBannerText = settingsLoadState.CorruptedSettingsBannerText;
+        ShowRestoreBackupButton = settingsLoadState.ShowRestoreBackupButton;
         TrustSslCommand = new RelayCommand(_ => _ = TrustSslAsync(), _ => !IsTrustingSsl);
         BrowseWwwCommand = new RelayCommand(_ => BrowseWww());
         BrowseEditorCommand = new RelayCommand(_ => BrowseEditor(), _ => PreferredEditor == PreferredEditor.Custom);
         UseDefaultWwwCommand = new RelayCommand(_ => WwwPath = string.Empty);
+        RestoreFromBackupCommand = new RelayCommand(_ => _ = RestoreFromBackupAsync(), _ => ShowRestoreBackupButton);
 
         _autoSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
         _autoSaveTimer.Tick += (_, _) =>
@@ -68,6 +102,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     public RelayCommand BrowseWwwCommand { get; }
     public RelayCommand BrowseEditorCommand { get; }
     public RelayCommand UseDefaultWwwCommand { get; }
+    public RelayCommand RestoreFromBackupCommand { get; }
 
     public IReadOnlyList<EditorOptionViewModel> EditorOptions { get; } =
     [
@@ -197,6 +232,37 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public bool ShellMetricsEnabled
+    {
+        get => _shellMetricsEnabled;
+        set
+        {
+            if (SetProperty(ref _shellMetricsEnabled, value))
+            {
+                RaisePropertyChanged(nameof(ShowShellMetricsCpuRefresh));
+                Save();
+            }
+        }
+    }
+
+    public bool ShowShellMetricsCpuRefresh => ShellMetricsEnabled;
+
+    public int ShellMetricsCpuRefreshSeconds
+    {
+        get => _shellMetricsCpuRefreshSeconds;
+        set
+        {
+            if (SetProperty(ref _shellMetricsCpuRefreshSeconds, value))
+            {
+                RaisePropertyChanged(nameof(ShellMetricsCpuRefreshHint));
+                ScheduleAutoSave();
+            }
+        }
+    }
+
+    public string ShellMetricsCpuRefreshHint =>
+        $"CPU refresh every {ShellMetricsDefaults.ClampCpuRefreshSeconds(ShellMetricsCpuRefreshSeconds)}s ({ShellMetricsDefaults.MinCpuRefreshSeconds}-{ShellMetricsDefaults.MaxCpuRefreshSeconds}). RAM updates every 30s.";
+
     public string BinPathPreview => Path.Combine(StackrootPathResolver.Resolve(ensureDirectories: false).RuntimeRoot, "bin");
 
     public string StatusMessage
@@ -232,6 +298,9 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
             LogRetentionDays = settings.General.LogRetentionDays ?? 30;
             AddBinToPath = settings.General.AddBinToPath ?? false;
             ThumbnailsEnabled = settings.General.ThumbnailsEnabled ?? false;
+            ShellMetricsEnabled = settings.General.ShellMetricsEnabled ?? true;
+            ShellMetricsCpuRefreshSeconds = settings.General.ShellMetricsCpuRefreshSeconds
+                ?? ShellMetricsDefaults.CpuRefreshSeconds;
             LaunchAtStartup = settings.General.LaunchAtStartup ?? false;
             StatusMessage = string.Empty;
         }
@@ -254,7 +323,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
 
     private void Save()
     {
-        if (_suppressAutoSave)
+        if (_suppressAutoSave || _settingsStore.PersistenceBlocked)
         {
             return;
         }
@@ -276,6 +345,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         LogRetentionDays = LogRetentionDays < 0 ? 0 : LogRetentionDays,
         AddBinToPath = AddBinToPath,
         ThumbnailsEnabled = ThumbnailsEnabled,
+        ShellMetricsEnabled = ShellMetricsEnabled,
+        ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.ClampCpuRefreshSeconds(ShellMetricsCpuRefreshSeconds),
         LaunchAtStartup = LaunchAtStartup
     };
 
@@ -303,6 +374,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
                 {
                     StatusMessage = "Saved";
                     _activity.LogInfo("Settings", SessionActivityMessages.GeneralSettingsSaved());
+                    _shell.ApplyHeaderMetricsFromSettings();
                 }).ConfigureAwait(false);
             }
         }
@@ -318,6 +390,45 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         {
             _saveSync.Release();
         }
+    }
+
+    private async Task RestoreFromBackupAsync()
+    {
+        if (!ShowRestoreBackupButton)
+        {
+            return;
+        }
+
+        await RunOnUiAsync(() => StatusMessage = "Restoring settings from backup…").ConfigureAwait(false);
+        var restored = await Task.Run(() =>
+            _settingsStore.TryRestoreFromLatestBackup(out var error) ? null : error).ConfigureAwait(false);
+        await RunOnUiAsync(() =>
+        {
+            if (restored is not null)
+            {
+                StatusMessage = $"Restore failed: {restored}";
+                _activity.LogError("Settings", StatusMessage);
+                return;
+            }
+
+            _settingsLoadState.MarkRestoredSuccessfully();
+            ShowCorruptedSettingsBanner = false;
+            ShowRestoreBackupButton = false;
+            CorruptedSettingsBannerText = string.Empty;
+            _suppressAutoSave = true;
+            try
+            {
+                Reload();
+            }
+            finally
+            {
+                _suppressAutoSave = false;
+            }
+
+            StatusMessage = "Settings restored from backup.";
+            _activity.LogSuccess("Settings", StatusMessage);
+            _shell.ApplyHeaderMetricsFromSettings();
+        }).ConfigureAwait(false);
     }
 
     private void BrowseWww()

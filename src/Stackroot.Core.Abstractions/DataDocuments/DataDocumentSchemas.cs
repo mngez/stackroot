@@ -6,12 +6,12 @@ namespace Stackroot.Core.Abstractions.DataDocuments;
 /// </summary>
 public static class DataDocumentSchemas
 {
-    public const int Settings = 3;
+    public const int Settings = 6;
     public const int Sites = 1;
     public const int Processes = 1;
     public const int Databases = 1;
     public const int Installed = 1;
-    public const int ScheduledTasks = 1;
+    public const int ScheduledTasks = 2;
     public const int DownloadCache = 1;
     public const int SiteWpCredentials = 1;
     public const int SiteCustomCommands = 1;

@@ -5,6 +5,8 @@ namespace Stackroot.Core.IO.Migrations;
 
 public static class DataMigrationRunner
 {
+    private static volatile bool _completedThisProcess;
+
     private static readonly JsonDocumentMigrator[] RegistryMigrators =
     [
         new Migrators.SitesJsonMigrator(),
@@ -20,10 +22,22 @@ public static class DataMigrationRunner
         new Migrators.CustomCommandsJsonMigrator()
     ];
 
-    public static DataMigrationReport Run(StackrootPaths paths)
+    public static DataMigrationReport Run(StackrootPaths paths, bool allowRepeat = true)
     {
         ArgumentNullException.ThrowIfNull(paths);
 
+        if (!allowRepeat && _completedThisProcess)
+        {
+            return new DataMigrationReport();
+        }
+
+        var report = RunCore(paths);
+        _completedThisProcess = true;
+        return report;
+    }
+
+    private static DataMigrationReport RunCore(StackrootPaths paths)
+    {
         var report = new DataMigrationReport();
         var context = new DataMigrationContext();
 

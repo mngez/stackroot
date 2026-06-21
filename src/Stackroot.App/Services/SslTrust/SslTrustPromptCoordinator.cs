@@ -119,7 +119,7 @@ public sealed class SslTrustPromptCoordinator
 
     private async Task CheckAsync(CancellationToken cancellationToken)
     {
-        if (StackrootShutdownCoordinator.IsShuttingDown)
+        if (ApplicationShutdownState.IsClosing)
         {
             return;
         }
@@ -127,6 +127,11 @@ public sealed class SslTrustPromptCoordinator
         try
         {
             await Task.Delay(PostStartupDelay, cancellationToken).ConfigureAwait(false);
+
+            if (ApplicationShutdownState.IsClosing)
+            {
+                return;
+            }
 
             if (!ShouldShowPrompt())
             {

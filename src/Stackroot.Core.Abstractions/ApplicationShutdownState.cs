@@ -20,4 +20,7 @@ public static class ApplicationShutdownState
         get => Volatile.Read(ref _isShuttingDown) != 0;
         set => Volatile.Write(ref _isShuttingDown, value ? 1 : 0);
     }
+
+    /// <summary>True once exit/shutdown has begun — suppress keep-alive, toasts, and background refresh.</summary>
+    public static bool IsClosing => ShutdownRequested || IsShuttingDown;
 }

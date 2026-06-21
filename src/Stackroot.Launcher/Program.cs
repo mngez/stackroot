@@ -31,6 +31,8 @@ internal static class Program
             return 1;
         }
 
+        CleanupOldVersions(installRoot, version);
+
         var appDir = Path.Combine(installRoot, AppFolderName, version);
         var appExe = Path.Combine(appDir, AppExecutableName);
         if (!File.Exists(appExe))
@@ -75,6 +77,33 @@ internal static class Program
         }
 
         return AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static void CleanupOldVersions(string installRoot, string currentVersion)
+    {
+        var appRoot = Path.Combine(installRoot, AppFolderName);
+        if (!Directory.Exists(appRoot))
+        {
+            return;
+        }
+
+        foreach (var dir in Directory.EnumerateDirectories(appRoot))
+        {
+            var dirName = Path.GetFileName(dir);
+            if (string.Equals(dirName, currentVersion, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+            catch
+            {
+                // Best-effort — old versions may be locked or already partially removed.
+            }
+        }
     }
 
     private static string BuildUserArgumentString() =>
