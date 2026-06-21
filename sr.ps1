@@ -33,8 +33,12 @@ switch -Regex ($Cmd.ToLower()) {
         & "$r/scripts/push-release.ps1" -Version $version -BumpVersion:$bump
         exit $LASTEXITCODE
     }
+    "^changelog$" {
+        & "$r/scripts/merge-release-notes.ps1"
+        exit $LASTEXITCODE
+    }
     default {
-        Write-Host "Usage: ./sr dev|pack|push {version} [+]"
+        Write-Host "Usage: ./sr dev|pack|push {version} [+]|changelog"
         exit 1
     }
 }
