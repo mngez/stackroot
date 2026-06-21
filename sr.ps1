@@ -1,4 +1,12 @@
-param([string]$Cmd = "dev")
+param(
+    [Parameter(Position = 0)]
+    [string]$Cmd = "dev",
+    [Parameter(Position = 1)]
+    [string]$Arg,
+    [Parameter(Position = 2)]
+    [string]$Flag
+)
+
 $ErrorActionPreference = "Stop"
 $r = $PSScriptRoot
 
@@ -12,12 +20,21 @@ switch -Regex ($Cmd.ToLower()) {
         & "$r/scripts/pack-release.ps1"
         exit $LASTEXITCODE
     }
-    "^(ship|release)$" {
-        & "$r/scripts/pack-release.ps1" -Publish
+    "^push$" {
+        if ([string]::IsNullOrWhiteSpace($Arg)) {
+            Write-Host "Usage: ./sr push {version} [+]"
+            Write-Host "Example: ./sr push 0.2.6      # csproj must already match"
+            Write-Host "         ./sr push 0.2.6 +    # update csproj, commit, then push"
+            exit 1
+        }
+
+        $bump = ($Flag -eq '+') -or ($Arg.TrimEnd() -match '\+$')
+        $version = $Arg.Trim().TrimEnd('+').Trim()
+        & "$r/scripts/push-release.ps1" -Version $version -BumpVersion:$bump
         exit $LASTEXITCODE
     }
     default {
-        Write-Host "Usage: ./sr dev|pack|ship"
+        Write-Host "Usage: ./sr dev|pack|push {version} [+]"
         exit 1
     }
 }

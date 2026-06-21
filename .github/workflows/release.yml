@@ -65,4 +65,4 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./scripts/pack-release.ps1 -PublishOnly
+        run: ./scripts/publish-github-release.ps1

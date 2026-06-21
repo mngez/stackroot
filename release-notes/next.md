@@ -7,8 +7,10 @@ Working draft for the next version. When you ship, copy this content to `release
 ### How publishing works
 
 1. Set `<Version>` in `src/Stackroot.App/Stackroot.App.csproj` (must match the tag).
-2. Write release notes in `release-notes/{Version}.md` — **not** in `0.2.5.md` after that version is already on GitHub.
-3. `.\scripts\pack-release.ps1` — local build; `pack-release.ps1 -Publish` uses `release-notes/{Version}.md`.
-4. Tag `v{Version}` and push — CI validates the tag against the csproj version and publishes the Setup exe.
+2. Write release notes in `release-notes/{Version}.md`.
+3. Commit on `main`.
+4. `./sr push {Version}` or `./sr push {Version} +` to bump csproj when needed — GitHub Actions builds + publishes.
+
+Local installer only: `.\scripts\pack-release.ps1` or `./sr pack`.
 
 `next.md` is only a scratch pad. **`pack-release.ps1` does not read this file.**

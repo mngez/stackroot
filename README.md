@@ -135,6 +135,15 @@ The root `Stackroot.exe` is built via `scripts/build-pinned-launcher.ps1` and st
 
 Rebuild the pinned launcher when `src/Stackroot.Launcher` changes, then run `pack-release.ps1`.
 
+### Local installer
+
+```powershell
+./scripts/pack-release.ps1
+```
+
+Writes `release/Stackroot-Setup-{Version}.exe` (version from `Stackroot.App.csproj`).
+
+
 ### Run (debug)
 ```bash
 dotnet run --project src/Stackroot.App/Stackroot.App.csproj
