@@ -95,13 +95,30 @@ internal static class Program
                 continue;
             }
 
+            TryDeleteDirectoryWithRetries(dir);
+        }
+    }
+
+    private static void TryDeleteDirectoryWithRetries(string directoryPath)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
             try
             {
-                Directory.Delete(dir, recursive: true);
+                Directory.Delete(directoryPath, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < 4)
+            {
+                Thread.Sleep(400);
+            }
+            catch (UnauthorizedAccessException) when (attempt < 4)
+            {
+                Thread.Sleep(400);
             }
             catch
             {
-                // Best-effort — old versions may be locked or already partially removed.
+                return;
             }
         }
     }

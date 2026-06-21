@@ -48,7 +48,7 @@ Get-ChildItem -Path $pinnedDir -Directory | Where-Object {
     $_.Name -match '^_(build|probe)'
 } | Remove-Item -Recurse -Force
 
-$launcherProtocolVersion = "8"
+$launcherProtocolVersion = "9"
 Set-Content -Path $pinnedVersionFile -Value $launcherProtocolVersion -NoNewline
 
 $hash = (Get-FileHash -Path $pinnedExe -Algorithm SHA256).Hash.ToLowerInvariant()

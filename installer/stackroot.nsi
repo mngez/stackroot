@@ -259,8 +259,16 @@ Function ShouldInstallPinnedLauncher
     IfErrors replace_launcher
     FileRead $0 $1
     FileClose $0
-    StrCpy $3 $1 1
-    StrCmp $3 "${LAUNCHER_PROTOCOL_VERSION}" keep_launcher replace_launcher
+    ; Trim CR/LF from launcher.version (single-line protocol id).
+    StrCpy $2 $1 1 -1
+    StrCmp $2 "$\r" 0 trim_lf
+      StrCpy $1 $1 -1
+    trim_lf:
+    StrCpy $2 $1 1 -1
+    StrCmp $2 "$\n" 0 compare_protocol
+      StrCpy $1 $1 -1
+    compare_protocol:
+    StrCmp $1 "${LAUNCHER_PROTOCOL_VERSION}" keep_launcher replace_launcher
 
   replace_launcher:
     DetailPrint "Pinned launcher: replacing (missing, legacy, or protocol mismatch)."
