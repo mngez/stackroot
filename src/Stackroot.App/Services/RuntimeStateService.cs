@@ -5,6 +5,7 @@ using Stackroot.Core.Services;
 using Stackroot.Core.Services.Php;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Supervisor;
+using Stackroot.Core.Windows;
 using Stackroot.Engine.Runtime;
 
 namespace Stackroot.App.Services;
@@ -379,6 +380,7 @@ public sealed class RuntimeStateService : IDisposable
         }
         finally
         {
+            ProcessPortTools.PurgeExpiredPortCacheEntries();
             Interlocked.Exchange(ref _refreshInFlight, 0);
             if (Interlocked.Exchange(ref _coalescedRefreshPending, 0) == 1)
             {

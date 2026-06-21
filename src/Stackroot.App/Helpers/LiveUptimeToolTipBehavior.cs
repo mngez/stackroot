@@ -5,6 +5,9 @@ namespace Stackroot.App.Helpers;
 
 public static class LiveUptimeToolTipBehavior
 {
+    private static readonly ToolTipEventHandler OpeningHandler = OnToolTipOpening;
+    private static readonly ToolTipEventHandler ClosingHandler = OnToolTipClosing;
+
     public static readonly DependencyProperty IsEnabledProperty =
         DependencyProperty.RegisterAttached(
             "IsEnabled",
@@ -27,13 +30,13 @@ public static class LiveUptimeToolTipBehavior
 
         if (e.NewValue is true)
         {
-            element.AddHandler(ToolTipService.ToolTipOpeningEvent, new ToolTipEventHandler(OnToolTipOpening));
-            element.AddHandler(ToolTipService.ToolTipClosingEvent, new ToolTipEventHandler(OnToolTipClosing));
+            element.AddHandler(ToolTipService.ToolTipOpeningEvent, OpeningHandler);
+            element.AddHandler(ToolTipService.ToolTipClosingEvent, ClosingHandler);
             return;
         }
 
-        element.RemoveHandler(ToolTipService.ToolTipOpeningEvent, new ToolTipEventHandler(OnToolTipOpening));
-        element.RemoveHandler(ToolTipService.ToolTipClosingEvent, new ToolTipEventHandler(OnToolTipClosing));
+        element.RemoveHandler(ToolTipService.ToolTipOpeningEvent, OpeningHandler);
+        element.RemoveHandler(ToolTipService.ToolTipClosingEvent, ClosingHandler);
     }
 
     private static void OnToolTipOpening(object sender, ToolTipEventArgs e)

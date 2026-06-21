@@ -7,11 +7,33 @@ namespace Stackroot.Core.Windows;
 public static class ProcessPortTools
 {
     private static readonly ConcurrentDictionary<int, PortCacheEntry> PortLookupCache = new();
-    private static readonly TimeSpan PortCacheTtl = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PortCacheTtl = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan PortCachePurgeInterval = TimeSpan.FromMinutes(5);
+    private const int PortCacheHighWaterMark = 48;
+    private static DateTimeOffset _lastPortCachePurgeAt;
     private static readonly object NetstatMapSync = new();
-    private static readonly TimeSpan NetstatMapTtl = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan NetstatMapTtl = TimeSpan.FromSeconds(10);
     private static IReadOnlyDictionary<int, List<int>>? _netstatPortPidMap;
     private static DateTimeOffset _netstatMapExpiresAt;
+
+    public static void PurgeExpiredPortCacheEntries()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var overCapacity = PortLookupCache.Count > PortCacheHighWaterMark;
+        if (!overCapacity && now - _lastPortCachePurgeAt < PortCachePurgeInterval)
+        {
+            return;
+        }
+
+        _lastPortCachePurgeAt = now;
+        foreach (var (port, entry) in PortLookupCache)
+        {
+            if (entry.ExpiresAt <= now)
+            {
+                PortLookupCache.TryRemove(port, out _);
+            }
+        }
+    }
 
     private readonly record struct PortCacheEntry(DateTimeOffset ExpiresAt, IReadOnlyList<int> Pids);
     public static int? TryResolveListenPort(string executable, IReadOnlyList<string> arguments)
@@ -79,6 +101,12 @@ public static class ProcessPortTools
 
         if (PortLookupCache.TryGetValue(port, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
+            var remaining = cached.ExpiresAt - DateTimeOffset.UtcNow;
+            if (remaining > PortCacheTtl * 0.4)
+            {
+                return cached.Pids;
+            }
+
             return FilterAlivePids(cached.Pids, port);
         }
 

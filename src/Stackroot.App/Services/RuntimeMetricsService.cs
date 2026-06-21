@@ -88,10 +88,14 @@ public sealed class RuntimeMetricsService : IDisposable
             StopHeaderTimers();
             _ = RefreshFullSnapshotAsync(measureCpu: true);
         }
-        else if (_headerCpuEnabled)
+        else
         {
-            StartHeaderCpuTimer(forceRestart: false);
-            StartHeaderRamTimer();
+            ReleaseDetailedSnapshot();
+            if (_headerCpuEnabled)
+            {
+                StartHeaderCpuTimer(forceRestart: false);
+                StartHeaderRamTimer();
+            }
         }
     }
 
@@ -328,6 +332,14 @@ public sealed class RuntimeMetricsService : IDisposable
         finally
         {
             Interlocked.Exchange(ref _refreshInFlight, 0);
+        }
+    }
+
+    private void ReleaseDetailedSnapshot()
+    {
+        lock (_sync)
+        {
+            LatestSnapshot = null;
         }
     }
 
