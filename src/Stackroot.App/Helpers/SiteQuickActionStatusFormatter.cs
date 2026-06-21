@@ -10,12 +10,12 @@ public static class SiteQuickActionStatusFormatter
 
         if (result.ExitCode == -1)
         {
-            return FormatFailure(result, label, timedOut: true);
+            return $"{label} cancelled.";
         }
 
         if (result.ExitCode != 0)
         {
-            return FormatFailure(result, label, timedOut: false);
+            return FormatFailure(result, label);
         }
 
         return ResolveStyle(actionId) switch
@@ -95,16 +95,8 @@ public static class SiteQuickActionStatusFormatter
         return FirstMeaningfulLine(result.Stdout);
     }
 
-    private static string FormatFailure(SiteCommandResult result, string label, bool timedOut)
+    private static string FormatFailure(SiteCommandResult result, string label)
     {
-        if (timedOut)
-        {
-            var timeoutLine = FirstMeaningfulLine(result.Stderr) ?? FirstMeaningfulLine(result.Stdout);
-            return string.IsNullOrWhiteSpace(timeoutLine)
-                ? $"{label} timed out. View log for details."
-                : timeoutLine;
-        }
-
         var errorLine = FirstMeaningfulLine(result.Stderr) ?? FirstMeaningfulLine(result.Stdout);
         return string.IsNullOrWhiteSpace(errorLine)
             ? $"{label} failed (exit {result.ExitCode}). View log for details."

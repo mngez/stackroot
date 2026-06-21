@@ -41,4 +41,15 @@ public partial class SiteManagePage : System.Windows.Controls.UserControl
 
         e.Handled = true;
     }
+
+    private void OnScheduledTaskLogClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button { DataContext: ScheduledTaskRowViewModel row })
+        {
+            return;
+        }
+
+        row.OpenLog(Keyboard.Modifiers == ModifierKeys.Control);
+        e.Handled = true;
+    }
 }

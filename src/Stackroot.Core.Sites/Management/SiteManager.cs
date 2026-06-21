@@ -261,6 +261,10 @@ public sealed class SiteManager
         return _commandRunner.RunCustomCommand(site, commandId, commandLine, onLogCreated);
     }
 
+    public bool IsSiteCommandRunning(string logPath) => _commandRunner.IsRunning(logPath);
+
+    public bool CancelSiteCommand(string logPath) => _commandRunner.TryCancel(logPath);
+
     public DevSslTrustResult TrustDevSslCertificate()
     {
         _ = EnsureDevSslForCurrentDomains();

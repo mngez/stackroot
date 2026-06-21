@@ -17,7 +17,9 @@ public static class StackrootLogViewer
         string title,
         bool openInExternalEditor,
         SettingsStore settingsStore,
-        Window? owner = null)
+        Window? owner = null,
+        Func<Task>? cancelAsync = null,
+        Func<bool>? isRunning = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
         {
@@ -30,11 +32,16 @@ public static class StackrootLogViewer
         }
         else
         {
-            ShowInApp(logPath, title, owner);
+            ShowInApp(logPath, title, owner, cancelAsync, isRunning);
         }
     }
 
-    public static void ShowInApp(string logPath, string title, Window? owner = null)
+    public static void ShowInApp(
+        string logPath,
+        string title,
+        Window? owner = null,
+        Func<Task>? cancelAsync = null,
+        Func<bool>? isRunning = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
         {
@@ -42,7 +49,7 @@ public static class StackrootLogViewer
         }
 
         owner ??= Application.Current?.MainWindow;
-        var dialogVm = new FileLogDialogViewModel(logPath, title);
+        var dialogVm = new FileLogDialogViewModel(logPath, title, cancelAsync, isRunning);
         var dialog = new SiteProcessLogDialog
         {
             DataContext = dialogVm,

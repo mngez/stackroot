@@ -5,6 +5,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Commands;
 using Stackroot.App.Helpers;
+using Stackroot.App.Scheduling;
 using Stackroot.App.Services;
 using Stackroot.App.Views;
 using Stackroot.Core.Abstractions;
@@ -27,7 +28,7 @@ using SiteModel = Stackroot.Core.Sites.Models.Site;
 
 namespace Stackroot.App.ViewModels;
 
-public sealed class SiteManageViewModel : ViewModelBase
+public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 {
     private readonly SiteManager _siteManager;
     private readonly GlobalProcessManager _processManager;
@@ -40,6 +41,7 @@ public sealed class SiteManageViewModel : ViewModelBase
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly SiteThumbnailService _thumbnailService;
     private readonly StackrootPaths _paths;
+    private readonly TaskSchedulerService _taskScheduler;
     private SiteModel? _site;
     private bool _isCapturing;
     private bool _isInstalling;
@@ -55,6 +57,7 @@ public sealed class SiteManageViewModel : ViewModelBase
     private string _lastCommandLabel = string.Empty;
     private string _lastCommandLogPath = string.Empty;
     private bool _showCommandLogButton;
+    private bool _isTogglingEnabled;
 
     public SiteManageViewModel(
         SiteManager siteManager,
@@ -67,7 +70,8 @@ public sealed class SiteManageViewModel : ViewModelBase
         IDiagnosticsReporter diagnostics,
         SettingsStore settingsStore,
         SiteThumbnailService thumbnailService,
-        StackrootPaths paths)
+        StackrootPaths paths,
+        TaskSchedulerService taskScheduler)
     {
         _siteManager = siteManager;
         _processManager = processManager;
@@ -80,6 +84,17 @@ public sealed class SiteManageViewModel : ViewModelBase
         _settingsStore = settingsStore;
         _thumbnailService = thumbnailService;
         _paths = paths;
+        _taskScheduler = taskScheduler;
+
+        _taskScheduler.TaskExecuted += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(SiteId))
+            {
+                return;
+            }
+
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(LoadScheduledTasks);
+        };
 
         // Auto-refresh processes when any process changes (e.g. auto-start)
         _processManager.Changed += (_, _) =>
@@ -93,6 +108,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         QuickActions = [];
         LinkedDatabases = [];
         ProcessPresets = [];
+        ScheduledTasks = [];
 
         RunQuickActionCommand = new RelayCommand(actionId => _ = RunQuickActionAsync(actionId as string), _ => CanRunQuickAction());
         RefreshCommand = new RelayCommand(_ => RefreshSite(), _ => !string.IsNullOrWhiteSpace(SiteId));
@@ -111,7 +127,8 @@ public sealed class SiteManageViewModel : ViewModelBase
         ToggleProcessEnabledCommand = new RelayCommand(row => ToggleProcessEnabled(row as SiteProcessRowViewModel));
         RemoveProcessCommand = new RelayCommand(row => RemoveProcess(row as SiteProcessRowViewModel));
         ViewCommandLogCommand = new RelayCommand(_ => OpenCommandLog(), _ => ShowCommandLogButton);
-        DismissCommandStatusCommand = new RelayCommand(_ => ClearCommandStatus());
+        CancelCommandStatusCommand = new RelayCommand(_ => _ = CancelRunningCommandAsync(), _ => CanCancelRunningCommand());
+        DismissCommandStatusCommand = new RelayCommand(_ => ClearCommandStatus(), _ => ShowDismissCommandStatus);
         DismissProcessStatusCommand = new RelayCommand(_ => ClearProcessStatus());
         DismissDatabaseStatusCommand = new RelayCommand(_ => ClearDatabaseStatus());
         CreateDatabaseCommand = new RelayCommand(_ => OpenCreateDatabaseDialog(), _ => Site is not null);
@@ -135,6 +152,13 @@ public sealed class SiteManageViewModel : ViewModelBase
             }
         });
         OpenSslPathsCommand = new RelayCommand(_ => OpenSslPathsDialog(), _ => HasDevSslPaths);
+        EditSiteCommand = new RelayCommand(_ => OpenEditSiteDialog(), _ => Site is not null);
+        ToggleFeaturedCommand = new RelayCommand(_ => ToggleFeatured(), _ => Site is not null);
+        ToggleEnabledCommand = new RelayCommand(_ => _ = ToggleEnabledAsync(), _ => Site is not null && !_isTogglingEnabled);
+        AddScheduledTaskCommand = new RelayCommand(_ => OpenScheduledTaskDialog(), _ => Site is not null);
+        EditScheduledTaskCommand = new RelayCommand(row => OpenScheduledTaskDialog(row as ScheduledTaskRowViewModel));
+        RefreshScheduledTasksCommand = new RelayCommand(_ => LoadScheduledTasks());
+        OpenAllScheduledTasksCommand = new RelayCommand(_ => _services.GetRequiredService<ShellViewModel>().Navigate("scheduled"));
         BackCommand = new RelayCommand(_ => _services.GetRequiredService<ShellViewModel>().Navigate("sites"));
     }
 
@@ -170,6 +194,7 @@ public sealed class SiteManageViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(ThumbnailsFeatureEnabled));
                 RaisePropertyChanged(nameof(ShowCaptureButton));
                 RaisePropertyChanged(nameof(ShowRefreshButton));
+                RaiseSiteActionChromeChanged();
                 OpenSiteCommand.RaiseCanExecuteChanged();
                 OpenFolderCommand.RaiseCanExecuteChanged();
                 CreateDatabaseCommand.RaiseCanExecuteChanged();
@@ -221,6 +246,29 @@ public sealed class SiteManageViewModel : ViewModelBase
     }
 
     public bool SiteEnabled => Site?.Enabled == true;
+    public bool SiteDisabled => Site is not null && !Site.Enabled;
+    public bool IsFeatured => Site?.Featured == true;
+    public string FeaturedPinToolTip => IsFeatured ? "Remove from featured" : "Pin to featured";
+    public string EnableDisableLabel => SiteEnabled ? "Disable" : "Enable";
+    public bool IsTogglingEnabled
+    {
+        get => _isTogglingEnabled;
+        private set
+        {
+            if (SetProperty(ref _isTogglingEnabled, value))
+            {
+                RaisePropertyChanged(nameof(IsNotTogglingEnabled));
+                RaisePropertyChanged(nameof(ToggleEnabledButtonLabel));
+                ToggleEnabledCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsNotTogglingEnabled => !IsTogglingEnabled;
+    public string ToggleEnabledButtonLabel => IsTogglingEnabled
+        ? (SiteEnabled ? "Disabling…" : "Enabling…")
+        : EnableDisableLabel;
+
     public bool ShowHttpsBadge => Site?.ForceHttps == true;
 
     public bool ShowInstallerButton => Site is not null
@@ -578,6 +626,7 @@ public sealed class SiteManageViewModel : ViewModelBase
             {
                 RaiseQuickActionCanExecute();
                 RaiseProcessActionCanExecute();
+                RaiseCommandStatusChromeChanged();
             }
         }
     }
@@ -635,6 +684,10 @@ public sealed class SiteManageViewModel : ViewModelBase
     }
 
     public bool ShowCommandStatus => !string.IsNullOrWhiteSpace(CommandStatusMessage);
+
+    public bool ShowDismissCommandStatus => ShowCommandStatus && !IsRunningAction;
+
+    public bool ShowCancelCommandStatus => IsRunningAction && CanCancelRunningCommand();
     public bool ShowProcessStatus => !string.IsNullOrWhiteSpace(ProcessStatusMessage);
     public bool ShowDatabaseStatus => !string.IsNullOrWhiteSpace(DatabaseStatusMessage);
 
@@ -655,6 +708,9 @@ public sealed class SiteManageViewModel : ViewModelBase
     public ObservableCollection<QuickActionItemViewModel> QuickActions { get; }
     public ObservableCollection<SiteLinkedDatabaseViewModel> LinkedDatabases { get; }
     public ObservableCollection<SiteProcessPresetViewModel> ProcessPresets { get; }
+    public ObservableCollection<ScheduledTaskRowViewModel> ScheduledTasks { get; }
+    public bool HasScheduledTasks => ScheduledTasks.Count > 0;
+    public bool ShowNoScheduledTasks => !HasScheduledTasks;
     public bool HasSiteProcesses => SiteProcesses.Count > 0;
     public bool ShowNoSiteProcesses => !HasSiteProcesses;
     public bool HasProcessPresets => ProcessPresets.Count > 0;
@@ -676,6 +732,7 @@ public sealed class SiteManageViewModel : ViewModelBase
     public RelayCommand ToggleProcessEnabledCommand { get; }
     public RelayCommand RemoveProcessCommand { get; }
     public RelayCommand ViewCommandLogCommand { get; }
+    public RelayCommand CancelCommandStatusCommand { get; }
     public RelayCommand DismissCommandStatusCommand { get; }
     public RelayCommand DismissProcessStatusCommand { get; }
     public RelayCommand DismissDatabaseStatusCommand { get; }
@@ -691,6 +748,13 @@ public sealed class SiteManageViewModel : ViewModelBase
     public RelayCommand RemoveCustomCommandCommand { get; }
     public RelayCommand DismissCustomStatusCommand { get; }
     public RelayCommand OpenSslPathsCommand { get; }
+    public RelayCommand EditSiteCommand { get; }
+    public RelayCommand ToggleFeaturedCommand { get; }
+    public RelayCommand ToggleEnabledCommand { get; }
+    public RelayCommand AddScheduledTaskCommand { get; }
+    public RelayCommand EditScheduledTaskCommand { get; }
+    public RelayCommand RefreshScheduledTasksCommand { get; }
+    public RelayCommand OpenAllScheduledTasksCommand { get; }
     public RelayCommand BackCommand { get; }
 
     public void Load(string siteId)
@@ -723,7 +787,88 @@ public sealed class SiteManageViewModel : ViewModelBase
         LoadVersions();
         LoadCustomCommands();
         LoadCustomCommandItems();
+        LoadScheduledTasks();
+        RaiseSiteActionChromeChanged();
     }
+
+    private void LoadScheduledTasks()
+    {
+        ScheduledTasks.Clear();
+        if (string.IsNullOrWhiteSpace(SiteId))
+        {
+            RaisePropertyChanged(nameof(HasScheduledTasks));
+            RaisePropertyChanged(nameof(ShowNoScheduledTasks));
+            return;
+        }
+
+        foreach (var task in _taskScheduler.List()
+                     .Where(t => string.Equals(t.SiteId, SiteId, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(t => t.Label, StringComparer.OrdinalIgnoreCase))
+        {
+            ScheduledTasks.Add(new ScheduledTaskRowViewModel(task, this, _siteManager, showSiteLabel: false));
+        }
+
+        RaisePropertyChanged(nameof(HasScheduledTasks));
+        RaisePropertyChanged(nameof(ShowNoScheduledTasks));
+    }
+
+    private void OpenScheduledTaskDialog(ScheduledTaskRowViewModel? existing = null)
+    {
+        if (Site is null)
+        {
+            return;
+        }
+
+        var dlgVm = new CronTaskDialogViewModel(_siteManager, existing?.Model, defaultSiteId: Site.Id);
+        var dialog = new CronTaskDialog
+        {
+            DataContext = dlgVm,
+            Owner = Application.Current?.MainWindow
+        };
+        var result = false;
+        dlgVm.RequestClose += (_, r) => { result = r; dialog.Close(); };
+        dialog.ShowDialog();
+
+        if (!result)
+        {
+            return;
+        }
+
+        var model = dlgVm.ToModel(existing?.Model.Id);
+        model.SiteId = Site.Id;
+        if (existing is not null)
+        {
+            existing.Model.Label = model.Label;
+            existing.Model.Command = model.Command;
+            existing.Model.CronExpression = model.CronExpression;
+            existing.Model.WorkingDirectory = model.WorkingDirectory;
+            existing.Model.CaptureLog = model.CaptureLog;
+            existing.Model.SiteId = model.SiteId;
+            _taskScheduler.Update(existing.Model);
+            existing.Refresh();
+        }
+        else
+        {
+            _taskScheduler.Add(model);
+        }
+
+        LoadScheduledTasks();
+    }
+
+    void IScheduledTaskRowHost.UpdateTask(ScheduledTaskModel model) => _taskScheduler.Update(model);
+
+    Task IScheduledTaskRowHost.RunNowAndWaitAsync(string id) => _taskScheduler.RunNowAsync(id);
+
+    void IScheduledTaskRowHost.DeleteTask(string id)
+    {
+        _taskScheduler.Delete(id);
+        LoadScheduledTasks();
+    }
+
+    void IScheduledTaskRowHost.ReloadTasks() => LoadScheduledTasks();
+
+    void IScheduledTaskRowHost.OpenTaskLog(string logPath, string label, bool openInExternalEditor) =>
+        StackrootLogViewer.Open(logPath, $"Log — {label}", openInExternalEditor, _settingsStore);
 
     private void LoadVersions()
     {
@@ -966,6 +1111,7 @@ public sealed class SiteManageViewModel : ViewModelBase
                 {
                     _lastCommandLogPath = logPath;
                     ShowCommandLogButton = true;
+                    RaiseCommandStatusChromeChanged();
                 })));
 
             if (!string.IsNullOrWhiteSpace(result.LogPath))
@@ -1042,7 +1188,36 @@ public sealed class SiteManageViewModel : ViewModelBase
         var title = string.IsNullOrWhiteSpace(_lastCommandLabel)
             ? $"Log — {Path.GetFileName(_lastCommandLogPath)}"
             : $"Log — {_lastCommandLabel}";
-        StackrootLogViewer.Open(_lastCommandLogPath, title, openInExternalEditor, _settingsStore);
+        StackrootLogViewer.Open(
+            _lastCommandLogPath,
+            title,
+            openInExternalEditor,
+            _settingsStore,
+            cancelAsync: () => Task.Run(() => _siteManager.CancelSiteCommand(_lastCommandLogPath)),
+            isRunning: () => _siteManager.IsSiteCommandRunning(_lastCommandLogPath));
+    }
+
+    private bool CanCancelRunningCommand() =>
+        IsRunningAction
+        && !string.IsNullOrWhiteSpace(_lastCommandLogPath)
+        && _siteManager.IsSiteCommandRunning(_lastCommandLogPath);
+
+    private Task CancelRunningCommandAsync()
+    {
+        if (!CanCancelRunningCommand())
+        {
+            return Task.CompletedTask;
+        }
+
+        return Task.Run(() => _siteManager.CancelSiteCommand(_lastCommandLogPath));
+    }
+
+    private void RaiseCommandStatusChromeChanged()
+    {
+        RaisePropertyChanged(nameof(ShowDismissCommandStatus));
+        RaisePropertyChanged(nameof(ShowCancelCommandStatus));
+        CancelCommandStatusCommand.RaiseCanExecuteChanged();
+        DismissCommandStatusCommand.RaiseCanExecuteChanged();
     }
 
     private void ClearCommandStatus()
@@ -1051,6 +1226,7 @@ public sealed class SiteManageViewModel : ViewModelBase
         ShowCommandLogButton = false;
         _lastCommandLogPath = string.Empty;
         _lastCommandLabel = string.Empty;
+        RaiseCommandStatusChromeChanged();
     }
 
     private void ClearProcessStatus() => ProcessStatusMessage = string.Empty;
@@ -1161,6 +1337,114 @@ public sealed class SiteManageViewModel : ViewModelBase
         };
         dialogVm.RequestClose += (_, _) => dialog.Close();
         dialog.ShowDialog();
+    }
+
+    private void OpenEditSiteDialog()
+    {
+        if (Site is null)
+        {
+            return;
+        }
+
+        var site = Site;
+        var settings = _settingsStore.Load();
+        var templates = _services.GetRequiredService<IReadOnlyList<SiteTemplateDefinition>>();
+        var dialogVm = new EditSiteDialogViewModel(site, templates, PhpVersions, settings.General.WwwPath);
+        var dialog = new EditSiteDialog
+        {
+            DataContext = dialogVm,
+            Owner = Application.Current?.MainWindow
+        };
+
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+        dialogVm.SiteSaved += (_, patch) =>
+        {
+            try
+            {
+                _siteManager.Update(site.Id, patch);
+                _activity.LogSuccess("Sites", SessionActivityMessages.SiteUpdated(site.Domain));
+                dialog.Close();
+                RefreshSite();
+                RefreshSiteNavigation();
+                _ = RebuildNginxAsync();
+            }
+            catch (Exception ex)
+            {
+                dialogVm.ErrorMessage = ex.Message;
+            }
+        };
+
+        dialog.ShowDialog();
+    }
+
+    private void ToggleFeatured()
+    {
+        if (Site is null)
+        {
+            return;
+        }
+
+        _siteManager.Update(Site.Id, new UpdateSiteInput { Featured = !IsFeatured });
+        RefreshSite();
+        RefreshSiteNavigation();
+    }
+
+    private async Task ToggleEnabledAsync()
+    {
+        if (Site is null || IsTogglingEnabled)
+        {
+            return;
+        }
+
+        IsTogglingEnabled = true;
+        try
+        {
+            var targetEnabled = !SiteEnabled;
+            var domain = Site.Domain;
+            await Task.Run(() => _siteManager.Update(Site.Id, new UpdateSiteInput { Enabled = targetEnabled }))
+                .ConfigureAwait(true);
+            RefreshSite();
+            _activity.LogSuccess("Sites", SessionActivityMessages.SiteEnabled(domain, targetEnabled));
+            await RebuildNginxAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _activity.LogError("Sites", ex.Message, ex);
+            CommandStatusMessage = ex.Message;
+        }
+        finally
+        {
+            IsTogglingEnabled = false;
+        }
+    }
+
+    private void RefreshSiteNavigation() =>
+        _services.GetRequiredService<ShellViewModel>().RefreshSiteNavFromStore(_siteManager);
+
+    private async Task RebuildNginxAsync()
+    {
+        try
+        {
+            var rebuilder = _services.GetRequiredService<NginxWebStackRebuilder>();
+            await rebuilder.RebuildAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _activity.LogError("Sites", ex.Message, ex);
+        }
+    }
+
+    private void RaiseSiteActionChromeChanged()
+    {
+        RaisePropertyChanged(nameof(SiteEnabled));
+        RaisePropertyChanged(nameof(SiteDisabled));
+        RaisePropertyChanged(nameof(IsFeatured));
+        RaisePropertyChanged(nameof(FeaturedPinToolTip));
+        RaisePropertyChanged(nameof(EnableDisableLabel));
+        RaisePropertyChanged(nameof(ToggleEnabledButtonLabel));
+        EditSiteCommand.RaiseCanExecuteChanged();
+        ToggleFeaturedCommand.RaiseCanExecuteChanged();
+        ToggleEnabledCommand.RaiseCanExecuteChanged();
     }
 
     private void OpenCreateDatabaseDialog()

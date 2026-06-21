@@ -16,18 +16,25 @@ public sealed class SiteCommandRunner
     private readonly InstallRegistryStore _registry;
     private readonly SettingsStore _settingsStore;
     private readonly INpmTooling? _npmTooling;
+    private readonly SiteCommandRunRegistry _runRegistry;
 
     public SiteCommandRunner(
         StackrootPaths paths,
         InstallRegistryStore registry,
         SettingsStore settingsStore,
+        SiteCommandRunRegistry runRegistry,
         INpmTooling? npmTooling = null)
     {
         _paths = paths;
         _registry = registry;
         _settingsStore = settingsStore;
+        _runRegistry = runRegistry;
         _npmTooling = npmTooling;
     }
+
+    public bool IsRunning(string logPath) => _runRegistry.IsRunning(logPath);
+
+    public bool TryCancel(string logPath) => _runRegistry.TryCancel(logPath);
 
     public SiteCommandResult RunCustomCommand(
         SiteModel site,
@@ -50,7 +57,7 @@ public sealed class SiteCommandRunner
         var versionId = ResolveSitePhpVersionId(site);
         var environment = BuildSiteCommandEnvironment(versionId);
         var startedAt = Stopwatch.StartNew();
-        var result = RunShellProcess(site.Path, trimmedCommand, environment, logPath, 600_000);
+        var result = RunShellProcess(site.Path, trimmedCommand, environment, logPath);
         startedAt.Stop();
 
         AppendLogFooter(logPath, result.ExitCode, startedAt.ElapsedMilliseconds);
@@ -89,8 +96,7 @@ public sealed class SiteCommandRunner
             resolved.Arguments,
             resolved.WorkingDirectory,
             resolved.Environment,
-            logPath,
-            resolved.TimeoutMs);
+            logPath);
         startedAt.Stop();
 
         AppendLogFooter(logPath, result.ExitCode, startedAt.ElapsedMilliseconds);
@@ -128,21 +134,8 @@ public sealed class SiteCommandRunner
         var phpExe = StackrootPhpCommands.ResolvePhpExecutable(_registry, versionId);
         var args = StackrootPhpCommands.BuildArtisanArguments(site.Path, argv);
         var environment = BuildSiteCommandEnvironment(versionId);
-        var timeoutMs = ResolveCommandTimeoutMs(_settingsStore.Load(), versionId);
 
-        return new ResolvedCommand(phpExe, args, site.Path, environment, timeoutMs);
-    }
-
-    private static int ResolveCommandTimeoutMs(AppSettings settings, string versionId)
-    {
-        if (settings.Php.Versions?.TryGetValue(versionId, out var versionSettings) == true
-            && int.TryParse(versionSettings.MaxExecutionTime.Trim().TrimEnd('s', 'S'), out var seconds)
-            && seconds > 0)
-        {
-            return seconds * 1000;
-        }
-
-        return 120_000;
+        return new ResolvedCommand(phpExe, args, site.Path, environment);
     }
 
     private ResolvedCommand ResolveComposerCommand(SiteModel site, IReadOnlyList<string> argv)
@@ -156,9 +149,8 @@ public sealed class SiteCommandRunner
         var args = new List<string>(invocation.PrefixArguments);
         args.AddRange(argv);
         var environment = BuildSiteCommandEnvironment(versionId);
-        var timeoutMs = ResolveCommandTimeoutMs(_settingsStore.Load(), versionId);
 
-        return new ResolvedCommand(invocation.FileName, args, site.Path, environment, timeoutMs);
+        return new ResolvedCommand(invocation.FileName, args, site.Path, environment);
     }
 
     private ResolvedCommand ResolveNpmCommand(SiteModel site, IReadOnlyList<string> argv)
@@ -172,7 +164,7 @@ public sealed class SiteCommandRunner
             throw new InvalidOperationException("npm is unavailable. Activate a Node version first.");
         }
 
-        return new ResolvedCommand(npm, argv.ToList(), site.Path, BuildSiteCommandEnvironment(null), 600_000);
+        return new ResolvedCommand(npm, argv.ToList(), site.Path, BuildSiteCommandEnvironment(null));
     }
 
     private string ResolveSitePhpVersionId(SiteModel site)
@@ -186,13 +178,12 @@ public sealed class SiteCommandRunner
     private Dictionary<string, string> BuildSiteCommandEnvironment(string? phpVersionId) =>
         SiteProcessEnvironment.Build(_paths, phpVersionId, _npmTooling);
 
-    private static ProcessResult RunProcess(
+    private ProcessResult RunProcess(
         string executable,
         IReadOnlyList<string> args,
         string cwd,
         IReadOnlyDictionary<string, string> environment,
-        string logPath,
-        int timeoutMs)
+        string logPath)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -210,15 +201,14 @@ public sealed class SiteCommandRunner
         }
 
         ApplyEnvironment(startInfo, environment);
-        return RunCapturedProcess(startInfo, logPath, timeoutMs, $"Failed to start command: {executable}");
+        return RunCapturedProcess(startInfo, logPath, $"Failed to start command: {executable}");
     }
 
-    private static ProcessResult RunShellProcess(
+    private ProcessResult RunShellProcess(
         string cwd,
         string commandLine,
         IReadOnlyDictionary<string, string> environment,
-        string logPath,
-        int timeoutMs)
+        string logPath)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -235,7 +225,7 @@ public sealed class SiteCommandRunner
         startInfo.ArgumentList.Add(commandLine);
 
         ApplyEnvironment(startInfo, environment);
-        return RunCapturedProcess(startInfo, logPath, timeoutMs, "Failed to start custom command.");
+        return RunCapturedProcess(startInfo, logPath, "Failed to start custom command.");
     }
 
     private static void ApplyEnvironment(ProcessStartInfo startInfo, IReadOnlyDictionary<string, string> environment)
@@ -246,10 +236,9 @@ public sealed class SiteCommandRunner
         }
     }
 
-    private static ProcessResult RunCapturedProcess(
+    private ProcessResult RunCapturedProcess(
         ProcessStartInfo startInfo,
         string logPath,
-        int timeoutMs,
         string startFailureMessage)
     {
         using var process = new Process { StartInfo = startInfo };
@@ -258,32 +247,54 @@ public sealed class SiteCommandRunner
             throw new InvalidOperationException(startFailureMessage);
         }
 
-        using var logWriter = new StreamWriter(logPath, append: true, Encoding.UTF8) { AutoFlush = true };
-        var stdoutBuilder = new StringBuilder();
-        var stderrBuilder = new StringBuilder();
-
-        var stdoutTask = Task.Run(() => PumpStream(process.StandardOutput, logWriter, stdoutBuilder));
-        var stderrTask = Task.Run(() => PumpStream(process.StandardError, logWriter, stderrBuilder, stderr: true));
-
-        if (!process.WaitForExit(timeoutMs))
+        var cancelToken = _runRegistry.Register(logPath, process);
+        try
         {
-            try
+            using var logWriter = new StreamWriter(logPath, append: true, Encoding.UTF8) { AutoFlush = true };
+            var stdoutBuilder = new StringBuilder();
+            var stderrBuilder = new StringBuilder();
+
+            var stdoutTask = Task.Run(() => PumpStream(process.StandardOutput, logWriter, stdoutBuilder));
+            var stderrTask = Task.Run(() => PumpStream(process.StandardError, logWriter, stderrBuilder));
+
+            while (!process.HasExited)
             {
-                process.Kill(entireProcessTree: true);
-            }
-            catch
-            {
-                // Best effort.
+                if (cancelToken.IsCancellationRequested)
+                {
+                    TryKillProcessTree(process);
+                    Task.WaitAll(stdoutTask, stderrTask);
+                    logWriter.WriteLine("# Command cancelled.");
+                    return new ProcessResult(
+                        -1,
+                        stdoutBuilder.ToString().Trim(),
+                        TrimWithMessage(stderrBuilder, "Command cancelled."));
+                }
+
+                process.WaitForExit(250);
             }
 
             Task.WaitAll(stdoutTask, stderrTask);
-            logWriter.WriteLine("[stderr] Command timed out and was stopped.");
-            return new ProcessResult(-1, stdoutBuilder.ToString().Trim(), TrimWithMessage(stderrBuilder, "Command timed out."));
+            return new ProcessResult(process.ExitCode, stdoutBuilder.ToString().Trim(), stderrBuilder.ToString().Trim());
         }
+        finally
+        {
+            _runRegistry.Complete(logPath);
+        }
+    }
 
-        Task.WaitAll(stdoutTask, stderrTask);
-
-        return new ProcessResult(process.ExitCode, stdoutBuilder.ToString().Trim(), stderrBuilder.ToString().Trim());
+    private static void TryKillProcessTree(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // Best effort.
+        }
     }
 
     private static string TrimWithMessage(StringBuilder builder, string message)
@@ -292,7 +303,7 @@ public sealed class SiteCommandRunner
         return string.IsNullOrWhiteSpace(text) ? message : $"{text}{Environment.NewLine}{message}";
     }
 
-    private static void PumpStream(StreamReader reader, StreamWriter logWriter, StringBuilder capture, bool stderr = false)
+    private static void PumpStream(StreamReader reader, StreamWriter logWriter, StringBuilder capture)
     {
         while (true)
         {
@@ -303,14 +314,7 @@ public sealed class SiteCommandRunner
             }
 
             capture.AppendLine(line);
-            if (stderr)
-            {
-                logWriter.WriteLine($"[stderr] {line}");
-            }
-            else
-            {
-                logWriter.WriteLine(line);
-            }
+            logWriter.WriteLine(line);
         }
     }
 
@@ -370,7 +374,6 @@ public sealed class SiteCommandRunner
         string Executable,
         IReadOnlyList<string> Arguments,
         string WorkingDirectory,
-        IReadOnlyDictionary<string, string> Environment,
-        int TimeoutMs = 120_000);
+        IReadOnlyDictionary<string, string> Environment);
     private sealed record ProcessResult(int ExitCode, string Output, string Error);
 }

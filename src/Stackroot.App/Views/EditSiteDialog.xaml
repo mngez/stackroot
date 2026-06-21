@@ -15,6 +15,86 @@
         ShowInTaskbar="False">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="DevProxyExpanderStyle" TargetType="Expander">
+            <Setter Property="Background" Value="{StaticResource StackrootCardBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <DockPanel LastChildFill="True">
+                                <ToggleButton DockPanel.Dock="Top"
+                                              MinHeight="44"
+                                              Padding="0"
+                                              HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Focusable="False"
+                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Grid Background="Transparent" MinHeight="44">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="36" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontFamily="{StaticResource StackrootIconFont}"
+                                                           FontSize="12"
+                                                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                           Text="&#xE70D;"
+                                                           RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform>
+                                                        <RotateTransform Angle="0" />
+                                                    </TextBlock.RenderTransform>
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                                    <Setter Property="RenderTransform">
+                                                                        <Setter.Value>
+                                                                            <RotateTransform Angle="90" />
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <ContentPresenter Grid.Column="1"
+                                                                  Margin="0,0,12,0"
+                                                                  VerticalAlignment="Center"
+                                                                  Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
+                                                                  RecognizesAccessKey="True" />
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter x:Name="ExpandSite"
+                                                  Margin="12,0,12,12"
+                                                  ContentSource="Content"
+                                                  Visibility="Collapsed" />
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -203,20 +283,19 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Expander Margin="0,0,0,10"
-                                      Padding="0"
-                                      Background="{StaticResource StackrootCardBrush}"
-                                      BorderBrush="{StaticResource StackrootBorderBrush}"
-                                      BorderThickness="1"
+                                      Style="{StaticResource DevProxyExpanderStyle}"
                                       IsExpanded="{Binding IsExpanded}">
                                 <Expander.Header>
-                                    <DockPanel LastChildFill="False">
+                                    <DockPanel LastChildFill="False"
+                                               VerticalAlignment="Center">
                                         <TextBlock DockPanel.Dock="Right"
                                                    Margin="12,0,0,0"
                                                    VerticalAlignment="Center"
                                                    FontSize="11"
                                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    Text="{Binding StatusHint}" />
-                                        <TextBlock FontWeight="SemiBold"
+                                        <TextBlock VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
                                                    Text="{Binding HeaderText}" />
                                     </DockPanel>
                                 </Expander.Header>

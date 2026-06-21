@@ -54,15 +54,15 @@ public sealed class DevProxyRowViewModel : ViewModelBase
 
         Id = source?.Id ?? Guid.NewGuid().ToString("N");
 
-        _name = source?.Name ?? "Dev proxy";
+        _name = source?.Name ?? string.Empty;
 
-        _locationPath = source?.LocationPath ?? "/vite/";
+        _locationPath = source?.LocationPath ?? "/";
 
-        _targetUrl = source?.TargetUrl ?? "http://localhost:5173/vite/";
+        _targetUrl = source?.TargetUrl ?? string.Empty;
 
-        _enabled = source?.Enabled ?? true;
+        _enabled = source?.Enabled ?? false;
 
-        _websocket = source?.Websocket ?? true;
+        _websocket = source?.Websocket ?? false;
 
         _isExpanded = expand;
 

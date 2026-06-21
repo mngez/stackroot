@@ -158,6 +158,7 @@ public static class StackrootBootstrap
         services.AddSingleton<TestDnsCoordinator>(provider => new TestDnsCoordinator(
             provider.GetRequiredService<SettingsStore>(),
             provider.GetRequiredService<IDiagnosticsReporter>()));
+        services.AddSingleton<SiteCommandRunRegistry>();
         services.AddSingleton<SiteCommandRunner>();
         services.AddSingleton<ISiteInstaller, LaravelSiteInstaller>();
         services.AddSingleton<ISiteInstaller, WordPressSiteInstaller>();

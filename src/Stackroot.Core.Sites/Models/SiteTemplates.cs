@@ -37,19 +37,7 @@ public static class SiteTemplates
             Label = "Laravel",
             DocumentRoot = "public",
             HasInstaller = true,
-            InstallerDescription = "Install latest Laravel via Composer",
-            DevProxies =
-            [
-                new SiteDevProxy
-                {
-                    Id = "vite",
-                    Name = "Vite",
-                    Enabled = false,
-                    LocationPath = "/@vite",
-                    TargetUrl = "http://127.0.0.1:5173",
-                    Websocket = true
-                }
-            ]
+            InstallerDescription = "Install latest Laravel via Composer"
         },
         new SiteTemplateDefinition
         {

@@ -11,6 +11,9 @@
         Background="{StaticResource StackrootWindowBrush}"
         Foreground="{StaticResource StackrootTextBrush}"
         ShowInTaskbar="True">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -81,6 +84,11 @@
                       Content="Live updates"
                       IsChecked="{Binding LiveUpdates}" />
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,8,0"
+                        Content="Cancel"
+                        Command="{Binding CancelCommand}"
+                        Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}" />
                 <Button Width="88"
                         Margin="0,0,8,0"
                         Content="Refresh"

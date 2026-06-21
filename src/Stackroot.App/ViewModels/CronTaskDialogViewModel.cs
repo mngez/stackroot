@@ -28,7 +28,7 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
     private CronFieldOption _selectedMonth = null!;
     private CronFieldOption _selectedWeekday = null!;
 
-    public CronTaskDialogViewModel(SiteManager siteManager, ScheduledTaskModel? existing = null)
+    public CronTaskDialogViewModel(SiteManager siteManager, ScheduledTaskModel? existing = null, string? defaultSiteId = null)
     {
         _siteManager = siteManager;
 
@@ -101,6 +101,10 @@ public sealed class CronTaskDialogViewModel : ViewModelBase
         {
             _workingDirectory = string.Empty;
             _cronExpression = "* * * * *";
+            if (!string.IsNullOrWhiteSpace(defaultSiteId))
+            {
+                SiteId = defaultSiteId;
+            }
         }
     }
 

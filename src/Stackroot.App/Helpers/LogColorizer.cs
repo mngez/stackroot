@@ -328,8 +328,37 @@ internal static class LogColorizer
         }
     }
 
-    private static string NormalizeTerminalText(string raw) =>
-        raw.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+    private static string NormalizeTerminalText(string raw)
+    {
+        var normalized = raw.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        if (!normalized.Contains("[stderr]", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized;
+        }
+
+        var lines = normalized.Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+        {
+            lines[i] = StripLegacyStreamPrefix(lines[i]);
+        }
+
+        return string.Join('\n', lines);
+    }
+
+    private static string StripLegacyStreamPrefix(string line)
+    {
+        if (line.StartsWith("[stderr] ", StringComparison.OrdinalIgnoreCase))
+        {
+            return line["[stderr] ".Length..];
+        }
+
+        if (line.StartsWith("[err] ", StringComparison.OrdinalIgnoreCase))
+        {
+            return line["[err] ".Length..];
+        }
+
+        return line;
+    }
 
     private static bool ContainsAnsi(string text) => text.Contains('\u001b', StringComparison.Ordinal);
 
@@ -341,9 +370,12 @@ internal static class LogColorizer
         }
 
         var normalized = line.TrimStart().ToLowerInvariant();
-        if (normalized.StartsWith("[err]", StringComparison.Ordinal) ||
-            normalized.StartsWith("[stderr]", StringComparison.Ordinal) ||
-            normalized.Contains("error", StringComparison.Ordinal) ||
+        if (normalized.StartsWith('#'))
+        {
+            return MutedHex;
+        }
+
+        if (normalized.Contains("error", StringComparison.Ordinal) ||
             normalized.Contains("fatal", StringComparison.Ordinal) ||
             normalized.Contains("exception", StringComparison.Ordinal))
         {

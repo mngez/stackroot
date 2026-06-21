@@ -10,17 +10,18 @@ namespace Stackroot.App.ViewModels;
 
 public sealed class ScheduledTaskRowViewModel : ViewModelBase
 {
-    private readonly ScheduledTaskViewModel _parent;
+    private readonly IScheduledTaskRowHost _host;
     public ScheduledTaskModel Model { get; }
 
     public string Id => Model.Id;
-    public string Label { get => Model.Label; set { Model.Label = value; RaisePropertyChanged(); _parent.Save(); } }
-    public string Command { get => Model.Command; set { Model.Command = value; RaisePropertyChanged(); _parent.Save(); } }
-    public string WorkingDirectory { get => Model.WorkingDirectory; set { Model.WorkingDirectory = value; RaisePropertyChanged(); _parent.Save(); } }
-    public string CronExpression { get => Model.CronExpression; set { Model.CronExpression = value; RaisePropertyChanged(); _parent.Save(); } }
-    public bool CaptureLog { get => Model.CaptureLog; set { Model.CaptureLog = value; RaisePropertyChanged(); _parent.Save(); } }
-    public bool IsEnabled { get => Model.IsEnabled; set { Model.IsEnabled = value; RaisePropertyChanged(); _parent.Save(); } }
+    public string Label { get => Model.Label; set { Model.Label = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
+    public string Command { get => Model.Command; set { Model.Command = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
+    public string WorkingDirectory { get => Model.WorkingDirectory; set { Model.WorkingDirectory = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
+    public string CronExpression { get => Model.CronExpression; set { Model.CronExpression = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
+    public bool CaptureLog { get => Model.CaptureLog; set { Model.CaptureLog = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
+    public bool IsEnabled { get => Model.IsEnabled; set { Model.IsEnabled = value; RaisePropertyChanged(); _host.UpdateTask(Model); } }
     public string SiteLabel { get; }
+    public bool ShowSiteLabel { get; }
 
     public string CronDescription => Scheduling.CronParser.Describe(Model.CronExpression);
     public string LastRunDisplay => Model.LastRunAt is not null
@@ -39,10 +40,15 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
     public bool IsRunning { get => _isRunning; set { if (SetProperty(ref _isRunning, value)) RaisePropertyChanged(nameof(RunButtonText)); } }
     public string RunButtonText => IsRunning ? "⏳" : "▶";
 
-    public ScheduledTaskRowViewModel(ScheduledTaskModel model, ScheduledTaskViewModel parent, SiteManager siteManager)
+    public ScheduledTaskRowViewModel(
+        ScheduledTaskModel model,
+        IScheduledTaskRowHost host,
+        SiteManager siteManager,
+        bool showSiteLabel = true)
     {
         Model = model;
-        _parent = parent;
+        _host = host;
+        ShowSiteLabel = showSiteLabel;
         SiteLabel = FormatSiteLabel(model.SiteId, siteManager);
         RunNowCommand = new RelayCommand(_ => Run(), _ => !IsRunning);
         ViewLogCommand = new RelayCommand(_ => OpenLog(), _ => HasLog);
@@ -63,11 +69,11 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
     private async void Run()
     {
         IsRunning = true;
-        await _parent.RunNowAndWaitAsync(Id);
+        await _host.RunNowAndWaitAsync(Id);
         await System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
         {
             IsRunning = false;
-            _parent.Load();
+            _host.ReloadTasks();
         });
     }
 
@@ -84,7 +90,7 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
             return;
         }
 
-        _parent.Delete(Id);
+        _host.DeleteTask(Id);
     }
 
     public void Refresh()
@@ -112,11 +118,11 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
             return;
         }
 
-        _parent.OpenTaskLog(Model.LastLogPath, Model.Label, openInExternalEditor);
+        _host.OpenTaskLog(Model.LastLogPath, Model.Label, openInExternalEditor);
     }
 }
 
-public sealed class ScheduledTaskViewModel : ViewModelBase
+public sealed class ScheduledTaskViewModel : ViewModelBase, IScheduledTaskRowHost
 {
     private readonly Scheduling.TaskSchedulerService _scheduler;
     private readonly SiteManager _siteManager;
@@ -183,21 +189,20 @@ public sealed class ScheduledTaskViewModel : ViewModelBase
         RaisePropertyChanged(nameof(ShowEmptyState));
     }
 
-    public void Save()
-    {
-        foreach (var row in Tasks)
-            _scheduler.Update(row.Model);
-    }
+    void IScheduledTaskRowHost.UpdateTask(ScheduledTaskModel model) => _scheduler.Update(model);
 
-    public void RunNow(string id) => _ = _scheduler.RunNowAsync(id);
+    Task IScheduledTaskRowHost.RunNowAndWaitAsync(string id) => _scheduler.RunNowAsync(id);
 
-    public Task RunNowAndWaitAsync(string id) => _scheduler.RunNowAsync(id);
-
-    public void Delete(string id)
+    void IScheduledTaskRowHost.DeleteTask(string id)
     {
         _scheduler.Delete(id);
         Load();
     }
+
+    void IScheduledTaskRowHost.ReloadTasks() => Load();
+
+    void IScheduledTaskRowHost.OpenTaskLog(string logPath, string label, bool openInExternalEditor) =>
+        OpenTaskLog(logPath, label, openInExternalEditor);
 
     private void RebuildSiteFilterOptions()
     {

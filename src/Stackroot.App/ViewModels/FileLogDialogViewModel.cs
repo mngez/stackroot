@@ -8,17 +8,27 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 {
     private readonly string _logPath;
     private readonly DispatcherTimer _timer;
+    private readonly Func<Task>? _cancelAsync;
+    private readonly Func<bool>? _isRunning;
     private bool _disposed;
     private string _title = "Log";
     private string _logContent = "(no output yet)";
     private string _statusMessage = string.Empty;
     private bool _isLoading;
     private bool _liveUpdates = true;
+    private bool _canCancel;
 
-    public FileLogDialogViewModel(string logPath, string title)
+    public FileLogDialogViewModel(
+        string logPath,
+        string title,
+        Func<Task>? cancelAsync = null,
+        Func<bool>? isRunning = null)
     {
         _logPath = logPath;
+        _cancelAsync = cancelAsync;
+        _isRunning = isRunning;
         Title = title;
+        _canCancel = isRunning?.Invoke() == true;
 
         _timer = new DispatcherTimer
         {
@@ -28,6 +38,10 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 
         RefreshCommand = new RelayCommand(_ => _ = RefreshAsync(scroll: false), _ => !IsLoading);
         CloseCommand = new RelayCommand(_ => RequestClose?.Invoke(this, EventArgs.Empty));
+        if (_cancelAsync is not null)
+        {
+            CancelCommand = new RelayCommand(_ => _ = CancelAsync(), _ => CanCancel);
+        }
 
         _ = RefreshAsync();
         StartPolling();
@@ -84,10 +98,45 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public bool CanCancel
+    {
+        get => _canCancel;
+        private set
+        {
+            if (SetProperty(ref _canCancel, value))
+            {
+                CancelCommand?.RaiseCanExecuteChanged();
+                RaisePropertyChanged(nameof(ShowCancelButton));
+            }
+        }
+    }
+
+    public bool ShowCancelButton => CancelCommand is not null;
+
     public RelayCommand RefreshCommand { get; }
     public RelayCommand CloseCommand { get; }
+    public RelayCommand? CancelCommand { get; }
 
     public event EventHandler? RequestClose;
+
+    private async Task CancelAsync()
+    {
+        if (_cancelAsync is null || !CanCancel)
+        {
+            return;
+        }
+
+        CanCancel = false;
+        try
+        {
+            await _cancelAsync().ConfigureAwait(true);
+            StatusMessage = "Cancelling command…";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+        }
+    }
 
     private void StartPolling()
     {
@@ -117,6 +166,10 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             var content = await Task.Run(ReadTail);
             LogContent = string.IsNullOrWhiteSpace(content) ? "(no output yet)" : content;
             StatusMessage = string.Empty;
+            if (_isRunning is not null)
+            {
+                CanCancel = _isRunning();
+            }
         }
         catch (Exception ex)
         {
