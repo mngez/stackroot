@@ -25,18 +25,29 @@
         </Grid.RowDefinitions>
 
         <DockPanel Grid.Row="0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Padding="10,6"
+                        Content="Import"
+                        ToolTip="Add commands from a file exported from another site"
+                        Command="{Binding ImportCommand}" />
+                <Button Margin="8,0,0,0"
+                        Padding="10,6"
+                        Content="Export"
+                        ToolTip="Save commands to a file you can import on another site"
+                        Command="{Binding ExportCommand}" />
+                <Button Margin="8,0,0,0"
+                        Width="34"
+                        Height="34"
+                        Padding="0"
+                        ToolTip="Add command"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding AddCommand}">
+                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                               FontSize="14"
+                               Text="&#xE710;" />
+                </Button>
+            </StackPanel>
             <TextBlock FontSize="18" FontWeight="SemiBold" Text="Custom commands" />
-            <Button DockPanel.Dock="Right"
-                    Width="34"
-                    Height="34"
-                    Padding="0"
-                    ToolTip="Add command"
-                    Style="{StaticResource StackrootPrimaryButtonStyle}"
-                    Command="{Binding AddCommand}">
-                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
-                           FontSize="14"
-                           Text="&#xE710;" />
-            </Button>
         </DockPanel>
 
         <Grid Grid.Row="1" Margin="0,14,0,0">

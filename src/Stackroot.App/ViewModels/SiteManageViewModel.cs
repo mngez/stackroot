@@ -766,7 +766,6 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 
         RebuildQuickActions();
         RebuildProcessPresets();
-        await RefreshProcessesAsync();
         RefreshLinkedDatabases();
         RaisePropertyChanged(nameof(HasDevSslPaths));
         OpenSslPathsCommand.RaiseCanExecuteChanged();
@@ -777,6 +776,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         LoadCustomCommandItems();
         LoadScheduledTasks();
         RaiseSiteActionChromeChanged();
+
+        await RefreshProcessesAsync();
     }
 
     private void LoadScheduledTasks()

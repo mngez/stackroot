@@ -211,6 +211,8 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
         BrowseIconCommand = new RelayCommand(_ => BrowseIcon(), _ => Selected is not null);
         ClearIconCommand = new RelayCommand(_ => Selected?.ClearIcon(), _ => Selected?.HasIcon == true);
         ClearColorsCommand = new RelayCommand(_ => Selected?.ClearColors(), _ => Selected is not null);
+        ExportCommand = new RelayCommand(_ => ExportCommands(), _ => Commands.Count > 0);
+        ImportCommand = new RelayCommand(_ => ImportCommands());
         SaveCommand = new RelayCommand(_ => RequestClose?.Invoke(this, true), _ => IsValid);
         CancelCommand = new RelayCommand(_ => RequestClose?.Invoke(this, false));
 
@@ -250,6 +252,8 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
     public RelayCommand BrowseIconCommand { get; }
     public RelayCommand ClearIconCommand { get; }
     public RelayCommand ClearColorsCommand { get; }
+    public RelayCommand ExportCommand { get; }
+    public RelayCommand ImportCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand CancelCommand { get; }
 
@@ -268,6 +272,51 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
         Commands.Add(item);
         Selected = item;
         SaveCommand.RaiseCanExecuteChanged();
+        ExportCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ExportCommands()
+    {
+        CustomCommandsPortability.TryExport(
+            Application.Current?.MainWindow,
+            _siteDataDir,
+            Commands.Select(static item => item.ToModel()).ToList());
+    }
+
+    private void ImportCommands()
+    {
+        var imported = CustomCommandsPortability.TryImport(Application.Current?.MainWindow, _siteDataDir);
+        if (imported is null || imported.Count == 0)
+        {
+            if (imported is not null)
+            {
+                MessageDialog.Show(
+                    Application.Current?.MainWindow,
+                    "Import custom commands",
+                    "The file does not contain any commands.",
+                    StackrootDialogKind.Info);
+            }
+
+            return;
+        }
+
+        var owner = Application.Current?.MainWindow;
+        var message = imported.Count == 1
+            ? "Import 1 command and add it to this site?"
+            : $"Import {imported.Count} commands and add them to this site?";
+        if (!ConfirmDialog.Show(owner, "Import custom commands", message, "Import"))
+        {
+            return;
+        }
+
+        foreach (var model in imported)
+        {
+            Commands.Add(new CustomCommandEditItemViewModel(_siteDataDir, model, _isRunning));
+        }
+
+        Selected = Commands.LastOrDefault();
+        SaveCommand.RaiseCanExecuteChanged();
+        ExportCommand.RaiseCanExecuteChanged();
     }
 
     private void DeleteSelected()
@@ -295,6 +344,7 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
             ? null
             : Commands[Math.Clamp(index, 0, Commands.Count - 1)];
         SaveCommand.RaiseCanExecuteChanged();
+        ExportCommand.RaiseCanExecuteChanged();
     }
 
     private void BrowseIcon()

@@ -38,6 +38,30 @@ internal static class CustomCommandIconStore
         return fileName;
     }
 
+    public static string ImportIconFromBytes(string siteDataDir, string commandId, byte[] data, string? extension)
+    {
+        extension = NormalizeExtension(extension);
+        Directory.CreateDirectory(IconsDirectory(siteDataDir));
+        var fileName = $"{commandId}{extension}";
+        File.WriteAllBytes(Path.Combine(IconsDirectory(siteDataDir), fileName), data);
+        return fileName;
+    }
+
+    private static string NormalizeExtension(string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return ".png";
+        }
+
+        if (!extension.StartsWith('.'))
+        {
+            extension = "." + extension;
+        }
+
+        return AllowedExtensions.Contains(extension) ? extension : ".png";
+    }
+
     public static void DeleteIcon(string siteDataDir, string? iconFileName)
     {
         if (string.IsNullOrWhiteSpace(iconFileName))
