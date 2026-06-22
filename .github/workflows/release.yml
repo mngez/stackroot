@@ -18,6 +18,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -51,6 +59,49 @@ jobs:
       - name: Build pinned launcher
         shell: pwsh
         run: ./scripts/build-pinned-launcher.ps1
+
+      - name: Cache installer prerequisites
+        uses: actions/cache@v4
+        with:
+          path: installer/prerequisites
+          key: prerequisites-${{ hashFiles('installer/dotnet-prereq.ps1', 'installer/vc-redist-prereq.ps1') }}
+
+      - name: Cache PIE phar
+        uses: actions/cache@v4
+        with:
+          path: resources/packages/pie.phar
+          key: pie-phar-${{ hashFiles('scripts/ensure-pie.ps1') }}
+
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          $candidates = @(
+            $env:NSIS_PATH,
+            "${env:ProgramFiles(x86)}\NSIS\makensis.exe",
+            "$env:ProgramFiles\NSIS\makensis.exe"
+          )
+
+          foreach ($path in $candidates) {
+            if (-not [string]::IsNullOrWhiteSpace($path) -and (Test-Path $path)) {
+              Write-Host "NSIS already available: $path"
+              "NSIS_PATH=$path" >> $env:GITHUB_ENV
+              exit 0
+            }
+          }
+
+          Write-Host "Installing NSIS via Chocolatey..."
+          choco install nsis --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "choco install nsis failed ($LASTEXITCODE)" }
+
+          foreach ($path in $candidates[1..2]) {
+            if (Test-Path $path) {
+              Write-Host "NSIS installed: $path"
+              "NSIS_PATH=$path" >> $env:GITHUB_ENV
+              exit 0
+            }
+          }
+
+          throw "NSIS (makensis) not found after install"
 
       - name: Pack installer
         shell: pwsh
