@@ -439,49 +439,44 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Margin="4,0,0,0" Padding="10,6"
-                                                    Content="{Binding DisplayLabel}"
-                                                    ToolTip="Ctrl+Click to remove"
-                                                    Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                                    Command="{Binding RunCommand}"
-                                                    MouseRightButtonDown="OnCustomCommandRightClick" />
+                                            <Button Margin="4,0,0,0"
+                                                    Padding="10,6"
+                                                    ToolTip="{Binding Command}"
+                                                    Command="{Binding RunCommand}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasCustomChrome}" Value="True">
+                                                                <Setter Property="Background" Value="{Binding CustomBackgroundBrush}" />
+                                                                <Setter Property="Foreground" Value="{Binding CustomForegroundBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Width="16"
+                                                           Height="16"
+                                                           Margin="0,0,6,0"
+                                                           Source="{Binding IconSource}"
+                                                           Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayLabel}" />
+                                                </StackPanel>
+                                            </Button>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <Button Margin="4,0,0,0" Width="34" Height="34" Padding="0"
-                                        Content="+" FontSize="18" FontWeight="Bold"
-                                        ToolTip="Add custom command"
-                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                        Command="{Binding ShowAddCommandCommand}" />
+                                <Button Margin="4,0,0,0"
+                                        Width="34"
+                                        Height="34"
+                                        Padding="0"
+                                        ToolTip="Manage custom commands"
+                                        Style="{StaticResource StackrootIconButtonStyle}"
+                                        Command="{Binding ManageCustomCommandsCommand}">
+                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                               FontSize="14"
+                                               Text="&#xE8FD;" />
+                                </Button>
                             </WrapPanel>
-
-                            <!-- Inline add form -->
-                            <Border Margin="0,6,0,0" Padding="8"
-                                    Background="#121A26" CornerRadius="6"
-                                    BorderBrush="{StaticResource StackrootBorderBrush}" BorderThickness="1"
-                                    Visibility="{Binding ShowAddCommandInput, Converter={StaticResource BoolToVis}}">
-                                <StackPanel>
-                                    <TextBlock Margin="0,0,0,3" FontSize="11"
-                                               Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Name" />
-                                    <TextBox Padding="6,4" Margin="0,0,0,6"
-                                             Text="{Binding NewCmdLabel, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Margin="0,0,0,3" FontSize="11"
-                                               Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Command" />
-                                    <TextBox Padding="6,4" Margin="0,0,0,6"
-                                             Text="{Binding NewCmdCommand, UpdateSourceTrigger=PropertyChanged}" />
-                                    <Button Content="Add command" Padding="8,4"
-                                            Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                            Command="{Binding AddCustomCommandCommand}" />
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Hint text -->
-                            <TextBlock Margin="0,6,0,0" FontSize="10"
-                                       Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Ctrl+Click a command button to remove it."
-                                       Visibility="{Binding HasCustomCommands, Converter={StaticResource BoolToVis}}" />
                         </StackPanel>
 
                         <!-- Right: Square thumbnail -->

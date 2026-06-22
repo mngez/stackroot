@@ -1,0 +1,202 @@
+<Window x:Class="Stackroot.App.Views.CustomCommandsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:windows="clr-namespace:Stackroot.App.Windows"
+        Title="Custom commands"
+        Width="620"
+        MinWidth="520"
+        Height="560"
+        MinHeight="460"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False"
+        windows:WindowsTheme.EnableDarkTitleBar="True">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="False">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Custom commands" />
+            <Button DockPanel.Dock="Right"
+                    Width="34"
+                    Height="34"
+                    Padding="0"
+                    ToolTip="Add command"
+                    Style="{StaticResource StackrootPrimaryButtonStyle}"
+                    Command="{Binding AddCommand}">
+                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                           FontSize="14"
+                           Text="&#xE710;" />
+            </Button>
+        </DockPanel>
+
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="180" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1.6*" MinWidth="260" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Padding="8"
+                    Background="#121A26"
+                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Bottom"
+                            Margin="0,8,0,0"
+                            Padding="8,4"
+                            Content="Delete"
+                            Command="{Binding DeleteCommand}" />
+                    <ListBox ItemsSource="{Binding Commands}"
+                             SelectedItem="{Binding Selected}"
+                             BorderThickness="0"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,6,0"
+                                               Foreground="{StaticResource StackrootWarnBrush}"
+                                               Text="⏳"
+                                               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock Text="{Binding Label}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Padding="12"
+                    Background="#121A26"
+                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <Grid>
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="Select a command or add a new one.">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Selected}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <StackPanel DataContext="{Binding Selected}">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <TextBlock FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Label" />
+                        <TextBox Margin="0,4,0,10" Padding="8,6" Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Command" />
+                        <TextBox Margin="0,4,0,10"
+                                 Padding="8,6"
+                                 FontFamily="Consolas"
+                                 Text="{Binding Command, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Button colors (optional)" />
+                        <Grid Margin="0,4,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock FontSize="11" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Text" />
+                                <TextBox Margin="0,2,0,0" Padding="8,6" FontFamily="Consolas" Text="{Binding ForegroundHex, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock FontSize="11" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Background" />
+                                <TextBox Margin="0,2,0,0" Padding="8,6" FontFamily="Consolas" Text="{Binding BackgroundHex, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+                        <Button Margin="0,0,0,10"
+                                HorizontalAlignment="Left"
+                                Padding="8,4"
+                                Content="Reset colors to default"
+                                Command="{Binding DataContext.ClearColorsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                        <TextBlock FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Icon (optional)" />
+                        <StackPanel Margin="0,4,0,10" Orientation="Horizontal">
+                            <Button Padding="8,4" Content="Upload…" Command="{Binding DataContext.BrowseIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <Button Margin="8,0,0,0"
+                                    Padding="8,4"
+                                    Content="Remove icon"
+                                    Command="{Binding DataContext.ClearIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Preview" />
+                        <Button HorizontalAlignment="Left"
+                                Padding="10,6"
+                                IsEnabled="False">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasCustomChrome}" Value="True">
+                                            <Setter Property="Background" Value="{Binding PreviewBackgroundBrush}" />
+                                            <Setter Property="Foreground" Value="{Binding PreviewForegroundBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="16"
+                                       Height="16"
+                                       Margin="0,0,6,0"
+                                       Source="{Binding IconSource}"
+                                       Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock VerticalAlignment="Center" Text="{Binding PreviewLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="2"
+                   Margin="0,10,0,0"
+                   FontSize="11"
+                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                   Text="Running commands cannot be deleted. Stop the command first." />
+
+        <DockPanel Grid.Row="3" Margin="0,14,0,0" LastChildFill="False">
+            <Button DockPanel.Dock="Right"
+                    MinWidth="90"
+                    Padding="10,6"
+                    Content="Save"
+                    Style="{StaticResource StackrootPrimaryButtonStyle}"
+                    Command="{Binding SaveCommand}" />
+            <Button DockPanel.Dock="Right"
+                    MinWidth="80"
+                    Margin="0,0,8,0"
+                    Padding="10,6"
+                    Content="Cancel"
+                    Command="{Binding CancelCommand}" />
+        </DockPanel>
+    </Grid>
+</Window>

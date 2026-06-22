@@ -212,7 +212,13 @@ public sealed class SiteStore
                 : CloneProxies(patch.DevProxies),
             CustomCommands = current.CustomCommands?.Select(c => new SiteCustomCommand
             {
-                Id = c.Id, Label = c.Label, Command = c.Command, Runtime = c.Runtime
+                Id = c.Id,
+                Label = c.Label,
+                Command = c.Command,
+                Runtime = c.Runtime,
+                ForegroundHex = c.ForegroundHex,
+                BackgroundHex = c.BackgroundHex,
+                IconFileName = c.IconFileName
             }).ToList(),
             CreatedAt = current.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
@@ -275,7 +281,13 @@ public sealed class SiteStore
             DevProxies = CloneProxies(site.DevProxies),
             CustomCommands = site.CustomCommands?.Select(c => new SiteCustomCommand
             {
-                Id = c.Id, Label = c.Label, Command = c.Command, Runtime = c.Runtime
+                Id = c.Id,
+                Label = c.Label,
+                Command = c.Command,
+                Runtime = c.Runtime,
+                ForegroundHex = c.ForegroundHex,
+                BackgroundHex = c.BackgroundHex,
+                IconFileName = c.IconFileName
             }).ToList(),
             CreatedAt = string.IsNullOrWhiteSpace(site.CreatedAt) ? DateTimeOffset.UtcNow.ToString("O") : site.CreatedAt,
             UpdatedAt = string.IsNullOrWhiteSpace(site.UpdatedAt) ? DateTimeOffset.UtcNow.ToString("O") : site.UpdatedAt

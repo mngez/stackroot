@@ -60,6 +60,8 @@ public static class StackrootPathResolver
 
     public static string SiteCustomCommandsPath(string siteDataDir) => Path.Combine(siteDataDir, "custom-commands.json");
 
+    public static string SiteCustomCommandIconsPath(string siteDataDir) => Path.Combine(siteDataDir, "custom-command-icons");
+
     public static string InstalledMarkerPath(string dataRoot) => FirstRunState.InstalledMarkerPath(dataRoot);
 
     private static string OrDefault(string? value, string fallback)

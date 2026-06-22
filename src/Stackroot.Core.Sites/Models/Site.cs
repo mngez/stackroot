@@ -16,6 +16,9 @@ public sealed class SiteCustomCommand
     public string Label { get; set; } = string.Empty;
     public string Command { get; set; } = string.Empty;
     public string? Runtime { get; set; } // "php", "npm", "composer", "cmd" — null means default
+    public string? ForegroundHex { get; set; }
+    public string? BackgroundHex { get; set; }
+    public string? IconFileName { get; set; }
 }
 
 public sealed class Site

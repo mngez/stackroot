@@ -143,9 +143,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         CopyPasswordCommand = new RelayCommand(_ => Clipboard.SetText(PostInstallAdminPassword));
         TogglePasswordCommand = new RelayCommand(_ => PasswordVisible = !PasswordVisible);
         ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync());
-        AddCustomCommandCommand = new RelayCommand(_ => AddCustomCommand());
-        ShowAddCommandCommand = new RelayCommand(_ => ShowAddCommandInput = !ShowAddCommandInput);
-        RemoveCustomCommandCommand = new RelayCommand(id => RemoveCustomCommand(id as string ?? ""));
+        ManageCustomCommandsCommand = new RelayCommand(_ => OpenCustomCommandsDialog(), _ => Site is not null);
         DismissCustomStatusCommand = new RelayCommand(item =>
         {
             if (item is SiteCustomCommandViewModel vm)
@@ -487,76 +485,57 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     public bool HasCustomCommands => CustomCommandItems.Count > 0;
     public bool ShowCustomCommandStatus => ActiveCommandStatuses.Count > 0;
 
-    private string _newCmdLabel = string.Empty;
-    public string NewCmdLabel { get => _newCmdLabel; set => SetProperty(ref _newCmdLabel, value); }
-
-    private string _newCmdCommand = string.Empty;
-    public string NewCmdCommand { get => _newCmdCommand; set => SetProperty(ref _newCmdCommand, value); }
-
-    private bool _showAddCommandInput;
-    public bool ShowAddCommandInput
+    private void OpenCustomCommandsDialog()
     {
-        get => _showAddCommandInput;
-        set => SetProperty(ref _showAddCommandInput, value);
-    }
-
-    private void AddCustomCommand()
-    {
-        if (Site is null || string.IsNullOrWhiteSpace(NewCmdLabel) || string.IsNullOrWhiteSpace(NewCmdCommand)) return;
-
-        var cmd = new SiteCustomCommand { Label = NewCmdLabel.Trim(), Command = NewCmdCommand.Trim() };
-        _customCommands.Add(cmd);
-        SaveCustomCommands();
-        LoadCustomCommandItems();
-        NewCmdLabel = string.Empty;
-        NewCmdCommand = string.Empty;
-        ShowAddCommandInput = false;
-    }
-
-    private void ConfirmRemoveCustomCommand(string id)
-    {
-        var cmd = _customCommands.FirstOrDefault(c => c.Id == id);
-        if (cmd is null)
+        if (Site is null)
         {
             return;
         }
 
-        if (!ConfirmDialog.Show(
-                Application.Current?.MainWindow,
-                "Remove custom command?",
-                $"Remove \"{cmd.Label}\" from this site?",
-                "Remove",
-                isDanger: true))
+        var siteDataDir = SiteDataDir;
+        var dlgVm = new CustomCommandsDialogViewModel(
+            siteDataDir,
+            _customCommands,
+            IsCustomCommandRunning);
+        var dialog = new CustomCommandsDialog
+        {
+            DataContext = dlgVm,
+            Owner = Application.Current?.MainWindow
+        };
+        var result = false;
+        dlgVm.RequestClose += (_, saved) => { result = saved; dialog.Close(); };
+        dialog.ShowDialog();
+
+        if (!result)
         {
             return;
         }
 
-        RemoveCustomCommand(id);
-    }
-
-    private void RemoveCustomCommand(string id)
-    {
-        _customCommands.RemoveAll(c => c.Id == id);
+        _customCommands = dlgVm.ToModels().ToList();
         SaveCustomCommands();
         LoadCustomCommandItems();
     }
+
+    private bool IsCustomCommandRunning(string commandId) =>
+        CustomCommandItems.FirstOrDefault(item => item.Id == commandId)?.IsRunning == true;
 
     private void LoadCustomCommandItems()
     {
         CustomCommandItems.Clear();
         foreach (var cmd in _customCommands)
         {
-            var cmdId = cmd.Id;
             var vm = new SiteCustomCommandViewModel
             {
                 Id = cmd.Id,
                 Label = cmd.Label,
                 Command = cmd.Command,
-                SitePath = Site?.Path ?? ""
+                SitePath = Site?.Path ?? "",
+                ForegroundHex = cmd.ForegroundHex,
+                BackgroundHex = cmd.BackgroundHex,
+                IconFilePath = CustomCommandIconStore.ResolvePath(SiteDataDir, cmd.IconFileName)
             };
             vm.RunCommand = new RelayCommand(_ => _ = RunCustomCommandTrackedAsync(vm, cmd.Command), _ => !vm.IsRunning);
             vm.CancelCommand = new RelayCommand(_ => _ = CancelCustomCommandAsync(vm), _ => vm.ShowCancelStatus);
-            vm.RemoveCommand = new RelayCommand(_ => ConfirmRemoveCustomCommand(cmdId), _ => !vm.IsRunning);
             vm.ViewLogCommand = new RelayCommand(_ => OpenCustomCommandLog(vm, openInExternalEditor: false), _ => vm.ShowViewLogButton);
             vm.OpenLogAction = openExternal => OpenCustomCommandLog(vm, openExternal);
             vm.IsCommandRunning = () =>
@@ -584,7 +563,10 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 Id = entry.Id,
                 Label = entry.Label,
                 Command = entry.Command,
-                Runtime = entry.Runtime
+                Runtime = entry.Runtime,
+                ForegroundHex = entry.ForegroundHex,
+                BackgroundHex = entry.BackgroundHex,
+                IconFileName = entry.IconFileName
             }).ToList() ?? [];
         }
         catch { _customCommands = []; }
@@ -604,18 +586,21 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 Id = command.Id,
                 Label = command.Label,
                 Command = command.Command,
-                Runtime = command.Runtime
+                Runtime = command.Runtime,
+                ForegroundHex = command.ForegroundHex,
+                BackgroundHex = command.BackgroundHex,
+                IconFileName = command.IconFileName
             }).ToList()
         };
         var json = System.Text.Json.JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
         File.WriteAllText(path, json);
     }
 
-    private string CustomCommandsPath => Site is not null
-        ? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Stackroot", "sites", Site.Id, "custom-commands.json")
-        : "";
+    private string SiteDataDir => Site is not null
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Stackroot", "sites", Site.Id)
+        : string.Empty;
+
+    private string CustomCommandsPath => StackrootPathResolver.SiteCustomCommandsPath(SiteDataDir);
 
     public bool IsRunningAction
     {
@@ -743,9 +728,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     public RelayCommand CopyPasswordCommand { get; }
     public RelayCommand TogglePasswordCommand { get; }
     public RelayCommand ChangePasswordCommand { get; }
-    public RelayCommand AddCustomCommandCommand { get; }
-    public RelayCommand ShowAddCommandCommand { get; }
-    public RelayCommand RemoveCustomCommandCommand { get; }
+    public RelayCommand ManageCustomCommandsCommand { get; }
     public RelayCommand DismissCustomStatusCommand { get; }
     public RelayCommand OpenSslPathsCommand { get; }
     public RelayCommand EditSiteCommand { get; }
@@ -2368,7 +2351,24 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     public string Label { get; set; } = string.Empty;
     public string Command { get; set; } = string.Empty;
     public string SitePath { get; set; } = string.Empty;
+    public string? ForegroundHex { get; set; }
+    public string? BackgroundHex { get; set; }
+    public string? IconFilePath { get; set; }
     public Action<bool>? OpenLogAction { get; set; }
+
+    public bool HasCustomChrome =>
+        CustomCommandChromeHelper.HasCustomChrome(ForegroundHex, BackgroundHex, IconFilePath);
+
+    public System.Windows.Media.Brush? CustomForegroundBrush =>
+        CustomCommandChromeHelper.TryBrush(ForegroundHex);
+
+    public System.Windows.Media.Brush? CustomBackgroundBrush =>
+        CustomCommandChromeHelper.TryBrush(BackgroundHex);
+
+    public System.Windows.Media.ImageSource? IconSource =>
+        CustomCommandChromeHelper.TryIcon(IconFilePath);
+
+    public bool HasIcon => IconSource is not null;
 
     private bool _isRunning;
     public bool IsRunning
@@ -2381,7 +2381,6 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
                 RaisePropertyChanged(nameof(DisplayLabel));
                 RaiseChromeChanged();
                 RunCommand.RaiseCanExecuteChanged();
-                RemoveCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -2415,7 +2414,6 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
 
     public RelayCommand RunCommand { get; set; } = new(_ => { });
     public RelayCommand CancelCommand { get; set; } = new(_ => { });
-    public RelayCommand RemoveCommand { get; set; } = new(_ => { });
     public RelayCommand ViewLogCommand { get; set; } = new(_ => { });
 
     public void SetLogPath(string logPath)

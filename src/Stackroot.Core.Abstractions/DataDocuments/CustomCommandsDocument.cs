@@ -16,4 +16,10 @@ public sealed class CustomCommandEntry
     public string Command { get; set; } = string.Empty;
 
     public string? Runtime { get; set; }
+
+    public string? ForegroundHex { get; set; }
+
+    public string? BackgroundHex { get; set; }
+
+    public string? IconFileName { get; set; }
 }
