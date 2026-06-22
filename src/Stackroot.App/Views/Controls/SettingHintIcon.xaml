@@ -15,8 +15,7 @@
                             Background="#334CAE8C"
                             BorderBrush="#664CAE8C"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            ToolTip="{TemplateBinding Hint}">
+                            CornerRadius="8">
                         <TextBlock HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    FontSize="10"

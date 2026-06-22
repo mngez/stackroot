@@ -217,17 +217,29 @@ public sealed class PhpExtensionManager
             : new Dictionary<string, PhpVersionSettings>(settings.Php.Versions);
         var current = MergeDiscoveredExtensions(versionId, ResolveVersionSettings(settings, versionId));
 
-        versions[versionId] = current with
+        versions[versionId] = PhpVersionSettingsSanitizer.Sanitize(current with
         {
             MemoryLimit = patch.MemoryLimit,
             MaxExecutionTime = patch.MaxExecutionTime,
             UploadMaxFilesize = patch.UploadMaxFilesize,
             PostMaxSize = patch.PostMaxSize,
+            MaxInputTime = patch.MaxInputTime,
+            MaxInputVars = patch.MaxInputVars,
+            DefaultSocketTimeout = patch.DefaultSocketTimeout,
+            RealpathCacheSize = patch.RealpathCacheSize,
+            RealpathCacheTtl = patch.RealpathCacheTtl,
+            OpcacheEnabled = patch.OpcacheEnabled,
+            OpcacheEnableCli = patch.OpcacheEnableCli,
+            OpcacheValidateTimestamps = patch.OpcacheValidateTimestamps,
+            OpcacheRevalidateFreq = patch.OpcacheRevalidateFreq,
+            OpcacheMemoryConsumption = patch.OpcacheMemoryConsumption,
+            OpcacheMaxAcceleratedFiles = patch.OpcacheMaxAcceleratedFiles,
+            ManageIniManually = patch.ManageIniManually,
             DisplayErrors = patch.DisplayErrors,
             HideWarnings = patch.HideWarnings,
             HideDeprecated = patch.HideDeprecated,
             LogErrors = patch.LogErrors
-        };
+        });
 
         settings = _settingsStore.UpdatePhp(settings.Php with { Versions = versions });
         _configWriter.WritePhpConfig(settings, versionId);

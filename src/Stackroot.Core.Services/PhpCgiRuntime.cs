@@ -133,7 +133,8 @@ public static class PhpCgiRuntime
                         phpCgiPath,
                         ["-b", $"{host}:{port}", "-c", iniPath],
                         Path.GetDirectoryName(phpCgiPath) ?? package.InstallPath,
-                        jobManager);
+                        jobManager,
+                        stderrLogPath: PhpLogPaths.GetCgiStderrLogPath(paths.LogsRoot, versionId));
                 }
                 catch (Exception ex)
                 {
@@ -278,10 +279,15 @@ public static class PhpCgiRuntime
 
     public static bool TryGetManagedListenerPid(string versionId, out int pid)
     {
-        if (Managed.TryGetValue(versionId, out var listener) && IsProcessAlive(listener.Pid))
+        if (Managed.TryGetValue(versionId, out var listener))
         {
-            pid = listener.Pid;
-            return true;
+            if (IsProcessAlive(listener.Pid))
+            {
+                pid = listener.Pid;
+                return true;
+            }
+
+            Managed.TryRemove(versionId, out _);
         }
 
         pid = 0;

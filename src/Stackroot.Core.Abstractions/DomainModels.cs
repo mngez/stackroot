@@ -257,15 +257,49 @@ public record class DownloadCacheRegistry
 
 public record class PhpVersionSettings
 {
-    public string MemoryLimit { get; set; } = "512M";
-    public string MaxExecutionTime { get; set; } = "120";
-    public string UploadMaxFilesize { get; set; } = "64M";
-    public string PostMaxSize { get; set; } = "64M";
+    public string MemoryLimit { get; set; } = "-1";
+
+    public string MaxExecutionTime { get; set; } = "0";
+
+    public string UploadMaxFilesize { get; set; } = "512M";
+
+    public string PostMaxSize { get; set; } = "512M";
+
+    public int MaxInputTime { get; set; } = 600;
+
+    public int MaxInputVars { get; set; } = 5000;
+
+    public int DefaultSocketTimeout { get; set; } = 300;
+
+    public string RealpathCacheSize { get; set; } = "4096K";
+
+    public int RealpathCacheTtl { get; set; } = 600;
+
+    public bool OpcacheEnabled { get; set; } = true;
+
+    public bool OpcacheEnableCli { get; set; } = true;
+
+    public bool OpcacheValidateTimestamps { get; set; } = true;
+
+    public int OpcacheRevalidateFreq { get; set; }
+
+    public int OpcacheMemoryConsumption { get; set; } = 256;
+
+    public int OpcacheMaxAcceleratedFiles { get; set; } = 20_000;
+
+    /// <summary>When true, Stackroot does not patch the generated php.ini for this version.</summary>
+    public bool ManageIniManually { get; set; }
+
     public bool? DisplayErrors { get; set; }
+
     public bool? HideWarnings { get; set; }
+
     public bool? HideDeprecated { get; set; }
+
     public bool? LogErrors { get; set; }
+
     public Dictionary<string, bool> Extensions { get; set; } = [];
+
     public Dictionary<string, string> IniOverrides { get; set; } = [];
 }
 

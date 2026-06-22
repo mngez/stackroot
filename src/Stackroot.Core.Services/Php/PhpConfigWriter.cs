@@ -3,6 +3,7 @@ using System.Text;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
 using Stackroot.Core.Services;
+using Stackroot.Core.Settings;
 
 namespace Stackroot.Core.Services.Php;
 
@@ -51,7 +52,7 @@ public sealed class PhpConfigWriter
             return null;
         }
 
-        var phpVersion = ResolvePhpVersionSettings(settings, effectiveVersionId);
+        var phpVersion = PhpVersionSettingsSanitizer.Sanitize(ResolvePhpVersionSettings(settings, effectiveVersionId));
         var extensionDir = ResolveExtensionDir(installed.InstallPath);
         var phpConfigRoot = Path.Combine(_paths.ConfigRoot, "php");
         Directory.CreateDirectory(phpConfigRoot);
@@ -62,42 +63,13 @@ public sealed class PhpConfigWriter
 
         MigrateNestedIniIfNeeded(effectiveVersionId, iniPath, profile);
 
-        var directives = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        if (profile == PhpConfigProfile.Default && phpVersion.ManageIniManually)
         {
-            ["memory_limit"] = phpVersion.MemoryLimit,
-            ["max_execution_time"] = phpVersion.MaxExecutionTime,
-            ["upload_max_filesize"] = phpVersion.UploadMaxFilesize,
-            ["post_max_size"] = phpVersion.PostMaxSize,
-            ["extension_dir"] = extensionDir.Replace('\\', '/'),
-            ["cgi.fix_pathinfo"] = "1",
-            ["max_input_time"] = "600",
-            ["default_socket_timeout"] = "300",
-            ["realpath_cache_size"] = "4096K",
-            ["realpath_cache_ttl"] = "600"
-        };
+            EnsureManualIniExists(iniPath, installed.InstallPath, effectiveVersionId);
+            return iniPath;
+        }
 
-        if (profile == PhpConfigProfile.PhpMyAdmin)
-        {
-            directives["error_reporting"] = "E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE";
-            directives["display_errors"] = "Off";
-            directives["display_startup_errors"] = "Off";
-            directives["log_errors"] = "On";
-            directives["output_buffering"] = "4096";
-            if (!string.IsNullOrWhiteSpace(sessionsPath))
-            {
-                Directory.CreateDirectory(sessionsPath);
-                directives["session_save_path"] = sessionsPath.Replace('\\', '/');
-            }
-        }
-        else
-        {
-            var displayErrors = phpVersion.DisplayErrors != false;
-            var logErrors = phpVersion.LogErrors != false;
-            directives["error_reporting"] = BuildErrorReporting(phpVersion);
-            directives["display_errors"] = displayErrors ? "On" : "Off";
-            directives["display_startup_errors"] = displayErrors ? "On" : "Off";
-            directives["log_errors"] = logErrors ? "On" : "Off";
-        }
+        var directives = BuildDirectives(phpVersion, extensionDir, profile, sessionsPath, _paths.LogsRoot, effectiveVersionId);
 
         foreach (var directive in phpVersion.IniOverrides)
         {
@@ -127,6 +99,11 @@ public sealed class PhpConfigWriter
             var userEnabled = phpVersion.Extensions.TryGetValue(extension, out var preference)
                 ? preference
                 : PhpExtensionPolicy.DefaultExtensionPreference(extension, null, _registry, settings);
+            if (string.Equals(extension, "opcache", StringComparison.OrdinalIgnoreCase) && !phpVersion.OpcacheEnabled)
+            {
+                userEnabled = false;
+            }
+
             ConsiderExtension(extension, userEnabled);
         }
 
@@ -172,7 +149,7 @@ public sealed class PhpConfigWriter
             new PhpIniPatchOptions(directives, enabledExtensions.ToList(), allKnownExtensions));
 
         WriteTextIfChanged(iniPath, content);
-        if (profile == PhpConfigProfile.Default)
+        if (profile == PhpConfigProfile.Default && !phpVersion.ManageIniManually)
         {
             SyncPhpIniBesideBinary(installed.InstallPath, content);
         }
@@ -368,8 +345,8 @@ public sealed class PhpConfigWriter
         {
             MemoryLimit = settings.Php.MemoryLimit ?? "-1",
             MaxExecutionTime = settings.Php.MaxExecutionTime ?? "0",
-            UploadMaxFilesize = settings.Php.UploadMaxFilesize ?? "128M",
-            PostMaxSize = settings.Php.PostMaxSize ?? "128M",
+            UploadMaxFilesize = settings.Php.UploadMaxFilesize ?? "512M",
+            PostMaxSize = settings.Php.PostMaxSize ?? "512M",
             DisplayErrors = true,
             HideWarnings = false,
             HideDeprecated = true,
@@ -381,6 +358,96 @@ public sealed class PhpConfigWriter
                 ? new Dictionary<string, string>()
                 : new Dictionary<string, string>(settings.Php.IniOverrides)
         };
+    }
+
+    private void EnsureManualIniExists(string iniPath, string installPath, string versionId)
+    {
+        if (File.Exists(iniPath))
+        {
+            return;
+        }
+
+        try
+        {
+            PhpIniMerge.EnsurePhpIniTemplate(_paths.ConfigRoot, installPath, versionId);
+        }
+        catch
+        {
+            // Optional until reset is used.
+        }
+
+        var templateContent = PhpIniMerge.ReadPhpIniTemplate(_paths.ConfigRoot, versionId);
+        PhpIniMerge.EnsurePhpIniFile(iniPath, installPath, templateContent);
+    }
+
+    private static Dictionary<string, string> BuildDirectives(
+        PhpVersionSettings phpVersion,
+        string extensionDir,
+        PhpConfigProfile profile,
+        string? sessionsPath,
+        string logsRoot,
+        string versionId)
+    {
+        Directory.CreateDirectory(logsRoot);
+        var errorLogPath = PhpLogPaths.ToIniPath(PhpLogPaths.GetErrorLogPath(logsRoot, versionId));
+
+        var directives = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["memory_limit"] = phpVersion.MemoryLimit,
+            ["max_execution_time"] = phpVersion.MaxExecutionTime,
+            ["upload_max_filesize"] = phpVersion.UploadMaxFilesize,
+            ["post_max_size"] = phpVersion.PostMaxSize,
+            ["extension_dir"] = extensionDir.Replace('\\', '/'),
+            ["cgi.fix_pathinfo"] = "1",
+            ["max_input_time"] = phpVersion.MaxInputTime.ToString(),
+            ["max_input_vars"] = phpVersion.MaxInputVars.ToString(),
+            ["default_socket_timeout"] = phpVersion.DefaultSocketTimeout.ToString(),
+            ["realpath_cache_size"] = phpVersion.RealpathCacheSize,
+            ["realpath_cache_ttl"] = phpVersion.RealpathCacheTtl.ToString()
+        };
+
+        if (profile == PhpConfigProfile.PhpMyAdmin)
+        {
+            directives["error_reporting"] = "E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE";
+            directives["display_errors"] = "Off";
+            directives["display_startup_errors"] = "Off";
+            directives["log_errors"] = "On";
+            directives["error_log"] = errorLogPath;
+            directives["output_buffering"] = "4096";
+            if (!string.IsNullOrWhiteSpace(sessionsPath))
+            {
+                Directory.CreateDirectory(sessionsPath);
+                directives["session_save_path"] = sessionsPath.Replace('\\', '/');
+            }
+
+            return directives;
+        }
+
+        var displayErrors = phpVersion.DisplayErrors != false;
+        var logErrors = phpVersion.LogErrors != false;
+        directives["error_reporting"] = BuildErrorReporting(phpVersion);
+        directives["display_errors"] = displayErrors ? "On" : "Off";
+        directives["display_startup_errors"] = displayErrors ? "On" : "Off";
+        directives["log_errors"] = logErrors ? "On" : "Off";
+        if (logErrors)
+        {
+            directives["error_log"] = errorLogPath;
+        }
+
+        if (phpVersion.OpcacheEnabled)
+        {
+            directives["opcache.enable"] = "1";
+            directives["opcache.enable_cli"] = phpVersion.OpcacheEnableCli ? "1" : "0";
+            directives["opcache.validate_timestamps"] = phpVersion.OpcacheValidateTimestamps ? "1" : "0";
+            directives["opcache.revalidate_freq"] = phpVersion.OpcacheRevalidateFreq.ToString();
+            directives["opcache.memory_consumption"] = phpVersion.OpcacheMemoryConsumption.ToString();
+            directives["opcache.max_accelerated_files"] = phpVersion.OpcacheMaxAcceleratedFiles.ToString();
+            directives["opcache.error_log"] = errorLogPath;
+            directives["opcache.jit_buffer_size"] = "0";
+            directives["opcache.jit"] = "0";
+        }
+
+        return directives;
     }
 
     private static string BuildErrorReporting(PhpVersionSettings version)

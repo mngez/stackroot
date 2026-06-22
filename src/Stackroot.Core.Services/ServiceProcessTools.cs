@@ -1,24 +1,29 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using Stackroot.Core.Windows;
 
 namespace Stackroot.Core.Services;
 
 internal static class ServiceProcessTools
 {
+    private static readonly ConcurrentDictionary<int, StderrLogSink> StderrSinks = new();
+
     public static Process StartProcess(
         string fileName,
         IEnumerable<string> arguments,
         string workingDirectory,
         IProcessJobManager jobManager,
-        IReadOnlyDictionary<string, string?>? environment = null)
+        IReadOnlyDictionary<string, string?>? environment = null,
+        string? stderrLogPath = null)
     {
         var startInfo = new ProcessStartInfo
         {
             FileName = fileName,
             WorkingDirectory = workingDirectory,
             UseShellExecute = false,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
+            RedirectStandardOutput = !string.IsNullOrWhiteSpace(stderrLogPath),
+            RedirectStandardError = !string.IsNullOrWhiteSpace(stderrLogPath),
             CreateNoWindow = true
         };
 
@@ -56,6 +61,12 @@ internal static class ServiceProcessTools
         }
 
         ServiceProcessPriority.Apply(process);
+
+        if (!string.IsNullOrWhiteSpace(stderrLogPath))
+        {
+            StderrSinks[process.Id] = new StderrLogSink(process, stderrLogPath);
+        }
+
         return process;
     }
 
@@ -134,5 +145,72 @@ internal static class ServiceProcessTools
         }
     }
 
+    private sealed class StderrLogSink : IDisposable
+    {
+        private readonly StreamWriter _writer;
+        private readonly Process _process;
+        private int _disposed;
+
+        public StderrLogSink(Process process, string logPath)
+        {
+            _process = process;
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+            _writer = new StreamWriter(logPath, append: true, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
+            {
+                AutoFlush = true
+            };
+            _writer.WriteLine($"[{DateTimeOffset.UtcNow:u}] --- started pid={process.Id} ---");
+
+            process.EnableRaisingEvents = true;
+            process.ErrorDataReceived += OnErrorData;
+            process.Exited += OnExited;
+            process.BeginErrorReadLine();
+        }
+
+        private void OnErrorData(object? sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                _writer.WriteLine(e.Data);
+            }
+        }
+
+        private void OnExited(object? sender, EventArgs e)
+        {
+            var code = SafeExitCode(_process);
+            _writer.WriteLine($"[{DateTimeOffset.UtcNow:u}] --- exited code={code} ---");
+            Dispose();
+            StderrSinks.TryRemove(_process.Id, out _);
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                _writer.Dispose();
+            }
+            catch
+            {
+                // Best effort only.
+            }
+        }
+
+        private static string SafeExitCode(Process process)
+        {
+            try
+            {
+                return process.ExitCode.ToString();
+            }
+            catch
+            {
+                return "unknown";
+            }
+        }
+    }
 }
 

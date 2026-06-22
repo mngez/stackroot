@@ -209,22 +209,7 @@ public static class SettingsDefaults
         return settings;
     }
 
-    public static PhpVersionSettings DefaultPhpVersionSettings()
-    {
-        return new PhpVersionSettings
-        {
-            MemoryLimit = "-1",
-            MaxExecutionTime = "0",
-            UploadMaxFilesize = "128M",
-            PostMaxSize = "128M",
-            DisplayErrors = true,
-            HideWarnings = false,
-            HideDeprecated = true,
-            LogErrors = true,
-            Extensions = new Dictionary<string, bool>(),
-            IniOverrides = new Dictionary<string, string>()
-        };
-    }
+    public static PhpVersionSettings DefaultPhpVersionSettings() => new();
 
     public static Dictionary<ServiceId, ServicePortSettings> DefaultServices()
     {

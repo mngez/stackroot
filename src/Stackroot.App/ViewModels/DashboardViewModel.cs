@@ -1509,8 +1509,9 @@ public sealed class DashboardViewModel : ViewModelBase
         bool isRunning,
         string statusText)
     {
-        var logPath = Path.Combine(_paths.LogsRoot, $"php-cgi-{state.VersionId}.stderr.log");
-        var logExists = File.Exists(logPath);
+        var logPath = PhpLogPaths.GetCgiStderrLogPath(_paths.LogsRoot, state.VersionId);
+        var errorLogPath = PhpLogPaths.GetErrorLogPath(_paths.LogsRoot, state.VersionId);
+        var logExists = File.Exists(logPath) || File.Exists(errorLogPath);
         var statusColor = ResolvePhpListenerStatusColor(isRunning, statusText);
         var capturedVersion = state.VersionId;
 
@@ -1523,7 +1524,7 @@ public sealed class DashboardViewModel : ViewModelBase
                 Endpoint = state.Endpoint,
                 StatusColor = statusColor,
                 ShowLogButton = logExists || isRunning,
-                OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath), _ => File.Exists(logPath)),
+                OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath, errorLogPath), _ => logExists || isRunning),
                 StopCommand = new RelayCommand(_ => _ = StopPhpCgiAsync(capturedVersion), _ => isRunning),
                 RestartCommand = null!,
                 IsRunning = isRunning,
@@ -2262,8 +2263,9 @@ public sealed class DashboardViewModel : ViewModelBase
             var statusText = isRunning
                 ? "Running"
                 : (version.IsRequired ? "Stopped" : listenerState?.StatusText ?? "Stopped");
-            var logPath = Path.Combine(_paths.LogsRoot, $"php-cgi-{version.Id}.stderr.log");
-            rows.Add((version, endpoint, isRunning, statusText, logPath, File.Exists(logPath)));
+            var logPath = PhpLogPaths.GetCgiStderrLogPath(_paths.LogsRoot, version.Id);
+            var errorLogPath = PhpLogPaths.GetErrorLogPath(_paths.LogsRoot, version.Id);
+            rows.Add((version, endpoint, isRunning, statusText, logPath, File.Exists(logPath) || File.Exists(errorLogPath)));
         }
 
         await RunOnUiAsync(() =>
@@ -2286,7 +2288,7 @@ public sealed class DashboardViewModel : ViewModelBase
                         Endpoint = endpoint,
                         StatusColor = ResolvePhpListenerStatusColor(isRunning, statusText),
                         ShowLogButton = logExists || isRunning,
-                        OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath), _ => File.Exists(logPath)),
+                        OpenLogCommand = new RelayCommand(_ => OpenPhpLog(logPath, PhpLogPaths.GetErrorLogPath(_paths.LogsRoot, version.Id)), _ => logExists || isRunning),
                         StopCommand = new RelayCommand(_ => _ = StopPhpCgiAsync(capturedVersion), _ => isRunning),
                         RestartCommand = null!, // filled below
                         IsRunning = isRunning,
@@ -2328,16 +2330,22 @@ public sealed class DashboardViewModel : ViewModelBase
     private IReadOnlyList<string> ResolveRequiredPhpVersionIds() =>
         _serviceManager.ResolveRequiredPhpVersionIds();
 
-    private static void OpenPhpLog(string logPath)
+    private static void OpenPhpLog(string stderrLogPath, string errorLogPath)
     {
-        if (!File.Exists(logPath))
+        var path = File.Exists(stderrLogPath)
+            ? stderrLogPath
+            : File.Exists(errorLogPath)
+                ? errorLogPath
+                : null;
+
+        if (path is null)
         {
             return;
         }
 
         var dialogVm = new FileLogDialogViewModel(
-            new SiteLogSession(logPath),
-            $"Log — {Path.GetFileName(logPath)}");
+            new SiteLogSession(path),
+            $"Log — {Path.GetFileName(path)}");
         var owner = Application.Current?.MainWindow;
         var dialog = new SiteProcessLogDialog
         {

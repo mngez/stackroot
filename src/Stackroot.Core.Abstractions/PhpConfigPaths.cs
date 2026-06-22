@@ -23,3 +23,14 @@ public static class PhpConfigPaths
         return File.Exists(nested) ? nested : null;
     }
 }
+
+public static class PhpLogPaths
+{
+    public static string GetErrorLogPath(string logsRoot, string versionId)
+        => Path.Combine(logsRoot, $"{versionId}.log");
+
+    public static string GetCgiStderrLogPath(string logsRoot, string versionId)
+        => Path.Combine(logsRoot, $"php-cgi-{versionId}.stderr.log");
+
+    public static string ToIniPath(string path) => path.Replace('\\', '/');
+}

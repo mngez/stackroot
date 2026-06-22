@@ -1,86 +1,227 @@
 <Window x:Class="Stackroot.App.Views.PhpVersionSettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
         Title="{Binding VersionLabel, StringFormat=Settings — {0}}"
-        Width="480"
-        MinWidth="440"
+        Width="540"
+        MinWidth="500"
+        MaxHeight="760"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="{StaticResource StackrootWindowBrush}"
         Foreground="{StaticResource StackrootTextBrush}"
         ShowInTaskbar="False">
+    <Window.Resources>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,18,0,0" />
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+        </Style>
+    </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   FontSize="20"
-                   FontWeight="SemiBold"
-                   Text="{Binding VersionLabel, StringFormat=Settings — {0}}" />
-
-        <StackPanel Grid.Row="1" Margin="0,16,0,0">
-            <TextBlock FontWeight="SemiBold" Text="Runtime limits" />
-            <Grid Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,10">
-                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="memory_limit" />
-                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding MemoryLimit, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,10">
-                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="max_execution_time" />
-                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding MaxExecutionTime, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
-                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="upload_max_filesize" />
-                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding UploadMaxFilesize, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
-                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="post_max_size" />
-                    <TextBox Margin="0,6,0,0" Padding="10,6" Text="{Binding PostMaxSize, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-            </Grid>
-
-            <TextBlock Margin="0,16,0,0" FontWeight="SemiBold" Text="Errors and warnings" />
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="{Binding VersionLabel, StringFormat=Settings — {0}}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Stackroot writes these into the generated php.ini."
+                       Text="Tune php.ini defaults for this PHP version. Extensions are still managed from the PHP page."
                        TextWrapping="Wrap" />
-            <CheckBox Margin="0,10,0,0"
-                      Content="Show errors in the browser (display_errors)"
-                      IsChecked="{Binding DisplayErrors}" />
-            <CheckBox Margin="0,8,0,0"
-                      Content="Log errors to file (log_errors)"
-                      IsChecked="{Binding LogErrors}" />
-            <CheckBox Margin="0,8,0,0"
-                      Content="Hide PHP warnings"
-                      IsChecked="{Binding HideWarnings}" />
-            <CheckBox Margin="0,8,0,0"
-                      Content="Hide deprecation notices"
-                      IsChecked="{Binding HideDeprecated}" />
-
-            <TextBlock Margin="0,16,0,0"
-                       Foreground="{StaticResource StackrootTextMutedBrush}"
-                       FontSize="12"
-                       Text="{Binding IniPath, StringFormat=Generated ini: {0}}"
-                       TextWrapping="Wrap" />
-            <Button Margin="0,8,0,0"
-                    HorizontalAlignment="Left"
-                    Padding="10,4"
-                    Content="Open generated ini"
-                    Command="{Binding OpenIniCommand}" />
         </StackPanel>
+
+        <ScrollViewer Grid.Row="1"
+                      Margin="0,16,0,0"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Style="{StaticResource SectionTitle}" Margin="0" Text="Manual control" />
+                <CheckBox Margin="0,8,0,0"
+                          IsChecked="{Binding ManageIniManually}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Manage php.ini manually" />
+                        <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.ManageIniManually}" />
+                    </StackPanel>
+                </CheckBox>
+                <TextBlock Margin="0,8,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="{Binding IniPath, StringFormat=Generated ini: {0}}"
+                           TextWrapping="Wrap" />
+                <Button Margin="0,8,0,0"
+                        HorizontalAlignment="Left"
+                        Padding="12,6"
+                        Content="Open php.ini"
+                        Command="{Binding OpenIniCommand}" />
+
+                <StackPanel IsEnabled="{Binding IsAutoTuningEnabled}">
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="Runtime limits" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="memory_limit" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.MemoryLimit}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding MemoryLimit, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="max_execution_time" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.MaxExecutionTime}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding MaxExecutionTime, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="upload_max_filesize" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.UploadMaxFilesize}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding UploadMaxFilesize, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="post_max_size" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.PostMaxSize}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding PostMaxSize, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="Input and sockets" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="max_input_time (seconds)" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.MaxInputTime}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding MaxInputTime, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="max_input_vars" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.MaxInputVars}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding MaxInputVars, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="default_socket_timeout (seconds)" />
+                            <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.DefaultSocketTimeout}" />
+                        </StackPanel>
+                        <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding DefaultSocketTimeout, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="Path cache" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="realpath_cache_size" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.RealpathCacheSize}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding RealpathCacheSize, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="realpath_cache_ttl (seconds)" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.RealpathCacheTtl}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding RealpathCacheTtl, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="OPcache" />
+                    <CheckBox Margin="0,8,0,0" IsChecked="{Binding OpcacheEnabled}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Enable OPcache" />
+                            <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheEnabled}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox Margin="0,8,0,0" IsChecked="{Binding OpcacheEnableCli}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="opcache.enable_cli" />
+                            <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheEnableCli}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox Margin="0,8,0,0" IsChecked="{Binding OpcacheValidateTimestamps}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="opcache.validate_timestamps" />
+                            <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheValidateTimestamps}" />
+                        </StackPanel>
+                    </CheckBox>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="opcache.revalidate_freq" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheRevalidateFreq}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding OpcacheRevalidateFreq, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="opcache.memory_consumption (MB)" />
+                                <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheMemoryConsumption}" />
+                            </StackPanel>
+                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding OpcacheMemoryConsumption, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Margin="0,10,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="opcache.max_accelerated_files" />
+                            <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheMaxAcceleratedFiles}" />
+                        </StackPanel>
+                        <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding OpcacheMaxAcceleratedFiles, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="Errors and warnings" />
+                    <CheckBox Margin="0,10,0,0"
+                              Content="Show errors in the browser (display_errors)"
+                              IsChecked="{Binding DisplayErrors}" />
+                    <CheckBox Margin="0,8,0,0"
+                              Content="Log errors to file (log_errors)"
+                              IsChecked="{Binding LogErrors}" />
+                    <CheckBox Margin="0,8,0,0"
+                              Content="Hide PHP warnings"
+                              IsChecked="{Binding HideWarnings}" />
+                    <CheckBox Margin="0,8,0,0"
+                              Content="Hide deprecation notices"
+                              IsChecked="{Binding HideDeprecated}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
 
         <StackPanel Grid.Row="2" Margin="0,18,0,0">
             <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -89,6 +230,10 @@
                        Text="{Binding StatusMessage}"
                        TextWrapping="Wrap" />
             <DockPanel Margin="0,12,0,0" LastChildFill="False">
+                <Button DockPanel.Dock="Left"
+                        Padding="12,6"
+                        Content="Reset defaults"
+                        Command="{Binding ResetDefaultsCommand}" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Width="88"
                             Margin="0,0,8,0"

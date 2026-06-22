@@ -50,6 +50,12 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 8:
                 EnsureNginxHttpExtendedSettings(obj);
                 break;
+            case 9:
+                EnsurePhpVersionPerformanceSettings(obj);
+                break;
+            case 10:
+                DisableRiskyPhpJitDefaults(obj);
+                break;
         }
     }
 
@@ -175,6 +181,80 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         SetIntIfMissing(nginxHttp, "proxyReadTimeoutSeconds", defaults.ProxyReadTimeoutSeconds);
 
         root["nginxHttp"] = nginxHttp;
+    }
+
+    private static void EnsurePhpVersionPerformanceSettings(JsonObject root)
+    {
+        if (root["php"] is not JsonObject php)
+        {
+            return;
+        }
+
+        var versions = php["versions"] as JsonObject;
+        if (versions is null)
+        {
+            return;
+        }
+
+        var defaults = new PhpVersionSettings();
+        foreach (var (_, versionNode) in versions)
+        {
+            if (versionNode is not JsonObject version)
+            {
+                continue;
+            }
+
+            SetIntIfMissing(version, "maxInputTime", defaults.MaxInputTime);
+            SetIntIfMissing(version, "maxInputVars", defaults.MaxInputVars);
+            SetIntIfMissing(version, "defaultSocketTimeout", defaults.DefaultSocketTimeout);
+            SetStringIfMissing(version, "realpathCacheSize", defaults.RealpathCacheSize);
+            SetIntIfMissing(version, "realpathCacheTtl", defaults.RealpathCacheTtl);
+            SetBoolIfMissing(version, "opcacheEnabled", defaults.OpcacheEnabled);
+            SetBoolIfMissing(version, "opcacheEnableCli", defaults.OpcacheEnableCli);
+            SetBoolIfMissing(version, "opcacheValidateTimestamps", defaults.OpcacheValidateTimestamps);
+            SetIntIfMissing(version, "opcacheRevalidateFreq", defaults.OpcacheRevalidateFreq);
+            SetIntIfMissing(version, "opcacheMemoryConsumption", defaults.OpcacheMemoryConsumption);
+            SetIntIfMissing(version, "opcacheMaxAcceleratedFiles", defaults.OpcacheMaxAcceleratedFiles);
+            SetBoolIfMissing(version, "manageIniManually", defaults.ManageIniManually);
+            UpgradeLegacyUploadLimits(version);
+        }
+    }
+
+    private static void UpgradeLegacyUploadLimits(JsonObject version)
+    {
+        var upload = version["uploadMaxFilesize"]?.GetValue<string>();
+        var post = version["postMaxSize"]?.GetValue<string>();
+        if (string.Equals(upload, "128M", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(post, "128M", StringComparison.OrdinalIgnoreCase))
+        {
+            version["uploadMaxFilesize"] = "512M";
+            version["postMaxSize"] = "512M";
+        }
+    }
+
+    private static void DisableRiskyPhpJitDefaults(JsonObject root)
+    {
+        if (root["php"] is not JsonObject php)
+        {
+            return;
+        }
+
+        var versions = php["versions"] as JsonObject;
+        if (versions is null)
+        {
+            return;
+        }
+
+        foreach (var (_, versionNode) in versions)
+        {
+            if (versionNode is not JsonObject version)
+            {
+                continue;
+            }
+
+            version.Remove("opcacheJitBufferSize");
+            version.Remove("opcacheJit");
+        }
     }
 
     private static void SetStringIfMissing(JsonObject obj, string key, string value)
