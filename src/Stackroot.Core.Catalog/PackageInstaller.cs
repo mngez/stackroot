@@ -332,18 +332,9 @@ public sealed class PackageInstaller
         }
 
         Directory.CreateDirectory(destination);
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = sevenZip,
-                Arguments = $"x \"{archivePath}\" -o\"{destination}\" -y",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
+        var startInfo = ProcessStreamEncoding.Create(sevenZip);
+        startInfo.Arguments = $"x \"{archivePath}\" -o\"{destination}\" -y";
+        using var process = new Process { StartInfo = startInfo };
 
         process.Start();
         process.WaitForExit();

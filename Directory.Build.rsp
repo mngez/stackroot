@@ -1,0 +1,4 @@
+# Applied automatically to every `dotnet build` in this repo.
+# Prevents MSBuild worker nodes from staying alive and locking bin/ outputs.
+/nodeReuse:false
+/p:UseSharedCompilation=false

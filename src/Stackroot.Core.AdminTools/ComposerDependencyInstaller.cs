@@ -32,15 +32,7 @@ internal static class ComposerDependencyInstaller
             ?? throw new InvalidOperationException(
                 "Composer is not available. Install Composer from Tools, or add composer to your system PATH.");
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = composer.FileName,
-            WorkingDirectory = projectDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create(composer.FileName, projectDirectory);
 
         foreach (var prefix in composer.PrefixArguments)
         {

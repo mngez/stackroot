@@ -70,15 +70,7 @@ public static class DatabaseConfigWriter
 
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = mysqldPath,
-                WorkingDirectory = workingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(mysqldPath, workingDirectory)
         };
         process.StartInfo.ArgumentList.Add($"--defaults-file={configPath}");
         process.StartInfo.ArgumentList.Add("--initialize-insecure");
@@ -116,15 +108,7 @@ public static class DatabaseConfigWriter
 
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = installDb,
-                WorkingDirectory = workingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(installDb, workingDirectory)
         };
         process.StartInfo.ArgumentList.Add($"--datadir={dataDir}");
 
@@ -218,18 +202,9 @@ public static class DatabaseConfigWriter
         }
 
         Directory.CreateDirectory(dataDir);
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = initdbPath,
-                Arguments = $"-D \"{dataDir}\" -U postgres -E UTF8 -A trust",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
+        var startInfo = ProcessStreamEncoding.Create(initdbPath);
+        startInfo.Arguments = $"-D \"{dataDir}\" -U postgres -E UTF8 -A trust";
+        using var process = new Process { StartInfo = startInfo };
 
         process.Start();
         var output = process.StandardOutput.ReadToEnd();

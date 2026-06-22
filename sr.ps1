@@ -16,8 +16,16 @@ switch -Regex ($Cmd.ToLower()) {
         dotnet run --project "$r/src/Stackroot.App/Stackroot.App.csproj"
         exit $LASTEXITCODE
     }
-    "^(pack|build)$" {
+    "^(pack|release)$" {
         & "$r/scripts/pack-release.ps1"
+        exit $LASTEXITCODE
+    }
+    "^(build|compile|sb)$" {
+        & "$r/scripts/build.ps1" @args
+        exit $LASTEXITCODE
+    }
+    "^stop-workers$" {
+        & "$r/scripts/stop-build-workers.ps1"
         exit $LASTEXITCODE
     }
     "^push$" {
@@ -38,7 +46,7 @@ switch -Regex ($Cmd.ToLower()) {
         exit $LASTEXITCODE
     }
     default {
-        Write-Host "Usage: ./sr dev|pack|push {version} [+]|changelog"
+        Write-Host "Usage: ./sr dev|build|pack|push {version} [+]|changelog|stop-workers"
         exit 1
     }
 }

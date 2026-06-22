@@ -55,6 +55,9 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     private string _processStatusMessage = string.Empty;
     private string _databaseStatusMessage = string.Empty;
     private string _lastCommandLabel = string.Empty;
+    private string _lastCommandLine = string.Empty;
+    private int? _lastCommandExitCode;
+    private long _lastCommandDurationMs;
     private string _lastCommandLogPath = string.Empty;
     private bool _showCommandLogButton;
     private bool _isTogglingEnabled;
@@ -147,10 +150,11 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         {
             if (item is SiteCustomCommandViewModel vm)
             {
+                vm.ClearStatus();
                 ActiveCommandStatuses.Remove(vm);
                 RaisePropertyChanged(nameof(ShowCustomCommandStatus));
             }
-        });
+        }, item => item is SiteCustomCommandViewModel { IsRunning: false });
         OpenSslPathsCommand = new RelayCommand(_ => OpenSslPathsDialog(), _ => HasDevSslPaths);
         EditSiteCommand = new RelayCommand(_ => OpenEditSiteDialog(), _ => Site is not null);
         ToggleFeaturedCommand = new RelayCommand(_ => ToggleFeatured(), _ => Site is not null);
@@ -550,19 +554,15 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 Command = cmd.Command,
                 SitePath = Site?.Path ?? ""
             };
-            vm.RunCommandAsync = () => RunCustomCommandAsync(cmd.Id, cmd.Command);
+            vm.RunCommand = new RelayCommand(_ => _ = RunCustomCommandTrackedAsync(vm, cmd.Command), _ => !vm.IsRunning);
+            vm.CancelCommand = new RelayCommand(_ => _ = CancelCustomCommandAsync(vm), _ => vm.ShowCancelStatus);
+            vm.RemoveCommand = new RelayCommand(_ => ConfirmRemoveCustomCommand(cmdId), _ => !vm.IsRunning);
+            vm.ViewLogCommand = new RelayCommand(_ => OpenCustomCommandLog(vm, openInExternalEditor: false), _ => vm.ShowViewLogButton);
             vm.OpenLogAction = openExternal => OpenCustomCommandLog(vm, openExternal);
-            vm.OnStatusChanged = (msg, logPath) =>
-            {
-                vm.Status = msg;
-                if (logPath is not null) vm._logPath = logPath;
-                if (!ActiveCommandStatuses.Contains(vm))
-                    ActiveCommandStatuses.Add(vm);
-                RaisePropertyChanged(nameof(ShowCustomCommandStatus));
-            };
-            vm.RunCommand = new RelayCommand(_ => vm.Execute());
-            vm.RemoveCommand = new RelayCommand(_ => ConfirmRemoveCustomCommand(cmdId));
-            vm.ViewLogCommand = new RelayCommand(_ => vm.OpenLog(), _ => vm.HasLog);
+            vm.IsCommandRunning = () =>
+                !string.IsNullOrWhiteSpace(vm._logPath) &&
+                _siteManager.IsSiteCommandRunning(vm._logPath!);
+            vm.ChromeChanged = () => DismissCustomStatusCommand.RaiseCanExecuteChanged();
             CustomCommandItems.Add(vm);
         }
 
@@ -1097,6 +1097,9 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 
         IsRunningAction = true;
         _lastCommandLabel = definition?.Label ?? actionId;
+        _lastCommandLine = string.Empty;
+        _lastCommandExitCode = null;
+        _lastCommandDurationMs = 0;
         _lastCommandLogPath = string.Empty;
         CommandStatusMessage = $"Running {_lastCommandLabel}…";
         ShowCommandLogButton = false;
@@ -1107,9 +1110,10 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             var result = await Task.Run(() => _siteManager.RunQuickAction(
                 SiteId,
                 actionId,
-                logPath => Application.Current?.Dispatcher.BeginInvoke(() =>
+                started => Application.Current?.Dispatcher.BeginInvoke(() =>
                 {
-                    _lastCommandLogPath = logPath;
+                    _lastCommandLogPath = started.LogPath;
+                    _lastCommandLine = started.CommandLine;
                     ShowCommandLogButton = true;
                     RaiseCommandStatusChromeChanged();
                 })));
@@ -1118,6 +1122,10 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             {
                 _lastCommandLogPath = result.LogPath;
             }
+
+            _lastCommandLine = result.CommandLine ?? string.Empty;
+            _lastCommandExitCode = result.ExitCode;
+            _lastCommandDurationMs = result.DurationMs;
 
             CommandStatusMessage = SiteQuickActionStatusFormatter.Format(actionId, definition?.Label, result);
             ShowCommandLogButton = !string.IsNullOrWhiteSpace(_lastCommandLogPath);
@@ -1156,27 +1164,113 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         }
     }
 
-    private async Task<SiteCommandResult> RunCustomCommandAsync(string commandId, string commandLine)
+    private async Task RunCustomCommandTrackedAsync(SiteCustomCommandViewModel vm, string commandLine)
     {
-        if (Site is null)
+        if (Site is null || vm.IsRunning)
         {
-            throw new InvalidOperationException("Site is not loaded.");
+            return;
         }
 
-        return await Task.Run(() => _siteManager.RunCustomCommand(SiteId, commandId, commandLine))
-            .ConfigureAwait(false);
+        vm.IsRunning = true;
+        vm.ClearLogPath();
+        vm.Status = $"Running {vm.Label}…";
+
+        if (!ActiveCommandStatuses.Contains(vm))
+        {
+            ActiveCommandStatuses.Add(vm);
+        }
+
+        RaisePropertyChanged(nameof(ShowCustomCommandStatus));
+        DismissCustomStatusCommand.RaiseCanExecuteChanged();
+
+        try
+        {
+            var result = await Task.Run(() => _siteManager.RunCustomCommand(
+                SiteId,
+                vm.Id,
+                commandLine,
+                started => Application.Current?.Dispatcher.BeginInvoke(() =>
+                {
+                    vm.SetLogPath(started.LogPath);
+                    vm.SetCommandLine(started.CommandLine);
+                })))
+                .ConfigureAwait(true);
+
+            if (!string.IsNullOrWhiteSpace(result.LogPath))
+            {
+                vm.SetLogPath(result.LogPath);
+            }
+
+            vm.SetCompletion(result.ExitCode, result.DurationMs);
+            vm.Status = FormatCustomCommandStatus(vm.Label, result);
+        }
+        catch (Exception ex)
+        {
+            vm.Status = $"{vm.Label} failed.";
+            _activity.LogError("Sites", ex.Message, ex);
+            if (string.IsNullOrWhiteSpace(vm._logPath))
+            {
+                var fallbackDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Stackroot",
+                    "logs",
+                    "sites",
+                    SiteId);
+                Directory.CreateDirectory(fallbackDir);
+                vm.SetLogPath(Path.Combine(fallbackDir, $"error-{DateTimeOffset.UtcNow:yyyy-MM-ddTHH-mm-ss-fffZ}.log"));
+                await File.WriteAllTextAsync(vm._logPath!, ex.ToString()).ConfigureAwait(true);
+            }
+        }
+        finally
+        {
+            vm.IsRunning = false;
+            DismissCustomStatusCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private static string FormatCustomCommandStatus(string label, SiteCommandResult result) =>
+        SiteQuickActionStatusFormatter.Format("custom", label, result);
+
+    private Task CancelCustomCommandAsync(SiteCustomCommandViewModel vm)
+    {
+        if (!vm.CanCancelRunning() || string.IsNullOrWhiteSpace(vm._logPath))
+        {
+            return Task.CompletedTask;
+        }
+
+        return Task.Run(() => _siteManager.CancelSiteCommand(vm._logPath!));
     }
 
     private void OpenCustomCommandLog(SiteCustomCommandViewModel vm, bool openInExternalEditor)
     {
         if (string.IsNullOrWhiteSpace(vm._logPath) || !File.Exists(vm._logPath))
         {
-            vm.OnStatusChanged?.Invoke($"{vm.Label}: No log file yet", null);
             return;
         }
 
-        StackrootLogViewer.Open(vm._logPath, $"Log — {vm.Label}", openInExternalEditor, _settingsStore);
+        var logPath = vm._logPath;
+        StackrootLogViewer.Open(
+            logPath,
+            $"Log — {vm.Label}",
+            openInExternalEditor,
+            _settingsStore,
+            cancelAsync: () => Task.Run(() => _siteManager.CancelSiteCommand(logPath!)),
+            isRunning: () => _siteManager.IsSiteCommandRunning(logPath!),
+            chrome: BuildSiteLogChrome(logPath, vm.Command, () => vm.GetCompletion()));
     }
+
+    private SiteLogChrome BuildSiteLogChrome(
+        string? logPath,
+        string? commandLine,
+        Func<(int ExitCode, long DurationMs)?> getCompletion) =>
+        new(
+            CommandLine: commandLine,
+            GetCompletion: getCompletion);
+
+    private (int ExitCode, long DurationMs)? GetLastCommandCompletion() =>
+        _lastCommandExitCode is int exitCode
+            ? (exitCode, _lastCommandDurationMs)
+            : null;
 
     public void OpenCommandLog(bool openInExternalEditor = false)
     {
@@ -1194,7 +1288,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             openInExternalEditor,
             _settingsStore,
             cancelAsync: () => Task.Run(() => _siteManager.CancelSiteCommand(_lastCommandLogPath)),
-            isRunning: () => _siteManager.IsSiteCommandRunning(_lastCommandLogPath));
+            isRunning: () => _siteManager.IsSiteCommandRunning(_lastCommandLogPath),
+            chrome: BuildSiteLogChrome(_lastCommandLogPath, _lastCommandLine, () => GetLastCommandCompletion()));
     }
 
     private bool CanCancelRunningCommand() =>
@@ -1226,6 +1321,9 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         ShowCommandLogButton = false;
         _lastCommandLogPath = string.Empty;
         _lastCommandLabel = string.Empty;
+        _lastCommandLine = string.Empty;
+        _lastCommandExitCode = null;
+        _lastCommandDurationMs = 0;
         RaiseCommandStatusChromeChanged();
     }
 
@@ -2270,9 +2368,7 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     public string Label { get; set; } = string.Empty;
     public string Command { get; set; } = string.Empty;
     public string SitePath { get; set; } = string.Empty;
-    public Func<Task<SiteCommandResult>>? RunCommandAsync { get; set; }
     public Action<bool>? OpenLogAction { get; set; }
-    public Action<string, string?>? OnStatusChanged { get; set; }
 
     private bool _isRunning;
     public bool IsRunning
@@ -2283,7 +2379,9 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
             if (SetProperty(ref _isRunning, value))
             {
                 RaisePropertyChanged(nameof(DisplayLabel));
-                ViewLogCommand.RaiseCanExecuteChanged();
+                RaiseChromeChanged();
+                RunCommand.RaiseCanExecuteChanged();
+                RemoveCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -2299,86 +2397,79 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
             if (SetProperty(ref _status, value))
             {
                 RaisePropertyChanged(nameof(HasStatus));
-                RaisePropertyChanged(nameof(HasLog));
-                ViewLogCommand.RaiseCanExecuteChanged();
+                RaiseChromeChanged();
             }
         }
     }
 
     public bool HasStatus => !string.IsNullOrWhiteSpace(_status);
-    public bool HasLog => HasStatus && !string.IsNullOrWhiteSpace(_logPath) && !IsRunning;
+    public bool ShowDismissStatus => HasStatus && !IsRunning;
+    public bool ShowCancelStatus => IsRunning && CanCancelRunning();
+    public bool ShowViewLogButton => !string.IsNullOrWhiteSpace(_logPath);
 
     internal string? _logPath;
+    private int? _lastExitCode;
+    private long _lastDurationMs;
+    public Func<bool>? IsCommandRunning { get; set; }
+    public Action? ChromeChanged { get; set; }
 
     public RelayCommand RunCommand { get; set; } = new(_ => { });
+    public RelayCommand CancelCommand { get; set; } = new(_ => { });
     public RelayCommand RemoveCommand { get; set; } = new(_ => { });
     public RelayCommand ViewLogCommand { get; set; } = new(_ => { });
 
-    public void Execute()
+    public void SetLogPath(string logPath)
     {
-        if (IsRunning) { Stop(); return; }
-        if (RunCommandAsync is null)
-        {
-            OnStatusChanged?.Invoke($"{Label}: ❌ Command runner unavailable", null);
-            return;
-        }
+        _logPath = logPath;
+        RaisePropertyChanged(nameof(ShowViewLogButton));
+        ViewLogCommand.RaiseCanExecuteChanged();
+        RaiseChromeChanged();
+    }
 
-        IsRunning = true;
+    public void SetCommandLine(string commandLine) => Command = commandLine;
+
+    public void SetCompletion(int exitCode, long durationMs)
+    {
+        _lastExitCode = exitCode;
+        _lastDurationMs = durationMs;
+    }
+
+    public (int ExitCode, long DurationMs)? GetCompletion() =>
+        _lastExitCode is int code ? (code, _lastDurationMs) : null;
+
+    public void ClearLogPath()
+    {
         _logPath = null;
-        OnStatusChanged?.Invoke($"{Label}: ⏳ Running…", null);
-
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                var result = await RunCommandAsync().ConfigureAwait(false);
-
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    _logPath = result.LogPath;
-                    _currentProcess = null;
-                    IsRunning = false;
-                    var msg = result.ExitCode == 0
-                        ? $"{Label}: ✅ Completed"
-                        : $"{Label}: ❌ Failed (code {result.ExitCode})";
-                    OnStatusChanged?.Invoke(msg, result.LogPath);
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    _currentProcess = null;
-                    IsRunning = false;
-                    OnStatusChanged?.Invoke($"{Label}: ❌ {ex.Message}", null);
-                });
-            }
-        });
+        _lastExitCode = null;
+        _lastDurationMs = 0;
+        RaisePropertyChanged(nameof(ShowViewLogButton));
+        ViewLogCommand.RaiseCanExecuteChanged();
+        RaiseChromeChanged();
     }
 
-    private System.Diagnostics.Process? _currentProcess;
-
-    private void Stop()
+    public void ClearStatus()
     {
-        try { _currentProcess?.Kill(true); } catch { }
-        _currentProcess = null;
-        IsRunning = false;
-        OnStatusChanged?.Invoke($"{Label}: ⏹ Stopped", null);
+        Status = string.Empty;
+        ClearLogPath();
     }
 
-    public void OpenLog(bool openInExternalEditor = false)
+    public bool CanCancelRunning() =>
+        IsRunning
+        && !string.IsNullOrWhiteSpace(_logPath)
+        && (IsCommandRunning?.Invoke() ?? true);
+
+    public void RaiseChromeChanged()
     {
-        if (OpenLogAction is not null)
-        {
-            OpenLogAction(openInExternalEditor);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_logPath) || !File.Exists(_logPath))
-        {
-            OnStatusChanged?.Invoke($"{Label}: No log file yet", null);
-        }
+        RaisePropertyChanged(nameof(ShowDismissStatus));
+        RaisePropertyChanged(nameof(ShowCancelStatus));
+        RaisePropertyChanged(nameof(ShowViewLogButton));
+        CancelCommand.RaiseCanExecuteChanged();
+        ViewLogCommand.RaiseCanExecuteChanged();
+        ChromeChanged?.Invoke();
     }
+
+    public void OpenLog(bool openInExternalEditor = false) =>
+        OpenLogAction?.Invoke(openInExternalEditor);
 }
 
 public sealed class QuickActionItemViewModel

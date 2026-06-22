@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
 using Stackroot.Core.Node;
@@ -6,10 +7,21 @@ namespace Stackroot.Core.Windows;
 
 public static class SiteProcessEnvironment
 {
+    private static readonly string[] CiEnvironmentKeys =
+    [
+        "CI",
+        "CONTINUOUS_INTEGRATION",
+        "GITHUB_ACTIONS",
+        "TF_BUILD",
+        "GITLAB_CI",
+        "BUILD_BUILDID"
+    ];
+
     public static Dictionary<string, string> Build(
         StackrootPaths paths,
         string? phpVersionId,
-        INpmTooling? npmTooling = null)
+        INpmTooling? npmTooling = null,
+        string? phpBinDirectory = null)
     {
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
@@ -28,16 +40,20 @@ public static class SiteProcessEnvironment
             }
         }
 
-        var prepend = new[]
+        var prepend = new List<string>();
+        if (!string.IsNullOrWhiteSpace(phpBinDirectory) && Directory.Exists(phpBinDirectory))
+        {
+            prepend.Add(phpBinDirectory);
+        }
+
+        prepend.AddRange(new[]
         {
             Path.Combine(paths.RuntimeRoot, "bin"),
             NodePaths.SymlinkPath(paths)
-        }
-        .Where(Directory.Exists)
-        .ToArray();
+        }.Where(Directory.Exists));
 
         var currentPath = env.TryGetValue("PATH", out var pathValue) ? pathValue : string.Empty;
-        env["PATH"] = prepend.Length == 0
+        env["PATH"] = prepend.Count == 0
             ? currentPath
             : string.Join(Path.PathSeparator, prepend) + Path.PathSeparator + currentPath;
 
@@ -50,10 +66,33 @@ public static class SiteProcessEnvironment
             }
         }
 
-        env["CI"] = env.TryGetValue("CI", out var ci) ? ci : "1";
-        env["TERM"] = env.TryGetValue("TERM", out var term) ? term : "dumb";
         env["PYTHONUNBUFFERED"] = "1";
+        if (!env.ContainsKey("PHP_WINDOWS_UTF8"))
+        {
+            env["PHP_WINDOWS_UTF8"] = "1";
+        }
+
+        foreach (var key in CiEnvironmentKeys)
+        {
+            env.Remove(key);
+        }
 
         return env;
+    }
+
+    /// <summary>
+    /// Pipe-only fallback when ConPTY is unavailable or STACKROOT_USE_PIPES=1.
+    /// </summary>
+    public static void ApplyRedirectCaptureDefaults(ProcessStartInfo startInfo)
+    {
+        StripCiEnvironment(startInfo.Environment);
+    }
+
+    public static void StripCiEnvironment(IDictionary<string, string?> env)
+    {
+        foreach (var key in CiEnvironmentKeys)
+        {
+            env.Remove(key);
+        }
     }
 }

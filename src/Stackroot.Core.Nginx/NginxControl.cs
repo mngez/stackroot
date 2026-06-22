@@ -246,15 +246,7 @@ public static class NginxControl
         string cwd,
         IProcessJobManager jobManager)
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = fileName,
-            WorkingDirectory = cwd,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create(fileName, cwd);
 
         foreach (var arg in args)
         {
@@ -278,15 +270,7 @@ public static class NginxControl
         string cwd,
         IProcessJobManager jobManager)
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = fileName,
-            WorkingDirectory = cwd,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create(fileName, cwd);
 
         foreach (var arg in args)
         {
@@ -434,18 +418,9 @@ public static class NginxControl
             return [];
         }
 
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "netstat",
-                Arguments = "-ano -p tcp",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            }
-        };
+        var startInfo = ProcessStreamEncoding.Create("netstat");
+        startInfo.Arguments = "-ano -p tcp";
+        using var process = new Process { StartInfo = startInfo };
 
         if (!process.Start())
         {

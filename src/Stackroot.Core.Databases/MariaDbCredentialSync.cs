@@ -524,14 +524,7 @@ public static class MariaDbCredentialSync
         stdout = string.Empty;
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = mysqlClient,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(mysqlClient)
         };
 
         AddConnectionArguments(process.StartInfo, host, port);
@@ -646,18 +639,7 @@ public static class MariaDbCredentialSync
 
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = mysqlClient,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardInputEncoding = Utf8NoBom,
-                StandardOutputEncoding = Utf8NoBom,
-                StandardErrorEncoding = Utf8NoBom,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(mysqlClient, redirectStdin: true)
         };
 
         AddConnectionArguments(process.StartInfo, host, port);
@@ -781,14 +763,7 @@ public static class MariaDbCredentialSync
 
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = dumpClient,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(dumpClient)
         };
 
         AddConnectionArguments(process.StartInfo, host, port);

@@ -19,7 +19,8 @@ public static class StackrootLogViewer
         SettingsStore settingsStore,
         Window? owner = null,
         Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null)
+        Func<bool>? isRunning = null,
+        SiteLogChrome? chrome = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
         {
@@ -32,7 +33,7 @@ public static class StackrootLogViewer
         }
         else
         {
-            ShowInApp(logPath, title, owner, cancelAsync, isRunning);
+            ShowInApp(logPath, title, owner, cancelAsync, isRunning, chrome);
         }
     }
 
@@ -41,7 +42,8 @@ public static class StackrootLogViewer
         string title,
         Window? owner = null,
         Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null)
+        Func<bool>? isRunning = null,
+        SiteLogChrome? chrome = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
         {
@@ -49,7 +51,7 @@ public static class StackrootLogViewer
         }
 
         owner ??= Application.Current?.MainWindow;
-        var dialogVm = new FileLogDialogViewModel(logPath, title, cancelAsync, isRunning);
+        var dialogVm = new FileLogDialogViewModel(logPath, title, cancelAsync, isRunning, chrome);
         var dialog = new SiteProcessLogDialog
         {
             DataContext = dialogVm,

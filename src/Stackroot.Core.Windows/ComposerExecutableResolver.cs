@@ -76,14 +76,9 @@ public static class ComposerExecutableResolver
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
-            {
-                FileName = "where.exe",
-                Arguments = executable,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            });
+            var startInfo = ProcessStreamEncoding.CreateStdoutOnly("where.exe");
+            startInfo.Arguments = executable;
+            using var process = Process.Start(startInfo);
 
             if (process is null)
             {

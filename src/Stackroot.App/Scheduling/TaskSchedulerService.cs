@@ -1,14 +1,18 @@
 using System.IO;
-using System.Text.Json;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Abstractions.DataDocuments;
 using Stackroot.Core.IO;
+using Stackroot.Core.Sites.Commands;
+using Stackroot.Core.Sites.Persistence;
+using SiteModel = Stackroot.Core.Sites.Models.Site;
 
 namespace Stackroot.App.Scheduling;
 
 public sealed class TaskSchedulerService : IDisposable
 {
     private readonly string _storePath;
+    private readonly SiteCommandRunner _commandRunner;
+    private readonly SiteStore _siteStore;
     private List<ScheduledTaskModel> _tasks = [];
     private readonly HashSet<string> _runningTaskIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly System.Timers.Timer _timer;
@@ -20,10 +24,18 @@ public sealed class TaskSchedulerService : IDisposable
 
     public bool IsStarted => _isStarted;
 
-    public TaskSchedulerService(StackrootPaths paths)
+    public TaskSchedulerService(
+        StackrootPaths paths,
+        SiteCommandRunner commandRunner,
+        SiteStore siteStore)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(commandRunner);
+        ArgumentNullException.ThrowIfNull(siteStore);
+
         _storePath = StackrootPathResolver.ScheduledTasksPath(paths.DataRoot);
+        _commandRunner = commandRunner;
+        _siteStore = siteStore;
 
         Load();
 
@@ -105,69 +117,104 @@ public sealed class TaskSchedulerService : IDisposable
         }
 
         var command = task.Command;
-        var workingDirectory = task.WorkingDirectory;
-        var logPath = task.CaptureLog
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Stackroot", "logs", "scheduled", $"task-{task.Id}.log")
-            : null;
+        var workingDirectory = ResolveWorkingDirectory(task);
+        SiteModel? site = ResolveSite(task.SiteId);
+        var phpVersionId = _commandRunner.ResolvePhpVersionId(site);
+
+        string? persistedLogPath = null;
+        string? tempLogPath = null;
         string? lastRunAt;
         string? lastError;
 
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"{command}\"",
-                WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
-                    ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-                    : workingDirectory,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
+            var logPath = task.CaptureLog
+                ? _commandRunner.CreateScheduledTaskLogFile(task.Id)
+                : CreateDiscardLogFile(task.Id, out tempLogPath);
 
-            var process = System.Diagnostics.Process.Start(psi);
-            if (process is null)
-            {
-                lastRunAt = DateTime.Now.ToString("O");
-                lastError = "Failed to start process.";
-                UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
-                return;
-            }
+            var result = _commandRunner.RunShellCommand(command, workingDirectory, phpVersionId, logPath);
 
-            var stdout = process.StandardOutput.ReadToEnd();
-            var stderr = process.StandardError.ReadToEnd();
-            process.WaitForExit(60_000);
-
-            if (logPath is not null)
+            if (task.CaptureLog)
             {
-                var dir = Path.GetDirectoryName(logPath);
-                if (dir is not null) Directory.CreateDirectory(dir);
-                var runHeader = $"\r\n=== {DateTime.Now:yyyy-MM-dd HH:mm:ss} (exit: {process.ExitCode}) ===\r\n";
-                var body = string.IsNullOrEmpty(stdout) && string.IsNullOrEmpty(stderr)
-                    ? "(no output)"
-                    : $"{stdout}\r\n{stderr}".Trim();
-                File.AppendAllText(logPath, runHeader + body + "\r\n");
+                persistedLogPath = logPath;
             }
 
             lastRunAt = DateTime.Now.ToString("O");
-            lastError = process.ExitCode != 0 ? $"Exit code: {process.ExitCode}" : null;
-            UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
+            lastError = result.ExitCode switch
+            {
+                0 => null,
+                -1 when result.Stderr.Contains("Command cancelled.", StringComparison.Ordinal) => "Command cancelled.",
+                _ => $"Exit code: {result.ExitCode}"
+            };
+            UpdateTaskExecutionResult(taskId, lastRunAt, persistedLogPath, lastError);
         }
         catch (Exception ex)
         {
             lastRunAt = DateTime.Now.ToString("O");
             lastError = ex.Message;
-            UpdateTaskExecutionResult(taskId, lastRunAt, logPath, lastError);
+            UpdateTaskExecutionResult(taskId, lastRunAt, persistedLogPath, lastError);
         }
         finally
         {
+            if (tempLogPath is not null)
+            {
+                TryDeleteFile(tempLogPath);
+            }
+
             lock (_lock)
             {
                 _runningTaskIds.Remove(taskId);
             }
+        }
+    }
+
+    private static string ResolveWorkingDirectory(ScheduledTaskModel task)
+    {
+        if (!string.IsNullOrWhiteSpace(task.WorkingDirectory) && Directory.Exists(task.WorkingDirectory))
+        {
+            return task.WorkingDirectory;
+        }
+
+        return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    }
+
+    private SiteModel? ResolveSite(string? siteId)
+    {
+        if (string.IsNullOrWhiteSpace(siteId))
+        {
+            return null;
+        }
+
+        return _siteStore.GetById(siteId);
+    }
+
+    private static string CreateDiscardLogFile(string taskId, out string tempLogPath)
+    {
+        tempLogPath = Path.Combine(
+            Path.GetTempPath(),
+            $"stackroot-scheduled-{SanitizeTaskId(taskId)}-{Guid.NewGuid():N}.log");
+        File.WriteAllBytes(tempLogPath, Array.Empty<byte>());
+        return tempLogPath;
+    }
+
+    private static string SanitizeTaskId(string taskId)
+    {
+        var slug = new string(taskId.Where(static c => char.IsLetterOrDigit(c) || c is '-' or '_').ToArray());
+        return string.IsNullOrWhiteSpace(slug) ? "task" : slug.Length <= 32 ? slug : slug[..32];
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Best effort.
         }
     }
 
@@ -186,7 +233,7 @@ public sealed class TaskSchedulerService : IDisposable
             }
 
             var json = File.ReadAllText(_storePath);
-            var document = JsonSerializer.Deserialize<ScheduledTasksDocument>(json, JsonSerializerConfig.Default);
+            var document = System.Text.Json.JsonSerializer.Deserialize<ScheduledTasksDocument>(json, JsonSerializerConfig.Default);
             lock (_lock)
             {
                 _tasks = document?.Tasks?.Select(ToModel).ToList() ?? [];
@@ -215,7 +262,7 @@ public sealed class TaskSchedulerService : IDisposable
                 };
             }
 
-            var json = JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
+            var json = System.Text.Json.JsonSerializer.Serialize(document, JsonSerializerConfig.Default);
             var tempPath = $"{_storePath}.tmp";
             File.WriteAllText(tempPath, json);
             if (File.Exists(_storePath))

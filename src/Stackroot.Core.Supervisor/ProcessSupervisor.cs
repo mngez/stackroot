@@ -185,15 +185,7 @@ public sealed class ProcessSupervisor : IDisposable
         ReleaseOrphanListeners(target);
 
         var commandLine = $"{target.Executable} {string.Join(' ', target.Arguments)}".Trim();
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = target.Executable,
-            WorkingDirectory = target.WorkingDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create(target.Executable, target.WorkingDirectory);
 
         foreach (var argument in target.Arguments)
         {
@@ -207,6 +199,8 @@ public sealed class ProcessSupervisor : IDisposable
                 startInfo.Environment[pair.Key] = pair.Value;
             }
         }
+
+        SiteProcessEnvironment.StripCiEnvironment(startInfo.Environment);
 
         var process = new Process
         {

@@ -544,16 +544,8 @@ public sealed class NodeManager
         CancellationToken cancellationToken,
         IReadOnlyDictionary<string, string>? environment = null)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = args,
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create(fileName, workingDirectory);
+        psi.Arguments = args;
 
         if (environment is not null)
         {

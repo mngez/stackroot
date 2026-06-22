@@ -13,17 +13,7 @@ internal static class SiteInstallerProcessRunner
         Action<InstallerMessage> onMessage,
         CancellationToken cancel)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = fileName,
-            WorkingDirectory = workingDir,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
-        };
+        var psi = ProcessStreamEncoding.Create(fileName, workingDir);
 
         foreach (var arg in args)
         {

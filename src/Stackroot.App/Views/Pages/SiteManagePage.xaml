@@ -378,20 +378,36 @@
                                                 Background="#121A26"
                                                 BorderBrush="{StaticResource StackrootBorderBrush}"
                                                 BorderThickness="1" CornerRadius="8">
-                                            <DockPanel>
-                                                <Button DockPanel.Dock="Right" Width="24" Height="24" Padding="0"
+                                            <DockPanel LastChildFill="True">
+                                                <Button DockPanel.Dock="Right"
+                                                        Width="28"
+                                                        Height="28"
+                                                        Padding="0"
                                                         Margin="8,0,0,0"
                                                         ToolTip="Dismiss"
                                                         Style="{StaticResource StackrootIconButtonStyle}"
                                                         Command="{Binding DataContext.DismissCustomStatusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}">
-                                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="12" Text="&#xE711;" />
+                                                        CommandParameter="{Binding}"
+                                                        Visibility="{Binding ShowDismissStatus, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                                               FontSize="12"
+                                                               Text="&#xE711;" />
                                                 </Button>
-                                                <Button DockPanel.Dock="Right" Margin="8,0,0,0" Padding="8,4"
-                                                        FontSize="12" Content="View log"
+                                                <Button DockPanel.Dock="Right"
+                                                        Margin="8,0,0,0"
+                                                        Padding="8,4"
+                                                        FontSize="12"
+                                                        Content="Cancel"
+                                                        Command="{Binding CancelCommand}"
+                                                        Visibility="{Binding ShowCancelStatus, Converter={StaticResource BoolToVis}}" />
+                                                <Button DockPanel.Dock="Right"
+                                                        Margin="8,0,0,0"
+                                                        Padding="8,4"
+                                                        FontSize="12"
+                                                        Content="View log"
                                                         ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
                                                         PreviewMouseLeftButtonDown="OnCustomCommandViewLogClick"
-                                                        Visibility="{Binding HasLog, Converter={StaticResource BoolToVis}}" />
+                                                        Visibility="{Binding ShowViewLogButton, Converter={StaticResource BoolToVis}}" />
                                                 <TextBlock VerticalAlignment="Center"
                                                            Foreground="{StaticResource StackrootTextMutedBrush}"
                                                            FontSize="12"

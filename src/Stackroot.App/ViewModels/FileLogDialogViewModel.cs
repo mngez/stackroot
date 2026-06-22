@@ -1,6 +1,8 @@
 using System.IO;
+using System.Text;
 using System.Windows.Threading;
 using Stackroot.App.Commands;
+using Stackroot.App.Helpers;
 
 namespace Stackroot.App.ViewModels;
 
@@ -10,8 +12,11 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _timer;
     private readonly Func<Task>? _cancelAsync;
     private readonly Func<bool>? _isRunning;
+    private readonly Func<(int ExitCode, long DurationMs)?>? _getCompletion;
     private bool _disposed;
     private string _title = "Log";
+    private string _commandLine = string.Empty;
+    private string _logFooterLine = string.Empty;
     private string _logContent = "(no output yet)";
     private string _statusMessage = string.Empty;
     private bool _isLoading;
@@ -22,12 +27,15 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         string logPath,
         string title,
         Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null)
+        Func<bool>? isRunning = null,
+        SiteLogChrome? chrome = null)
     {
         _logPath = logPath;
         _cancelAsync = cancelAsync;
         _isRunning = isRunning;
+        _getCompletion = chrome?.GetCompletion;
         Title = title;
+        CommandLine = chrome?.CommandLine ?? string.Empty;
         _canCancel = isRunning?.Invoke() == true;
 
         _timer = new DispatcherTimer
@@ -52,6 +60,44 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         get => _title;
         private set => SetProperty(ref _title, value);
     }
+
+    public string CommandLine
+    {
+        get => _commandLine;
+        private set
+        {
+            if (SetProperty(ref _commandLine, value))
+            {
+                RaisePropertyChanged(nameof(LogHeaderLine));
+                RaisePropertyChanged(nameof(ShowLogHeader));
+            }
+        }
+    }
+
+    public string LogHeaderLine =>
+        string.IsNullOrWhiteSpace(CommandLine) ? string.Empty : $"# {CommandLine}";
+
+    public bool ShowLogHeader => !string.IsNullOrWhiteSpace(LogHeaderLine);
+
+    public string LogFooterLine
+    {
+        get => _logFooterLine;
+        private set
+        {
+            if (SetProperty(ref _logFooterLine, value))
+            {
+                RaisePropertyChanged(nameof(ShowLogFooter));
+            }
+        }
+    }
+
+    public bool ShowLogFooter => !string.IsNullOrWhiteSpace(LogFooterLine);
+
+    public string ProcessName => string.Empty;
+
+    public string RunningLabel => _isRunning?.Invoke() == true ? "Running" : "Stopped";
+
+    public string? PidLabel => null;
 
     public string LogContent
     {
@@ -169,7 +215,10 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             if (_isRunning is not null)
             {
                 CanCancel = _isRunning();
+                RaisePropertyChanged(nameof(RunningLabel));
             }
+
+            UpdateLogFooter();
         }
         catch (Exception ex)
         {
@@ -199,7 +248,7 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         const int maxBytes = 512 * 1024;
         var start = stream.Length > maxBytes ? stream.Length - maxBytes : 0;
         stream.Seek(start, SeekOrigin.Begin);
-        using var reader = new StreamReader(stream);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
         var content = reader.ReadToEnd();
         if (start > 0)
         {
@@ -211,6 +260,20 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         }
 
         return content;
+    }
+
+    private void UpdateLogFooter()
+    {
+        if (_isRunning?.Invoke() == true)
+        {
+            LogFooterLine = "# running…";
+            return;
+        }
+
+        var completion = _getCompletion?.Invoke();
+        LogFooterLine = completion is { } result
+            ? $"# exit {result.ExitCode} · {result.DurationMs}ms"
+            : string.Empty;
     }
 
     public void Dispose()

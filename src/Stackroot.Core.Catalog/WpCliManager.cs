@@ -72,15 +72,7 @@ public sealed class WpCliManager
     {
         var phar = await EnsureInstalledAsync(cancel).ConfigureAwait(false);
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = phpExe,
-            WorkingDirectory = workingDir,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create(phpExe, workingDir);
 
         psi.ArgumentList.Add(phar);
         foreach (var arg in SplitArgs(arguments))

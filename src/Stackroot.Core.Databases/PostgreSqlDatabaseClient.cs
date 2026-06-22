@@ -58,14 +58,7 @@ public static class PostgreSqlDatabaseClient
 
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = pgDump,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(pgDump)
         };
         process.StartInfo.Environment["PGPASSWORD"] = settings.Databases.Postgresql.Password;
         process.StartInfo.ArgumentList.Add("-h");
@@ -114,14 +107,7 @@ public static class PostgreSqlDatabaseClient
         // Import
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = psqlPath,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(psqlPath)
         };
         process.StartInfo.Environment["PGPASSWORD"] = settings.Databases.Postgresql.Password;
         process.StartInfo.ArgumentList.Add("-h");
@@ -174,14 +160,7 @@ public static class PostgreSqlDatabaseClient
     {
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = psqlPath,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(psqlPath)
         };
         process.StartInfo.Environment["PGPASSWORD"] = password;
         process.StartInfo.ArgumentList.Add("-h");

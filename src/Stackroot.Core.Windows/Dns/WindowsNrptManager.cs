@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Stackroot.Core.Abstractions;
 
 namespace Stackroot.Core.Windows.Dns;
 
@@ -75,15 +76,8 @@ public sealed class WindowsNrptManager
     {
         error = null;
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
-        var psi = new ProcessStartInfo
-        {
-            FileName = "powershell.exe",
-            Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create("powershell.exe");
+        psi.Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}";
 
         if (elevate)
         {

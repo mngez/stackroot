@@ -3,5 +3,9 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- NU1900: NuGet audit feed unreachable (offline/VPN); real advisories still warn as NU1901+. -->
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
+    <!-- Do not keep MSBuild/Roslyn worker processes alive after build (locks bin/ on Windows). -->
+    <NodeReuse>false</NodeReuse>
   </PropertyGroup>
 </Project>

@@ -17,7 +17,6 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -30,7 +29,18 @@
                            Text="{Binding Title, FallbackValue=Log}" />
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="{Binding ProcessName}" />
+                           Text="{Binding ProcessName}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ProcessName}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
@@ -46,39 +56,58 @@
             </StackPanel>
         </DockPanel>
 
-        <TextBlock Grid.Row="1"
-                   Margin="0,10,0,0"
-                   FontFamily="Consolas"
-                   FontSize="12"
-                   Foreground="{StaticResource StackrootTextMutedBrush}"
-                   Text="{Binding CommandLine}"
-                   TextWrapping="Wrap" />
-
-        <Border Grid.Row="2"
+        <Border Grid.Row="1"
                 Margin="0,10,0,0"
                 Padding="10"
                 Background="#1E1E1E"
                 BorderBrush="{StaticResource StackrootBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="6">
-            <RichTextBox x:Name="LogViewer"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         FontFamily="Consolas"
-                         FontSize="12"
-                         Foreground="#D4D4D4"
-                         IsReadOnly="True"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Margin="0,0,0,8"
+                           FontFamily="Consolas"
+                           FontSize="12"
+                           Foreground="#9DA5B4"
+                           Text="{Binding LogHeaderLine}"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding ShowLogHeader, Converter={StaticResource BoolToVis}}" />
+
+                <RichTextBox x:Name="LogViewer"
+                             Grid.Row="1"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             Foreground="#D4D4D4"
+                             IsReadOnly="True"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto" />
+
+                <TextBlock Grid.Row="2"
+                           Margin="0,8,0,0"
+                           FontFamily="Consolas"
+                           FontSize="12"
+                           Foreground="#9DA5B4"
+                           Text="{Binding LogFooterLine}"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding ShowLogFooter, Converter={StaticResource BoolToVis}}" />
+            </Grid>
         </Border>
 
-        <TextBlock Grid.Row="3"
+        <TextBlock Grid.Row="2"
                    Margin="0,8,0,0"
                    Foreground="{StaticResource StackrootDangerBrush}"
                    Text="{Binding StatusMessage}"
                    TextWrapping="Wrap" />
 
-        <DockPanel Grid.Row="4" Margin="0,12,0,0" LastChildFill="False">
+        <DockPanel Grid.Row="3" Margin="0,12,0,0" LastChildFill="False">
             <CheckBox DockPanel.Dock="Left"
                       VerticalAlignment="Center"
                       Content="Live updates"

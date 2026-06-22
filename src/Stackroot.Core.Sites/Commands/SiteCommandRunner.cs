@@ -1,8 +1,8 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
-using Stackroot.Core.Node;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Sites.Models;
 using Stackroot.Core.Windows;
@@ -40,40 +40,20 @@ public sealed class SiteCommandRunner
         SiteModel site,
         string commandId,
         string commandLine,
-        Action<string>? onLogCreated = null)
+        Action<SiteCommandLogStarted>? onLogCreated = null)
     {
         ArgumentNullException.ThrowIfNull(site);
         ArgumentException.ThrowIfNullOrWhiteSpace(commandId);
         ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
 
-        if (!Directory.Exists(site.Path))
-        {
-            throw new DirectoryNotFoundException($"Site folder not found: {site.Path}");
-        }
-
-        var trimmedCommand = commandLine.Trim();
-        var logPath = CreateCustomCommandLogFile(site.Id, commandId, trimmedCommand);
-        onLogCreated?.Invoke(logPath);
-        var versionId = ResolveSitePhpVersionId(site);
-        var environment = BuildSiteCommandEnvironment(versionId);
-        var startedAt = Stopwatch.StartNew();
-        var result = RunShellProcess(site.Path, trimmedCommand, environment, logPath);
-        startedAt.Stop();
-
-        AppendLogFooter(logPath, result.ExitCode, startedAt.ElapsedMilliseconds);
-
-        return new SiteCommandResult
-        {
-            ExitCode = result.ExitCode,
-            Stdout = result.Output,
-            Stderr = result.Error,
-            DurationMs = startedAt.ElapsedMilliseconds,
-            CommandLine = trimmedCommand,
-            LogPath = logPath
-        };
+        return RunSiteShellCommand(
+            site,
+            commandLine.Trim(),
+            $"custom-{SanitizeLogSlug(commandId)}",
+            onLogCreated);
     }
 
-    public SiteCommandResult RunQuickAction(SiteModel site, string actionId, Action<string>? onLogCreated = null)
+    public SiteCommandResult RunQuickAction(SiteModel site, string actionId, Action<SiteCommandLogStarted>? onLogCreated = null)
     {
         ArgumentNullException.ThrowIfNull(site);
         ArgumentException.ThrowIfNullOrWhiteSpace(actionId);
@@ -81,25 +61,49 @@ public sealed class SiteCommandRunner
         var action = SiteQuickActionPresets.Get(actionId)
             ?? throw new InvalidOperationException($"Unknown site action: {actionId}");
 
+        var commandLine = BuildQuickActionCommandLine(site, action.Runtime, action.Argv);
+        return RunSiteShellCommand(site, commandLine, action.Id, onLogCreated);
+    }
+
+    private SiteCommandResult RunSiteShellCommand(
+        SiteModel site,
+        string commandLine,
+        string logSlug,
+        Action<SiteCommandLogStarted>? onLogCreated)
+    {
         if (!Directory.Exists(site.Path))
         {
             throw new DirectoryNotFoundException($"Site folder not found: {site.Path}");
         }
 
-        var resolved = ResolveCommand(site, action.Runtime, action.Argv);
-        var commandLine = BuildCommandLine(resolved.Executable, resolved.Arguments);
-        var logPath = CreateLogFile(site.Id, action.Id, commandLine);
-        onLogCreated?.Invoke(logPath);
-        var startedAt = Stopwatch.StartNew();
-        var result = RunProcess(
-            resolved.Executable,
-            resolved.Arguments,
-            resolved.WorkingDirectory,
-            resolved.Environment,
-            logPath);
-        startedAt.Stop();
+        var logPath = CreateSiteCommandLogFile(site.Id, logSlug);
+        onLogCreated?.Invoke(new SiteCommandLogStarted(logPath, commandLine));
+        return RunShellCommand(commandLine, site.Path, ResolveSitePhpVersionId(site), logPath);
+    }
 
-        AppendLogFooter(logPath, result.ExitCode, startedAt.ElapsedMilliseconds);
+    /// <summary>
+    /// Runs a shell command the same way as site custom commands: cmd.exe /c, site env, ConPTY capture.
+    /// </summary>
+    public SiteCommandResult RunShellCommand(
+        string commandLine,
+        string workingDirectory,
+        string? phpVersionId,
+        string logPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(logPath);
+
+        if (!Directory.Exists(workingDirectory))
+        {
+            throw new DirectoryNotFoundException($"Working directory not found: {workingDirectory}");
+        }
+
+        var trimmed = commandLine.Trim();
+        var environment = BuildSiteCommandEnvironment(phpVersionId);
+        var startedAt = Stopwatch.StartNew();
+        var result = RunShellProcess(workingDirectory, trimmed, environment, logPath);
+        startedAt.Stop();
 
         return new SiteCommandResult
         {
@@ -107,23 +111,47 @@ public sealed class SiteCommandRunner
             Stdout = result.Output,
             Stderr = result.Error,
             DurationMs = startedAt.ElapsedMilliseconds,
-            CommandLine = commandLine,
+            CommandLine = trimmed,
             LogPath = logPath
         };
     }
 
-    private ResolvedCommand ResolveCommand(SiteModel site, SiteCommandRuntime runtime, IReadOnlyList<string> argv)
+    public string? ResolvePhpVersionId(SiteModel? site) =>
+        site is null ? null : ResolveSitePhpVersionId(site);
+
+    public string CreateScheduledTaskLogFile(string taskId)
     {
-        return runtime switch
-        {
-            SiteCommandRuntime.Php => ResolvePhpCommand(site, argv),
-            SiteCommandRuntime.Composer => ResolveComposerCommand(site, argv),
-            SiteCommandRuntime.Npm => ResolveNpmCommand(site, argv),
-            _ => throw new InvalidOperationException($"Unsupported runtime for quick action: {runtime}")
-        };
+        var dir = Path.Combine(_paths.LogsRoot, "scheduled");
+        Directory.CreateDirectory(dir);
+        var stamp = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss-fffZ");
+        var path = Path.Combine(dir, $"task-{SanitizeLogSlug(taskId)}-{stamp}.log");
+        File.WriteAllBytes(path, Array.Empty<byte>());
+        return path;
     }
 
-    private ResolvedCommand ResolvePhpCommand(SiteModel site, IReadOnlyList<string> argv)
+    private string BuildQuickActionCommandLine(SiteModel site, SiteCommandRuntime runtime, IReadOnlyList<string> argv) =>
+        runtime switch
+        {
+            SiteCommandRuntime.Php => BuildPhpShellCommand(site, argv),
+            SiteCommandRuntime.Composer => BuildComposerShellCommand(site, argv),
+            SiteCommandRuntime.Npm => JoinShellCommand("npm", argv),
+            _ => throw new InvalidOperationException($"Unsupported runtime for quick action: {runtime}")
+        };
+
+    private string BuildPhpShellCommand(SiteModel site, IReadOnlyList<string> argv)
+    {
+        var versionId = ResolveSitePhpVersionId(site);
+        if (string.IsNullOrWhiteSpace(versionId))
+        {
+            throw new InvalidOperationException("No PHP version is selected for this site.");
+        }
+
+        _ = StackrootPhpCommands.ResolvePhpExecutable(_registry, versionId);
+        var args = StackrootPhpCommands.BuildArtisanArguments(site.Path, argv);
+        return JoinShellCommand("php", args);
+    }
+
+    private string BuildComposerShellCommand(SiteModel site, IReadOnlyList<string> argv)
     {
         var versionId = ResolveSitePhpVersionId(site);
         if (string.IsNullOrWhiteSpace(versionId))
@@ -132,39 +160,18 @@ public sealed class SiteCommandRunner
         }
 
         var phpExe = StackrootPhpCommands.ResolvePhpExecutable(_registry, versionId);
-        var args = StackrootPhpCommands.BuildArtisanArguments(site.Path, argv);
-        var environment = BuildSiteCommandEnvironment(versionId);
-
-        return new ResolvedCommand(phpExe, args, site.Path, environment);
-    }
-
-    private ResolvedCommand ResolveComposerCommand(SiteModel site, IReadOnlyList<string> argv)
-    {
-        var versionId = ResolveSitePhpVersionId(site);
-        var phpExe = StackrootPhpCommands.ResolvePhpExecutable(_registry, versionId);
         var invocation = ComposerExecutableResolver.Resolve(_registry, phpExe)
             ?? throw new InvalidOperationException(
                 "Composer is not available. Install Composer from Tools, or add composer to your system PATH.");
 
-        var args = new List<string>(invocation.PrefixArguments);
-        args.AddRange(argv);
-        var environment = BuildSiteCommandEnvironment(versionId);
-
-        return new ResolvedCommand(invocation.FileName, args, site.Path, environment);
-    }
-
-    private ResolvedCommand ResolveNpmCommand(SiteModel site, IReadOnlyList<string> argv)
-    {
-        var npm = ResolveFirstExisting(
-            Path.Combine(NodePaths.SymlinkPath(_paths), "npm.cmd"),
-            Path.Combine(NodePaths.SymlinkPath(_paths), "npm"),
-            Path.Combine(_paths.RuntimeRoot, "bin", "npm.cmd"));
-        if (npm is null)
+        if (invocation.PrefixArguments.Count > 0)
         {
-            throw new InvalidOperationException("npm is unavailable. Activate a Node version first.");
+            var args = new List<string>(invocation.PrefixArguments);
+            args.AddRange(argv);
+            return JoinShellCommand("php", args);
         }
 
-        return new ResolvedCommand(npm, argv.ToList(), site.Path, BuildSiteCommandEnvironment(null));
+        return JoinShellCommand("composer", argv);
     }
 
     private string ResolveSitePhpVersionId(SiteModel site)
@@ -175,33 +182,23 @@ public sealed class SiteCommandRunner
             : site.PhpVersionId;
     }
 
-    private Dictionary<string, string> BuildSiteCommandEnvironment(string? phpVersionId) =>
-        SiteProcessEnvironment.Build(_paths, phpVersionId, _npmTooling);
-
-    private ProcessResult RunProcess(
-        string executable,
-        IReadOnlyList<string> args,
-        string cwd,
-        IReadOnlyDictionary<string, string> environment,
-        string logPath)
+    private Dictionary<string, string> BuildSiteCommandEnvironment(string? phpVersionId)
     {
-        var startInfo = new ProcessStartInfo
+        string? phpBinDirectory = null;
+        if (!string.IsNullOrWhiteSpace(phpVersionId))
         {
-            FileName = executable,
-            WorkingDirectory = cwd,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-
-        foreach (var arg in args)
-        {
-            startInfo.ArgumentList.Add(arg);
+            try
+            {
+                var phpExe = StackrootPhpCommands.ResolvePhpExecutable(_registry, phpVersionId);
+                phpBinDirectory = Path.GetDirectoryName(phpExe);
+            }
+            catch (InvalidOperationException)
+            {
+                // PHP not installed — the shell command will fail with a clear error.
+            }
         }
 
-        ApplyEnvironment(startInfo, environment);
-        return RunCapturedProcess(startInfo, logPath, $"Failed to start command: {executable}");
+        return SiteProcessEnvironment.Build(_paths, phpVersionId, _npmTooling, phpBinDirectory);
     }
 
     private ProcessResult RunShellProcess(
@@ -210,22 +207,14 @@ public sealed class SiteCommandRunner
         IReadOnlyDictionary<string, string> environment,
         string logPath)
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            WorkingDirectory = cwd,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create("cmd.exe", cwd);
         startInfo.ArgumentList.Add("/d");
         startInfo.ArgumentList.Add("/s");
         startInfo.ArgumentList.Add("/c");
         startInfo.ArgumentList.Add(commandLine);
 
         ApplyEnvironment(startInfo, environment);
-        return RunCapturedProcess(startInfo, logPath, "Failed to start custom command.");
+        return RunCapturedProcess(startInfo, logPath, "Failed to start site command.");
     }
 
     private static void ApplyEnvironment(ProcessStartInfo startInfo, IReadOnlyDictionary<string, string> environment)
@@ -241,6 +230,41 @@ public sealed class SiteCommandRunner
         string logPath,
         string startFailureMessage)
     {
+        if (PseudoConsoleCapture.IsSupported && !PseudoConsoleCapture.PreferPipes)
+        {
+            try
+            {
+                using var logWriter = new StreamWriter(logPath, append: false, Encoding.UTF8) { AutoFlush = true };
+                var captured = PseudoConsoleCapture.Run(
+                    startInfo,
+                    logWriter,
+                    process => _runRegistry.Register(logPath, process));
+                try
+                {
+                    return new ProcessResult(captured.ExitCode, captured.Output, captured.Error);
+                }
+                finally
+                {
+                    _runRegistry.Complete(logPath);
+                }
+            }
+            catch (Exception ex) when (ex is Win32Exception or NotSupportedException or IOException)
+            {
+                // Fall back to pipe capture with a fresh log file.
+            }
+        }
+
+        return RunPipeCapturedProcess(startInfo, logPath, startFailureMessage);
+    }
+
+    private ProcessResult RunPipeCapturedProcess(
+        ProcessStartInfo startInfo,
+        string logPath,
+        string startFailureMessage)
+    {
+        SiteProcessEnvironment.ApplyRedirectCaptureDefaults(startInfo);
+
+        using var logWriter = new StreamWriter(logPath, append: false, Encoding.UTF8) { AutoFlush = true };
         using var process = new Process { StartInfo = startInfo };
         if (!process.Start())
         {
@@ -250,7 +274,6 @@ public sealed class SiteCommandRunner
         var cancelToken = _runRegistry.Register(logPath, process);
         try
         {
-            using var logWriter = new StreamWriter(logPath, append: true, Encoding.UTF8) { AutoFlush = true };
             var stdoutBuilder = new StringBuilder();
             var stderrBuilder = new StringBuilder();
 
@@ -263,10 +286,9 @@ public sealed class SiteCommandRunner
                 {
                     TryKillProcessTree(process);
                     Task.WaitAll(stdoutTask, stderrTask);
-                    logWriter.WriteLine("# Command cancelled.");
                     return new ProcessResult(
                         -1,
-                        stdoutBuilder.ToString().Trim(),
+                        stdoutBuilder.ToString(),
                         TrimWithMessage(stderrBuilder, "Command cancelled."));
                 }
 
@@ -274,7 +296,16 @@ public sealed class SiteCommandRunner
             }
 
             Task.WaitAll(stdoutTask, stderrTask);
-            return new ProcessResult(process.ExitCode, stdoutBuilder.ToString().Trim(), stderrBuilder.ToString().Trim());
+
+            if (cancelToken.IsCancellationRequested)
+            {
+                return new ProcessResult(
+                    -1,
+                    stdoutBuilder.ToString(),
+                    TrimWithMessage(stderrBuilder, "Command cancelled."));
+            }
+
+            return new ProcessResult(process.ExitCode, stdoutBuilder.ToString(), stderrBuilder.ToString());
         }
         finally
         {
@@ -305,39 +336,28 @@ public sealed class SiteCommandRunner
 
     private static void PumpStream(StreamReader reader, StreamWriter logWriter, StringBuilder capture)
     {
+        var buffer = new char[4096];
         while (true)
         {
-            var line = reader.ReadLine();
-            if (line is null)
+            var read = reader.Read(buffer, 0, buffer.Length);
+            if (read <= 0)
             {
                 break;
             }
 
-            capture.AppendLine(line);
-            logWriter.WriteLine(line);
+            var chunk = new string(buffer, 0, read);
+            capture.Append(chunk);
+            logWriter.Write(chunk);
         }
     }
 
-    private string CreateLogFile(string siteId, string actionId, string commandLine) =>
-        CreateSiteCommandLogFile(siteId, actionId, commandLine);
-
-    private string CreateCustomCommandLogFile(string siteId, string commandId, string commandLine) =>
-        CreateSiteCommandLogFile(siteId, $"custom-{SanitizeLogSlug(commandId)}", commandLine);
-
-    private string CreateSiteCommandLogFile(string siteId, string slug, string commandLine)
+    private string CreateSiteCommandLogFile(string siteId, string slug)
     {
         var dir = Path.Combine(_paths.LogsRoot, "sites", siteId);
         Directory.CreateDirectory(dir);
         var stamp = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss-fffZ");
         var path = Path.Combine(dir, $"{slug}-{stamp}.log");
-        File.WriteAllText(
-            path,
-            new StringBuilder()
-                .AppendLine($"# {commandLine}")
-                .AppendLine("# running…")
-                .AppendLine()
-                .ToString(),
-            Encoding.UTF8);
+        File.WriteAllBytes(path, Array.Empty<byte>());
         return path;
     }
 
@@ -352,28 +372,32 @@ public sealed class SiteCommandRunner
         return slug.Length <= 32 ? slug : slug[..32];
     }
 
-    private static void AppendLogFooter(string logPath, int exitCode, long durationMs)
+    private static string JoinShellCommand(string executable, IReadOnlyList<string> arguments)
     {
-        File.AppendAllText(
-            logPath,
-            $"{Environment.NewLine}# exit {exitCode} · {durationMs}ms{Environment.NewLine}",
-            Encoding.UTF8);
+        var builder = new StringBuilder(executable);
+        foreach (var argument in arguments)
+        {
+            builder.Append(' ');
+            builder.Append(QuoteCmdArgument(argument));
+        }
+
+        return builder.ToString();
     }
 
-    private static string BuildCommandLine(string executable, IReadOnlyList<string> arguments)
+    private static string QuoteCmdArgument(string value)
     {
-        return $"{executable} {string.Join(' ', arguments)}".Trim();
+        if (string.IsNullOrEmpty(value))
+        {
+            return "\"\"";
+        }
+
+        if (value.IndexOfAny([' ', '\t', '"', '&', '|', '<', '>']) < 0)
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\\\"")}\"";
     }
 
-    private static string? ResolveFirstExisting(params string[] candidates)
-    {
-        return candidates.FirstOrDefault(File.Exists);
-    }
-
-    private sealed record ResolvedCommand(
-        string Executable,
-        IReadOnlyList<string> Arguments,
-        string WorkingDirectory,
-        IReadOnlyDictionary<string, string> Environment);
     private sealed record ProcessResult(int ExitCode, string Output, string Error);
 }

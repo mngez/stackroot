@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title="Scheduled Task"
-        Width="560" Height="580"
+        Width="560" Height="630"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource StackrootWindowBrush}"

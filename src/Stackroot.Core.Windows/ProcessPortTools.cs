@@ -181,18 +181,9 @@ public static class ProcessPortTools
     {
         DiagnosticsCounters.RecordNetstatInvocation();
 
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "netstat",
-                Arguments = "-ano",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            }
-        };
+        var startInfo = ProcessStreamEncoding.Create("netstat");
+        startInfo.Arguments = "-ano";
+        using var process = new Process { StartInfo = startInfo };
 
         if (!process.Start())
         {

@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.Engine", "src\Sta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.Cli", "src\Stackroot.Cli\Stackroot.Cli.csproj", "{CAC3D573-AE25-480A-96A3-9D9CB531063B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.App.Tests", "tests\Stackroot.App.Tests\Stackroot.App.Tests.csproj", "{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,10 @@ Global
 		{CAC3D573-AE25-480A-96A3-9D9CB531063B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAC3D573-AE25-480A-96A3-9D9CB531063B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAC3D573-AE25-480A-96A3-9D9CB531063B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -135,5 +141,6 @@ Global
 		{A1C2E3F4-B5D6-7890-ABCD-EF9876543210} = {D1E2F3A4-B5C6-7890-DEF1-234567890ABC}
 		{84D218F6-F305-4F0F-AC11-09582B908CCF} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 		{CAC3D573-AE25-480A-96A3-9D9CB531063B} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
+		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5} = {D1E2F3A4-B5C6-7890-DEF1-234567890ABC}
 	EndGlobalSection
 EndGlobal

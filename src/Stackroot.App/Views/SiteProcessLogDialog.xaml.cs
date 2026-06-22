@@ -17,6 +17,9 @@ public partial class SiteProcessLogDialog : Window
     public SiteProcessLogDialog()
     {
         InitializeComponent();
+        var (width, height) = LogDialogBoundsStore.Load();
+        Width = width;
+        Height = height;
         DataContextChanged += OnDataContextChanged;
         Loaded += (_, _) => ApplyLogContent();
         Closing += OnClosing;
@@ -25,6 +28,11 @@ public partial class SiteProcessLogDialog : Window
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         Interlocked.Increment(ref _applyGeneration);
+        if (WindowState == WindowState.Normal)
+        {
+            LogDialogBoundsStore.Save(Width, Height);
+        }
+
         if (DataContext is IDisposable disposable)
         {
             disposable.Dispose();
@@ -75,6 +83,7 @@ public partial class SiteProcessLogDialog : Window
         var previous = _lastAppliedContent;
         var canAppend =
             previous is not null
+            && !LogColorizer.ContainsAnsi(content)
             && content.StartsWith(previous, StringComparison.Ordinal)
             && content.Length > previous.Length
             && content.Length - previous.Length <= MaxIncrementalDeltaChars

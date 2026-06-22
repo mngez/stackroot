@@ -208,16 +208,8 @@ public sealed class NpmPrefixPackageInstaller
         string workingDirectory,
         CancellationToken cancellationToken)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/d /s /c \"\"{npmCommand}\" {arguments}\"",
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create("cmd.exe", workingDirectory);
+        psi.Arguments = $"/d /s /c \"\"{npmCommand}\" {arguments}\"";
 
         foreach (var pair in _npmTooling.BuildCommandEnvironment())
         {
@@ -368,19 +360,9 @@ public sealed class LaravelInstaller
         Action<string> onLine,
         CancellationToken cancellationToken)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = phpExePath,
-            Arguments =
-                $"\"{pharPath}\" global require {installerSpec} --no-interaction --no-ansi --with-all-dependencies",
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
-        };
+        var psi = ProcessStreamEncoding.Create(phpExePath, workingDirectory);
+        psi.Arguments =
+            $"\"{pharPath}\" global require {installerSpec} --no-interaction --no-ansi --with-all-dependencies";
         configure(psi);
 
         using var process = new Process { StartInfo = psi };

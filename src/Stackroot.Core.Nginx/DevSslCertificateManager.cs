@@ -306,14 +306,7 @@ public static class DevSslCertificateManager
 
     private static ProcessResult RunProcess(string fileName, IReadOnlyList<string> args)
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = fileName,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var startInfo = ProcessStreamEncoding.Create(fileName);
 
         foreach (var arg in args)
         {

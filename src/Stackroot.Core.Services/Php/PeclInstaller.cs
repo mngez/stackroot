@@ -259,15 +259,7 @@ public sealed class PeclInstaller
         args.Add(PiePharPath);
         args.AddRange(pieArgs);
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = runner.Executable,
-            WorkingDirectory = root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create(runner.Executable, root);
 
         foreach (var arg in args)
         {
@@ -313,15 +305,7 @@ public sealed class PeclInstaller
         args.Add("-r");
         args.Add($"exit(extension_loaded('{extensionId}') ? 0 : 1);");
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = phpExecutable,
-            WorkingDirectory = Path.GetDirectoryName(phpExecutable)!,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+        var psi = ProcessStreamEncoding.Create(phpExecutable, Path.GetDirectoryName(phpExecutable)!);
 
         foreach (var arg in args)
         {

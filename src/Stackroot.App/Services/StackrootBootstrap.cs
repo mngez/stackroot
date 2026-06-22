@@ -179,7 +179,10 @@ public static class StackrootBootstrap
                 provider.GetRequiredService<IDiagnosticsReporter>()));
         services.AddSingleton<Core.Services.IToastService>(provider =>
             new AppToastService(provider.GetRequiredService<IDiagnosticsReporter>()));
-        services.AddSingleton<TaskSchedulerService>();
+        services.AddSingleton<TaskSchedulerService>(provider => new TaskSchedulerService(
+            provider.GetRequiredService<StackrootPaths>(),
+            provider.GetRequiredService<SiteCommandRunner>(),
+            provider.GetRequiredService<SiteStore>()));
         services.AddTransient<ScheduledTaskViewModel>();
         services.AddTransient<ScheduledTasksPage>();
         services.AddTransient<CronTaskDialog>();

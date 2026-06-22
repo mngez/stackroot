@@ -35,14 +35,7 @@ public static class MongoDatabaseClient
 
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = shell,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(shell)
         };
         process.StartInfo.ArgumentList.Add("--host");
         process.StartInfo.ArgumentList.Add(host);
@@ -83,14 +76,7 @@ public static class MongoDatabaseClient
 
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = mongoDump,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(mongoDump)
         };
         process.StartInfo.ArgumentList.Add("--host");
         process.StartInfo.ArgumentList.Add(host);
@@ -129,14 +115,7 @@ public static class MongoDatabaseClient
 
         using var process = new System.Diagnostics.Process
         {
-            StartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = mongoRestore,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            StartInfo = ProcessStreamEncoding.Create(mongoRestore)
         };
         process.StartInfo.ArgumentList.Add("--host");
         process.StartInfo.ArgumentList.Add(host);

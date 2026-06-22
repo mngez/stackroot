@@ -245,7 +245,7 @@ public sealed class SiteManager
         }
     }
 
-    public SiteCommandResult RunQuickAction(string siteId, string actionId, Action<string>? onLogCreated = null)
+    public SiteCommandResult RunQuickAction(string siteId, string actionId, Action<SiteCommandLogStarted>? onLogCreated = null)
     {
         var site = _store.GetById(siteId) ?? throw new KeyNotFoundException($"Site not found: {siteId}");
         return _commandRunner.RunQuickAction(site, actionId, onLogCreated);
@@ -255,7 +255,7 @@ public sealed class SiteManager
         string siteId,
         string commandId,
         string commandLine,
-        Action<string>? onLogCreated = null)
+        Action<SiteCommandLogStarted>? onLogCreated = null)
     {
         var site = _store.GetById(siteId) ?? throw new KeyNotFoundException($"Site not found: {siteId}");
         return _commandRunner.RunCustomCommand(site, commandId, commandLine, onLogCreated);
