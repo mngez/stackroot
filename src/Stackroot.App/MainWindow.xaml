@@ -21,10 +21,15 @@
         <Border Grid.Column="0" Background="{StaticResource StackrootSidebarBrush}">
             <DockPanel Margin="12">
                 <TextBlock DockPanel.Dock="Top"
-                           Margin="8,10,8,14"
-                           FontSize="22"
-                           FontWeight="SemiBold"
-                           Text="Stackroot" />
+                           Margin="8,10,8,14">
+                    <Run Text="Stackroot"
+                         FontSize="22"
+                         FontWeight="SemiBold" />
+                    <Run Text="{Binding AppVersionLabel, Mode=OneWay, StringFormat=' {0}'}"
+                         FontSize="11"
+                         FontWeight="Normal"
+                         Foreground="{StaticResource StackrootTextMutedBrush}" />
+                </TextBlock>
 
                 <ListBox DockPanel.Dock="Bottom"
                          ItemsSource="{Binding BottomNavigationItems}"

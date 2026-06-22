@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Commands;
 using Stackroot.App.Services;
+using Stackroot.App.Services.AppUpdate;
 using Stackroot.App.Views.Pages;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Settings;
@@ -264,6 +265,8 @@ public sealed class ShellViewModel : ViewModelBase
     public AppUpdateViewModel AppUpdate { get; }
 
     public SslTrustPromptViewModel SslTrustPrompt { get; }
+
+    public string AppVersionLabel => AppVersion.Current;
 
     public string SelectedRoute
     {
