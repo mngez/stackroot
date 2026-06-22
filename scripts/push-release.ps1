@@ -57,9 +57,62 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     throw "git is required."
 }
 
+function Invoke-Git {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$GitArgs
+    )
+
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & git @GitArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "git $($GitArgs -join ' ') failed ($LASTEXITCODE)"
+        }
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
+function Invoke-GitQuiet {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$GitArgs
+    )
+
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & git @GitArgs 2>$null
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
+function Get-GitOutput {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$GitArgs
+    )
+
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & git @GitArgs 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "git $($GitArgs -join ' ') failed ($LASTEXITCODE)"
+        }
+        return $output
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
 Push-Location $Root
 try {
-    $branch = (git rev-parse --abbrev-ref HEAD).Trim()
+    $branch = (Get-GitOutput rev-parse --abbrev-ref HEAD).Trim()
     if ($branch -ne "main") {
         throw "Push releases from main (current branch: $branch)."
     }
@@ -73,53 +126,47 @@ try {
         if ($csprojVersion -ne $Version) {
             Write-Host "Updating Stackroot.App.csproj: $csprojVersion -> $Version"
             Set-ProjectVersion $Project $Version
-            git add -- "$Project"
-            git commit -m "Set release version to $Version."
-            if ($LASTEXITCODE -ne 0) { throw "git commit failed ($LASTEXITCODE)" }
+            Invoke-Git add -- "$Project"
+            Invoke-Git commit -m "Set release version to $Version."
         }
     } elseif ($csprojVersion -ne $Version) {
         throw "Stackroot.App.csproj is '$csprojVersion' but you asked to push '$Version'. Bump the csproj first or use: ./sr push $Version +"
     }
 
-    $dirty = git status --porcelain
+    $dirty = Get-GitOutput status --porcelain
     if ($dirty) {
         throw "Working tree is not clean. Commit or stash changes before pushing a release."
     }
 
-    git fetch origin main 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        git fetch origin
-        if ($LASTEXITCODE -ne 0) { throw "git fetch failed ($LASTEXITCODE)" }
+    if ((Invoke-GitQuiet fetch origin main) -ne 0) {
+        if ((Invoke-GitQuiet fetch origin) -ne 0) {
+            throw "git fetch failed"
+        }
     }
 
-    $ahead = [int](git rev-list --count "origin/main..HEAD" 2>$null)
+    $ahead = [int](Get-GitOutput rev-list --count "origin/main..HEAD")
     if ($ahead -gt 0) {
         Write-Host "Pushing $ahead commit(s) to origin/main..."
-        git push origin main
-        if ($LASTEXITCODE -ne 0) { throw "git push origin main failed ($LASTEXITCODE)" }
+        Invoke-Git push origin main
     }
 
-    $localTag = git tag -l $Tag
+    $localTag = Get-GitOutput tag -l $Tag
     if ($localTag) {
         Write-Host "Removing local tag $Tag..."
-        git tag -d $Tag | Out-Null
+        Invoke-GitQuiet tag -d $Tag | Out-Null
     }
 
-    $remoteTag = git ls-remote --tags origin "refs/tags/$Tag"
+    $remoteTag = Get-GitOutput ls-remote --tags origin "refs/tags/$Tag"
     if ($remoteTag) {
         Write-Host "Replacing remote tag $Tag (GitHub Actions will rebuild the installer)..."
-        git push origin ":refs/tags/$Tag"
-        if ($LASTEXITCODE -ne 0) { throw "Failed to delete remote tag $Tag ($LASTEXITCODE)" }
+        Invoke-Git push origin ":refs/tags/$Tag"
     }
 
-    git tag $Tag
-    if ($LASTEXITCODE -ne 0) { throw "git tag failed ($LASTEXITCODE)" }
-
-    git push origin $Tag
-    if ($LASTEXITCODE -ne 0) { throw "git push origin $Tag failed ($LASTEXITCODE)" }
+    Invoke-Git tag $Tag
+    Invoke-Git push origin $Tag
 
     $repo = "mngez/stackroot"
-    $remote = git remote get-url origin 2>$null
+    $remote = Get-GitOutput remote get-url origin
     if ($remote -match 'github\.com[:/](?<owner>[^/]+)/(?<repo>[^/.]+)(\.git)?$') {
         $repo = "$($Matches.owner)/$($Matches.repo)"
     }
