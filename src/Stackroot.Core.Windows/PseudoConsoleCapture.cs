@@ -131,20 +131,29 @@ public static class PseudoConsoleCapture
             readTask = Task.Run(() => PumpOutput(outputReader, logWriter, outputBuilder));
 
             var (exitCode, error) = WaitForProcessExit(processHandle, cancelToken, process);
+            var cancelled = cancelToken.IsCancellationRequested;
+
             inputWrite?.Dispose();
             inputWrite = null;
+
+            if (cancelled && pseudoConsole != IntPtr.Zero)
+            {
+                ClosePseudoConsole(pseudoConsole);
+                pseudoConsole = IntPtr.Zero;
+            }
+
+            CloseOutputPump(ref outputReader, ref outputStream);
             DrainReadTask(readTask);
+            readTask = null;
+
             return new CapturedProcessResult(exitCode, outputBuilder.ToString(), error);
         }
         finally
         {
-            if (readTask is not null)
-            {
-                DrainReadTask(readTask);
-            }
+            DrainReadTask(readTask);
+            readTask = null;
 
-            outputReader?.Dispose();
-            outputStream?.Dispose();
+            CloseOutputPump(ref outputReader, ref outputStream);
             process?.Dispose();
             inputWrite?.Dispose();
             // outputStream owns the read side of the pipe — do not dispose outputRead again.
@@ -195,15 +204,43 @@ public static class PseudoConsoleCapture
         }
     }
 
-    private static void DrainReadTask(Task readTask)
+    private static void CloseOutputPump(ref StreamReader? outputReader, ref FileStream? outputStream)
     {
         try
         {
-            readTask.Wait(TimeSpan.FromSeconds(5));
+            outputReader?.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        outputReader = null;
+
+        try
+        {
+            outputStream?.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        outputStream = null;
+    }
+
+    private static void DrainReadTask(Task? readTask)
+    {
+        if (readTask is null || readTask.IsCompleted)
+        {
+            return;
+        }
+
+        try
+        {
+            readTask.Wait(TimeSpan.FromMilliseconds(500));
         }
         catch (AggregateException ex) when (ex.InnerException is ObjectDisposedException)
         {
-            // Ignore — reader closed after process exit.
+            // Reader closed after process exit or cancel.
         }
     }
 
@@ -336,7 +373,7 @@ public static class PseudoConsoleCapture
                 return ((int)exitCode, string.Empty);
             }
 
-            WaitForSingleObject(processHandle, 250);
+            WaitForSingleObject(processHandle, 50);
         }
     }
 

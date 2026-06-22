@@ -59,6 +59,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     private int? _lastCommandExitCode;
     private long _lastCommandDurationMs;
     private string _lastCommandLogPath = string.Empty;
+    private string? _lastQuickActionId;
     private bool _showCommandLogButton;
     private bool _isTogglingEnabled;
 
@@ -184,6 +185,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 RaisePropertyChanged(nameof(ShowPostInstallCard));
                 RaisePropertyChanged(nameof(ShowWordPressPostInstallCard));
                 RaisePropertyChanged(nameof(ShowLaravelPostInstallCard));
+                RaisePropertyChanged(nameof(ShowStaticSiteCard));
                 RaisePropertyChanged(nameof(InstallerButtonLabel));
                 RaisePropertyChanged(nameof(PostInstallWpVersion));
                 RaisePropertyChanged(nameof(PostInstallWpLabel));
@@ -295,6 +297,9 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 
     public bool ShowLaravelPostInstallCard => ShowPostInstallCard
         && Site?.Template == SiteTemplateIds.Laravel;
+
+    public bool ShowStaticSiteCard => Site is not null
+        && Site.Template == SiteTemplateIds.Static;
 
     private bool IsWordPressInstalled =>
         Site is not null
@@ -535,7 +540,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 IconFilePath = CustomCommandIconStore.ResolvePath(SiteDataDir, cmd.IconFileName)
             };
             vm.RunCommand = new RelayCommand(_ => _ = RunCustomCommandTrackedAsync(vm, cmd.Command), _ => !vm.IsRunning);
-            vm.CancelCommand = new RelayCommand(_ => _ = CancelCustomCommandAsync(vm), _ => vm.ShowCancelStatus);
+            vm.CancelCommand = new RelayCommand(_ => _ = CancelCustomCommandAsync(vm), _ => vm.CanCancelCommand);
             vm.ViewLogCommand = new RelayCommand(_ => OpenCustomCommandLog(vm, openInExternalEditor: false), _ => vm.ShowViewLogButton);
             vm.OpenLogAction = openExternal => OpenCustomCommandLog(vm, openExternal);
             vm.IsCommandRunning = () =>
@@ -850,8 +855,52 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 
     void IScheduledTaskRowHost.ReloadTasks() => LoadScheduledTasks();
 
-    void IScheduledTaskRowHost.OpenTaskLog(string logPath, string label, bool openInExternalEditor) =>
-        StackrootLogViewer.Open(logPath, $"Log — {label}", openInExternalEditor, _settingsStore);
+    void IScheduledTaskRowHost.OpenTaskLog(string taskId, string logPath, string label, bool openInExternalEditor) =>
+        OpenScheduledTaskLog(taskId, logPath, label, openInExternalEditor);
+
+    private void OpenScheduledTaskLog(string taskId, string logPath, string label, bool openInExternalEditor)
+    {
+        var task = _taskScheduler.List().FirstOrDefault(t => t.Id == taskId);
+        var running = false;
+        var session = new SiteLogSession(logPath)
+        {
+            CommandLine = task?.Command,
+            IsRunning = () => running
+        };
+
+        if (task is { CaptureLog: true })
+        {
+            session.RunAgainAsync = async () =>
+            {
+                running = true;
+                session.MarkRunning();
+                try
+                {
+                    await _taskScheduler.RunNowAsync(taskId).ConfigureAwait(true);
+                    LoadScheduledTasks();
+                    var updated = _taskScheduler.List().FirstOrDefault(t => t.Id == taskId);
+                    if (updated?.LastLogPath is { Length: > 0 } newPath && File.Exists(newPath))
+                    {
+                        session.LogPath = newPath;
+                        session.CommandLine = updated.Command;
+                    }
+                }
+                finally
+                {
+                    running = false;
+                    session.MarkFinished();
+                    session.NotifyUpdated();
+                }
+            };
+        }
+
+        StackrootLogViewer.Open(
+            logPath,
+            $"Log — {label}",
+            openInExternalEditor,
+            _settingsStore,
+            chrome: new SiteLogChrome(session));
+    }
 
     private void LoadVersions()
     {
@@ -1056,7 +1105,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         StopAllProcessesCommand.RaiseCanExecuteChanged();
     }
 
-    private async Task RunQuickActionAsync(string? actionId)
+    private async Task RunQuickActionAsync(string? actionId, SiteLogSession? logSession = null)
     {
         if (!CanRunQuickAction() || string.IsNullOrWhiteSpace(actionId))
         {
@@ -1064,7 +1113,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         }
 
         var definition = SiteQuickActionPresets.Get(actionId);
-        if (definition?.ConfirmMessage is { Length: > 0 } confirmMessage)
+        if (definition?.ConfirmMessage is { Length: > 0 } confirmMessage && logSession is null)
         {
             var confirmed = ConfirmDialog.Show(
                 Application.Current?.MainWindow,
@@ -1079,6 +1128,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         }
 
         IsRunningAction = true;
+        _lastQuickActionId = actionId;
         _lastCommandLabel = definition?.Label ?? actionId;
         _lastCommandLine = string.Empty;
         _lastCommandExitCode = null;
@@ -1088,22 +1138,38 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         ShowCommandLogButton = false;
         var siteLabel = Site?.Domain ?? SiteId;
         var progressId = _activity.Begin("Sites", SessionActivityMessages.SiteQuickActionRunning(_lastCommandLabel));
+        logSession?.MarkRunning();
         try
         {
             var result = await Task.Run(() => _siteManager.RunQuickAction(
                 SiteId,
                 actionId,
-                started => Application.Current?.Dispatcher.BeginInvoke(() =>
+                started =>
                 {
-                    _lastCommandLogPath = started.LogPath;
-                    _lastCommandLine = started.CommandLine;
-                    ShowCommandLogButton = true;
-                    RaiseCommandStatusChromeChanged();
-                })));
+                    void apply()
+                    {
+                        _lastCommandLogPath = started.LogPath;
+                        _lastCommandLine = started.CommandLine;
+                        ApplySiteLogStarted(null, logSession, started.LogPath, started.CommandLine);
+                        ShowCommandLogButton = true;
+                        RaiseCommandStatusChromeChanged();
+                    }
+
+                    if (logSession is not null)
+                    {
+                        ApplyOnUiThread(apply);
+                    }
+                    else
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(apply);
+                    }
+                }))
+                .ConfigureAwait(true);
 
             if (!string.IsNullOrWhiteSpace(result.LogPath))
             {
                 _lastCommandLogPath = result.LogPath;
+                ApplySiteLogResult(null, logSession, result);
             }
 
             _lastCommandLine = result.CommandLine ?? string.Empty;
@@ -1144,10 +1210,15 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         finally
         {
             IsRunningAction = false;
+            logSession?.MarkFinished();
+            logSession?.NotifyUpdated();
         }
     }
 
-    private async Task RunCustomCommandTrackedAsync(SiteCustomCommandViewModel vm, string commandLine)
+    private async Task RunCustomCommandTrackedAsync(
+        SiteCustomCommandViewModel vm,
+        string commandLine,
+        SiteLogSession? logSession = null)
     {
         if (Site is null || vm.IsRunning)
         {
@@ -1166,24 +1237,28 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         RaisePropertyChanged(nameof(ShowCustomCommandStatus));
         DismissCustomStatusCommand.RaiseCanExecuteChanged();
 
+        logSession?.MarkRunning();
         try
         {
             var result = await Task.Run(() => _siteManager.RunCustomCommand(
                 SiteId,
                 vm.Id,
                 commandLine,
-                started => Application.Current?.Dispatcher.BeginInvoke(() =>
+                started =>
                 {
-                    vm.SetLogPath(started.LogPath);
-                    vm.SetCommandLine(started.CommandLine);
-                })))
+                    void apply() => ApplySiteLogStarted(vm, logSession, started.LogPath, started.CommandLine);
+                    if (logSession is not null)
+                    {
+                        ApplyOnUiThread(apply);
+                    }
+                    else
+                    {
+                        Application.Current?.Dispatcher.BeginInvoke(apply);
+                    }
+                }))
                 .ConfigureAwait(true);
 
-            if (!string.IsNullOrWhiteSpace(result.LogPath))
-            {
-                vm.SetLogPath(result.LogPath);
-            }
-
+            ApplySiteLogResult(vm, logSession, result);
             vm.SetCompletion(result.ExitCode, result.DurationMs);
             vm.Status = FormatCustomCommandStatus(vm.Label, result);
         }
@@ -1200,15 +1275,84 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                     "sites",
                     SiteId);
                 Directory.CreateDirectory(fallbackDir);
-                vm.SetLogPath(Path.Combine(fallbackDir, $"error-{DateTimeOffset.UtcNow:yyyy-MM-ddTHH-mm-ss-fffZ}.log"));
-                await File.WriteAllTextAsync(vm._logPath!, ex.ToString()).ConfigureAwait(true);
+                var fallbackPath = Path.Combine(fallbackDir, $"error-{DateTimeOffset.UtcNow:yyyy-MM-ddTHH-mm-ss-fffZ}.log");
+                await File.WriteAllTextAsync(fallbackPath, ex.ToString()).ConfigureAwait(true);
+                ApplySiteLogStarted(vm, logSession, fallbackPath, commandLine);
             }
         }
         finally
         {
             vm.IsRunning = false;
+            vm.IsCancelling = false;
             DismissCustomStatusCommand.RaiseCanExecuteChanged();
+            logSession?.MarkFinished();
+            logSession?.NotifyUpdated();
         }
+    }
+
+    private static void ApplyOnUiThread(Action action)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            action();
+            return;
+        }
+
+        if (dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            dispatcher.Invoke(action);
+        }
+    }
+
+    private static void ApplySiteLogStarted(
+        SiteCustomCommandViewModel? vm,
+        SiteLogSession? session,
+        string logPath,
+        string commandLine)
+    {
+        vm?.SetLogPath(logPath);
+        vm?.SetCommandLine(commandLine);
+        if (session is null)
+        {
+            return;
+        }
+
+        session.CommandLine = commandLine;
+        session.LogPath = logPath;
+    }
+
+    private static void ApplySiteLogResult(
+        SiteCustomCommandViewModel? vm,
+        SiteLogSession? session,
+        SiteCommandResult result)
+    {
+        if (string.IsNullOrWhiteSpace(result.LogPath))
+        {
+            return;
+        }
+
+        vm?.SetLogPath(result.LogPath);
+        if (!string.IsNullOrWhiteSpace(result.CommandLine))
+        {
+            vm?.SetCommandLine(result.CommandLine);
+        }
+
+        if (session is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.CommandLine))
+        {
+            session.CommandLine = result.CommandLine;
+        }
+
+        session.LogPath = result.LogPath;
     }
 
     private static string FormatCustomCommandStatus(string label, SiteCommandResult result) =>
@@ -1221,6 +1365,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             return Task.CompletedTask;
         }
 
+        vm.IsCancelling = true;
+        vm.Status = "Cancelling…";
         return Task.Run(() => _siteManager.CancelSiteCommand(vm._logPath!));
     }
 
@@ -1231,24 +1377,27 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             return;
         }
 
-        var logPath = vm._logPath;
+        var session = CreateCustomCommandLogSession(vm);
         StackrootLogViewer.Open(
-            logPath,
+            session.LogPath,
             $"Log — {vm.Label}",
             openInExternalEditor,
             _settingsStore,
-            cancelAsync: () => Task.Run(() => _siteManager.CancelSiteCommand(logPath!)),
-            isRunning: () => _siteManager.IsSiteCommandRunning(logPath!),
-            chrome: BuildSiteLogChrome(logPath, vm.Command, () => vm.GetCompletion()));
+            chrome: new SiteLogChrome(session));
     }
 
-    private SiteLogChrome BuildSiteLogChrome(
-        string? logPath,
-        string? commandLine,
-        Func<(int ExitCode, long DurationMs)?> getCompletion) =>
-        new(
-            CommandLine: commandLine,
-            GetCompletion: getCompletion);
+    private SiteLogSession CreateCustomCommandLogSession(SiteCustomCommandViewModel vm)
+    {
+        var session = new SiteLogSession(vm._logPath!)
+        {
+            CommandLine = vm.Command,
+            GetCompletion = () => vm.GetCompletion()
+        };
+        session.CancelAsync = () => Task.Run(() => _siteManager.CancelSiteCommand(session.LogPath));
+        session.IsRunning = () => session.IsMarkedRunning || _siteManager.IsSiteCommandRunning(session.LogPath);
+        session.RunAgainAsync = () => RunCustomCommandTrackedAsync(vm, vm.Command, session);
+        return session;
+    }
 
     private (int ExitCode, long DurationMs)? GetLastCommandCompletion() =>
         _lastCommandExitCode is int exitCode
@@ -1265,14 +1414,30 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         var title = string.IsNullOrWhiteSpace(_lastCommandLabel)
             ? $"Log — {Path.GetFileName(_lastCommandLogPath)}"
             : $"Log — {_lastCommandLabel}";
+        var session = CreateQuickActionLogSession();
         StackrootLogViewer.Open(
-            _lastCommandLogPath,
+            session.LogPath,
             title,
             openInExternalEditor,
             _settingsStore,
-            cancelAsync: () => Task.Run(() => _siteManager.CancelSiteCommand(_lastCommandLogPath)),
-            isRunning: () => _siteManager.IsSiteCommandRunning(_lastCommandLogPath),
-            chrome: BuildSiteLogChrome(_lastCommandLogPath, _lastCommandLine, () => GetLastCommandCompletion()));
+            chrome: new SiteLogChrome(session));
+    }
+
+    private SiteLogSession CreateQuickActionLogSession()
+    {
+        var session = new SiteLogSession(_lastCommandLogPath)
+        {
+            CommandLine = _lastCommandLine,
+            GetCompletion = () => GetLastCommandCompletion()
+        };
+        session.CancelAsync = () => Task.Run(() => _siteManager.CancelSiteCommand(session.LogPath));
+        session.IsRunning = () => session.IsMarkedRunning || IsRunningAction || _siteManager.IsSiteCommandRunning(session.LogPath);
+        if (!string.IsNullOrWhiteSpace(_lastQuickActionId))
+        {
+            session.RunAgainAsync = () => RunQuickActionAsync(_lastQuickActionId, session);
+        }
+
+        return session;
     }
 
     private bool CanCancelRunningCommand() =>
@@ -1287,6 +1452,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             return Task.CompletedTask;
         }
 
+        CommandStatusMessage = "Cancelling…";
         return Task.Run(() => _siteManager.CancelSiteCommand(_lastCommandLogPath));
     }
 
@@ -2378,9 +2544,26 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
         {
             if (SetProperty(ref _isRunning, value))
             {
+                if (!value)
+                {
+                    IsCancelling = false;
+                }
+
                 RaisePropertyChanged(nameof(DisplayLabel));
                 RaiseChromeChanged();
                 RunCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsCancelling
+    {
+        get => _isCancelling;
+        set
+        {
+            if (SetProperty(ref _isCancelling, value))
+            {
+                RaiseChromeChanged();
             }
         }
     }
@@ -2403,12 +2586,17 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
 
     public bool HasStatus => !string.IsNullOrWhiteSpace(_status);
     public bool ShowDismissStatus => HasStatus && !IsRunning;
-    public bool ShowCancelStatus => IsRunning && CanCancelRunning();
+    public bool ShowCancelStatus => IsRunning && (IsCancelling || CanCancelRunning());
+    public bool CanCancelCommand => ShowCancelStatus && !IsCancelling;
+
+    public string CancelButtonLabel => IsCancelling ? "Cancelling…" : "Cancel";
+
     public bool ShowViewLogButton => !string.IsNullOrWhiteSpace(_logPath);
 
     internal string? _logPath;
     private int? _lastExitCode;
     private long _lastDurationMs;
+    private bool _isCancelling;
     public Func<bool>? IsCommandRunning { get; set; }
     public Action? ChromeChanged { get; set; }
 
@@ -2460,6 +2648,8 @@ public sealed class SiteCustomCommandViewModel : ViewModelBase
     {
         RaisePropertyChanged(nameof(ShowDismissStatus));
         RaisePropertyChanged(nameof(ShowCancelStatus));
+        RaisePropertyChanged(nameof(CanCancelCommand));
+        RaisePropertyChanged(nameof(CancelButtonLabel));
         RaisePropertyChanged(nameof(ShowViewLogButton));
         CancelCommand.RaiseCanExecuteChanged();
         ViewLogCommand.RaiseCanExecuteChanged();

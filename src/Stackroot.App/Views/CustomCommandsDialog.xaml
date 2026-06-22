@@ -128,11 +128,47 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
                                 <TextBlock FontSize="11" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Text" />
-                                <TextBox Margin="0,2,0,0" Padding="8,6" FontFamily="Consolas" Text="{Binding ForegroundHex, UpdateSourceTrigger=PropertyChanged}" />
+                                <DockPanel Margin="0,2,0,0" LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            Margin="6,0,0,0"
+                                            Padding="8,4"
+                                            Content="Choose…"
+                                            Command="{Binding DataContext.PickForegroundColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                    <Border Width="28"
+                                            Height="28"
+                                            Margin="0,0,6,0"
+                                            DockPanel.Dock="Left"
+                                            Background="{Binding PreviewForegroundBrush, FallbackValue={StaticResource StackrootCardBrush}}"
+                                            BorderBrush="{StaticResource StackrootBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="4" />
+                                    <TextBox Padding="8,6"
+                                             FontFamily="Consolas"
+                                             IsReadOnly="True"
+                                             Text="{Binding ForegroundHex}" />
+                                </DockPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock FontSize="11" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Background" />
-                                <TextBox Margin="0,2,0,0" Padding="8,6" FontFamily="Consolas" Text="{Binding BackgroundHex, UpdateSourceTrigger=PropertyChanged}" />
+                                <DockPanel Margin="0,2,0,0" LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            Margin="6,0,0,0"
+                                            Padding="8,4"
+                                            Content="Choose…"
+                                            Command="{Binding DataContext.PickBackgroundColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                    <Border Width="28"
+                                            Height="28"
+                                            Margin="0,0,6,0"
+                                            DockPanel.Dock="Left"
+                                            Background="{Binding PreviewBackgroundBrush, FallbackValue={StaticResource StackrootCardBrush}}"
+                                            BorderBrush="{StaticResource StackrootBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="4" />
+                                    <TextBox Padding="8,6"
+                                             FontFamily="Consolas"
+                                             IsReadOnly="True"
+                                             Text="{Binding BackgroundHex}" />
+                                </DockPanel>
                             </StackPanel>
                         </Grid>
                         <Button Margin="0,0,0,10"
@@ -153,17 +189,8 @@
                         <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Preview" />
                         <Button HorizontalAlignment="Left"
                                 Padding="10,6"
-                                IsEnabled="False">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasCustomChrome}" Value="True">
-                                            <Setter Property="Background" Value="{Binding PreviewBackgroundBrush}" />
-                                            <Setter Property="Foreground" Value="{Binding PreviewForegroundBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
+                                IsEnabled="False"
+                                Style="{StaticResource StackrootCustomCommandButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <Image Width="16"
                                        Height="16"

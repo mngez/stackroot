@@ -118,7 +118,7 @@ public sealed class ScheduledTaskRowViewModel : ViewModelBase
             return;
         }
 
-        _host.OpenTaskLog(Model.LastLogPath, Model.Label, openInExternalEditor);
+        _host.OpenTaskLog(Model.Id, Model.LastLogPath, Model.Label, openInExternalEditor);
     }
 }
 
@@ -201,8 +201,8 @@ public sealed class ScheduledTaskViewModel : ViewModelBase, IScheduledTaskRowHos
 
     void IScheduledTaskRowHost.ReloadTasks() => Load();
 
-    void IScheduledTaskRowHost.OpenTaskLog(string logPath, string label, bool openInExternalEditor) =>
-        OpenTaskLog(logPath, label, openInExternalEditor);
+    void IScheduledTaskRowHost.OpenTaskLog(string taskId, string logPath, string label, bool openInExternalEditor) =>
+        OpenTaskLog(taskId, logPath, label, openInExternalEditor);
 
     private void RebuildSiteFilterOptions()
     {
@@ -294,8 +294,47 @@ public sealed class ScheduledTaskViewModel : ViewModelBase, IScheduledTaskRowHos
         OpenDialog(row);
     }
 
-    public void OpenTaskLog(string logPath, string label, bool openInExternalEditor)
+    public void OpenTaskLog(string taskId, string logPath, string label, bool openInExternalEditor)
     {
-        StackrootLogViewer.Open(logPath, $"Log — {label}", openInExternalEditor, _settingsStore);
+        var task = _scheduler.List().FirstOrDefault(t => t.Id == taskId);
+        var running = false;
+        var session = new SiteLogSession(logPath)
+        {
+            CommandLine = task?.Command,
+            IsRunning = () => running
+        };
+
+        if (task is { CaptureLog: true })
+        {
+            session.RunAgainAsync = async () =>
+            {
+                running = true;
+                session.MarkRunning();
+                try
+                {
+                    await _scheduler.RunNowAsync(taskId).ConfigureAwait(true);
+                    Load();
+                    var updated = _scheduler.List().FirstOrDefault(t => t.Id == taskId);
+                    if (updated?.LastLogPath is { Length: > 0 } newPath && System.IO.File.Exists(newPath))
+                    {
+                        session.LogPath = newPath;
+                        session.CommandLine = updated.Command;
+                    }
+                }
+                finally
+                {
+                    running = false;
+                    session.MarkFinished();
+                    session.NotifyUpdated();
+                }
+            };
+        }
+
+        StackrootLogViewer.Open(
+            logPath,
+            $"Log — {label}",
+            openInExternalEditor,
+            _settingsStore,
+            chrome: new SiteLogChrome(session));
     }
 }

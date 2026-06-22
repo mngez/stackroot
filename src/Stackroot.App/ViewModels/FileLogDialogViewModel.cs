@@ -8,11 +8,15 @@ namespace Stackroot.App.ViewModels;
 
 public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 {
-    private readonly string _logPath;
+    private static readonly string[] PlaceholderContents =
+    [
+        "(no output yet)",
+        "(starting…)",
+        "(log file not found)"
+    ];
+
+    private readonly SiteLogSession _session;
     private readonly DispatcherTimer _timer;
-    private readonly Func<Task>? _cancelAsync;
-    private readonly Func<bool>? _isRunning;
-    private readonly Func<(int ExitCode, long DurationMs)?>? _getCompletion;
     private bool _disposed;
     private string _title = "Log";
     private string _commandLine = string.Empty;
@@ -22,21 +26,18 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
     private bool _isLoading;
     private bool _liveUpdates = true;
     private bool _canCancel;
+    private bool _isCancelling;
+    private bool _isRunningAgain;
 
-    public FileLogDialogViewModel(
-        string logPath,
-        string title,
-        Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null,
-        SiteLogChrome? chrome = null)
+    public FileLogDialogViewModel(SiteLogSession session, string title)
     {
-        _logPath = logPath;
-        _cancelAsync = cancelAsync;
-        _isRunning = isRunning;
-        _getCompletion = chrome?.GetCompletion;
+        _session = session;
         Title = title;
-        CommandLine = chrome?.CommandLine ?? string.Empty;
-        _canCancel = isRunning?.Invoke() == true;
+        CommandLine = session.CommandLine ?? string.Empty;
+        _canCancel = session.IsRunning?.Invoke() == true;
+
+        _session.LogPathChanged += OnLogPathChanged;
+        _session.Updated += OnSessionUpdated;
 
         _timer = new DispatcherTimer
         {
@@ -46,12 +47,17 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 
         RefreshCommand = new RelayCommand(_ => _ = RefreshAsync(scroll: false), _ => !IsLoading);
         CloseCommand = new RelayCommand(_ => RequestClose?.Invoke(this, EventArgs.Empty));
-        if (_cancelAsync is not null)
+        if (session.RunAgainAsync is not null)
         {
-            CancelCommand = new RelayCommand(_ => _ = CancelAsync(), _ => CanCancel);
+            RunAgainCommand = new RelayCommand(_ => _ = RunAgainAsync(), _ => ShowRunAgainButton);
         }
 
-        if (isRunning?.Invoke() == false)
+        if (session.CancelAsync is not null)
+        {
+            CancelCommand = new RelayCommand(_ => _ = CancelAsync(), _ => CanCancelCommand);
+        }
+
+        if (session.IsRunning?.Invoke() == false)
         {
             LiveUpdates = false;
         }
@@ -103,7 +109,7 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 
     public string ProcessName => string.Empty;
 
-    public string RunningLabel => _isRunning?.Invoke() == true ? "Running" : "Stopped";
+    public string RunningLabel => _session.IsRunning?.Invoke() == true ? "Running" : "Stopped";
 
     public string? PidLabel => null;
 
@@ -127,6 +133,7 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             if (SetProperty(ref _isLoading, value))
             {
                 RefreshCommand.RaiseCanExecuteChanged();
+                RunAgainCommand?.RaiseCanExecuteChanged();
             }
         }
     }
@@ -156,6 +163,11 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 
     public bool ShowRefreshButton => !LiveUpdates;
 
+    public bool ShowRunAgainButton =>
+        _session.RunAgainAsync is not null
+        && !_isRunningAgain
+        && _session.IsRunning?.Invoke() != true;
+
     public bool CanCancel
     {
         get => _canCancel;
@@ -163,36 +175,111 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         {
             if (SetProperty(ref _canCancel, value))
             {
-                CancelCommand?.RaiseCanExecuteChanged();
                 RaisePropertyChanged(nameof(ShowCancelButton));
+                RaisePropertyChanged(nameof(CanCancelCommand));
+                CancelCommand?.RaiseCanExecuteChanged();
             }
         }
     }
 
-    public bool ShowCancelButton => CancelCommand is not null;
+    public bool IsCancelling
+    {
+        get => _isCancelling;
+        private set
+        {
+            if (SetProperty(ref _isCancelling, value))
+            {
+                RaisePropertyChanged(nameof(ShowCancelButton));
+                RaisePropertyChanged(nameof(CancelButtonLabel));
+                RaisePropertyChanged(nameof(CanCancelCommand));
+                CancelCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string CancelButtonLabel => IsCancelling ? "Cancelling…" : "Cancel";
+
+    public bool CanCancelCommand => CanCancel && !IsCancelling;
+
+    public bool ShowCancelButton =>
+        CancelCommand is not null
+        && (CanCancel || IsCancelling);
 
     public RelayCommand RefreshCommand { get; }
     public RelayCommand CloseCommand { get; }
     public RelayCommand? CancelCommand { get; }
+    public RelayCommand? RunAgainCommand { get; }
 
     public event EventHandler? RequestClose;
 
-    private async Task CancelAsync()
+    private void OnLogPathChanged(object? sender, EventArgs e)
     {
-        if (_cancelAsync is null || !CanCancel)
+        CommandLine = _session.CommandLine ?? CommandLine;
+        LogContent = "(no output yet)";
+        LogFooterLine = string.Empty;
+        LiveUpdates = true;
+        RaisePropertyChanged(nameof(RunningLabel));
+        RaisePropertyChanged(nameof(ShowRunAgainButton));
+        RunAgainCommand?.RaiseCanExecuteChanged();
+        _ = RefreshAsync();
+    }
+
+    private void OnSessionUpdated(object? sender, EventArgs e) => _ = RefreshAsync();
+
+    private async Task RunAgainAsync()
+    {
+        if (_session.RunAgainAsync is null || _isRunningAgain)
         {
             return;
         }
 
-        CanCancel = false;
+        _isRunningAgain = true;
+        RaisePropertyChanged(nameof(ShowRunAgainButton));
+        RunAgainCommand?.RaiseCanExecuteChanged();
+        LogContent = "(starting…)";
+        LogFooterLine = string.Empty;
+        StatusMessage = string.Empty;
+        LiveUpdates = true;
+
         try
         {
-            await _cancelAsync().ConfigureAwait(true);
-            StatusMessage = "Cancelling command…";
+            await _session.RunAgainAsync().ConfigureAwait(true);
+            await ReadLogWithSettleAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             StatusMessage = ex.Message;
+        }
+        finally
+        {
+            _isRunningAgain = false;
+            RaisePropertyChanged(nameof(ShowRunAgainButton));
+            RaisePropertyChanged(nameof(RunningLabel));
+            RunAgainCommand?.RaiseCanExecuteChanged();
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_session.CancelAsync is null || !CanCancelCommand)
+        {
+            return;
+        }
+
+        IsCancelling = true;
+        StatusMessage = string.Empty;
+        LiveUpdates = true;
+        _timer.Interval = TimeSpan.FromMilliseconds(200);
+
+        try
+        {
+            await _session.CancelAsync().ConfigureAwait(true);
+            _ = RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+            IsCancelling = false;
         }
     }
 
@@ -221,16 +308,32 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         IsLoading = true;
         try
         {
+            var running = _session.IsRunning?.Invoke() == true;
             var content = await Task.Run(ReadTail);
-            LogContent = string.IsNullOrWhiteSpace(content) ? "(no output yet)" : content;
+            ApplyLogContent(content);
             StatusMessage = string.Empty;
-            if (_isRunning is not null)
+
+            if (_session.IsRunning is not null)
             {
-                var running = _isRunning();
+                running = _session.IsRunning();
                 CanCancel = running;
                 RaisePropertyChanged(nameof(RunningLabel));
+                RaisePropertyChanged(nameof(ShowRunAgainButton));
+                RunAgainCommand?.RaiseCanExecuteChanged();
+
                 if (!running)
                 {
+                    if (IsCancelling)
+                    {
+                        IsCancelling = false;
+                        _timer.Interval = TimeSpan.FromSeconds(1);
+                    }
+
+                    if (IsPlaceholder(LogContent))
+                    {
+                        await ReadLogWithSettleAsync().ConfigureAwait(true);
+                    }
+
                     DisableLiveUpdates();
                 }
             }
@@ -249,14 +352,44 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         _ = scroll;
     }
 
+    private async Task ReadLogWithSettleAsync()
+    {
+        foreach (var delayMs in new[] { 0, 75, 200 })
+        {
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs).ConfigureAwait(true);
+            }
+
+            var content = await Task.Run(ReadTail).ConfigureAwait(true);
+            ApplyLogContent(content);
+            UpdateLogFooter();
+
+            if (!IsPlaceholder(LogContent))
+            {
+                break;
+            }
+        }
+    }
+
+    private void ApplyLogContent(string content)
+    {
+        LogContent = string.IsNullOrWhiteSpace(content) ? "(no output yet)" : content;
+    }
+
+    private static bool IsPlaceholder(string? content) =>
+        !string.IsNullOrWhiteSpace(content)
+        && PlaceholderContents.Contains(content, StringComparer.Ordinal);
+
     private string ReadTail()
     {
-        if (!File.Exists(_logPath))
+        var logPath = _session.LogPath;
+        if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
         {
             return "(log file not found)";
         }
 
-        using var stream = new FileStream(_logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         if (stream.Length == 0)
         {
             return string.Empty;
@@ -281,13 +414,13 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
 
     private void UpdateLogFooter()
     {
-        if (_isRunning?.Invoke() == true)
+        if (_session.IsRunning?.Invoke() == true)
         {
             LogFooterLine = "# running…";
             return;
         }
 
-        var completion = _getCompletion?.Invoke();
+        var completion = _session.GetCompletion?.Invoke();
         LogFooterLine = completion is { } result
             ? $"# exit {result.ExitCode} · {result.DurationMs}ms"
             : string.Empty;
@@ -311,6 +444,8 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         }
 
         _disposed = true;
+        _session.LogPathChanged -= OnLogPathChanged;
+        _session.Updated -= OnSessionUpdated;
         StopPolling();
     }
 }

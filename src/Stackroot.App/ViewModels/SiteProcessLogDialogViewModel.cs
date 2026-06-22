@@ -102,6 +102,14 @@ public sealed class SiteProcessLogDialogViewModel : ViewModelBase, IDisposable
 
     public bool ShowRefreshButton => !LiveUpdates;
 
+    public bool ShowRunAgainButton => false;
+
+    public bool ShowCancelButton => false;
+
+    public string CancelButtonLabel => "Cancel";
+
+    public bool CanCancelCommand => false;
+
     public bool IsRunning
     {
         get => _isRunning;

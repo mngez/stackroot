@@ -1,0 +1,107 @@
+<UserControl x:Class="Stackroot.App.Views.Controls.SiteCustomCommandsToolbar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:Stackroot.App.Helpers">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <StackPanel>
+        <ItemsControl ItemsSource="{Binding ActiveCommandStatuses}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,0,0,4"
+                            Padding="10,8"
+                            Background="#121A26"
+                            BorderBrush="{StaticResource StackrootBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <DockPanel LastChildFill="True">
+                            <Button DockPanel.Dock="Right"
+                                    Width="28"
+                                    Height="28"
+                                    Padding="0"
+                                    Margin="8,0,0,0"
+                                    ToolTip="Dismiss"
+                                    Style="{StaticResource StackrootIconButtonStyle}"
+                                    Command="{Binding DataContext.DismissCustomStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Visibility="{Binding ShowDismissStatus, Converter={StaticResource BoolToVis}}">
+                                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                           FontSize="12"
+                                           Text="&#xE711;" />
+                            </Button>
+                            <Button DockPanel.Dock="Right"
+                                    Margin="8,0,0,0"
+                                    Padding="8,4"
+                                    FontSize="12"
+                                    Content="{Binding CancelButtonLabel}"
+                                    IsEnabled="{Binding CanCancelCommand}"
+                                    Command="{Binding CancelCommand}"
+                                    Visibility="{Binding ShowCancelStatus, Converter={StaticResource BoolToVis}}" />
+                            <Button DockPanel.Dock="Right"
+                                    Margin="8,0,0,0"
+                                    Padding="8,4"
+                                    FontSize="12"
+                                    Content="View log"
+                                    ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
+                                    PreviewMouseLeftButtonDown="OnCustomCommandViewLogClick"
+                                    Visibility="{Binding ShowViewLogButton, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       FontSize="12"
+                                       Text="{Binding Status}" />
+                        </DockPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <WrapPanel Margin="0,8,0,0">
+            <Button Padding="10,6"
+                    Content="Open site"
+                    Style="{StaticResource StackrootPrimaryButtonStyle}"
+                    Command="{Binding OpenSiteCommand}"
+                    Visibility="{Binding ShowOpenSiteButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
+            <Button Margin="8,0,0,0"
+                    Padding="10,6"
+                    Content="Open admin"
+                    Command="{Binding OpenPostInstallAdminCommand}"
+                    Visibility="{Binding ShowOpenAdminButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
+            <ItemsControl ItemsSource="{Binding CustomCommandItems}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="8,0,4,0"
+                                    Padding="10,6"
+                                    ToolTip="{Binding Command}"
+                                    Command="{Binding RunCommand}"
+                                    Style="{StaticResource StackrootCustomCommandButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Width="16"
+                                           Height="16"
+                                           Margin="0,0,6,0"
+                                           Source="{Binding IconSource}"
+                                           Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayLabel}" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Margin="8,0,0,0"
+                    Width="32"
+                    Height="32"
+                    ToolTip="Manage custom commands"
+                    Style="{StaticResource StackrootPrimaryIconButtonStyle}"
+                    Command="{Binding ManageCustomCommandsCommand}">
+                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                           FontSize="14"
+                           Text="&#xE8FD;" />
+            </Button>
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

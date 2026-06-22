@@ -12,5 +12,5 @@ public interface IScheduledTaskRowHost
 
     void ReloadTasks();
 
-    void OpenTaskLog(string logPath, string label, bool openInExternalEditor);
+    void OpenTaskLog(string taskId, string logPath, string label, bool openInExternalEditor);
 }

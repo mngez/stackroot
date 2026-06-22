@@ -292,13 +292,9 @@
                                 </StackPanel>
                             </Grid>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button MinWidth="110" Padding="14,8" Content="Open site"
-                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                        Command="{Binding OpenSiteCommand}" />
-                                <Button MinWidth="100" Margin="8,0,0,0" Padding="14,8" Content="Open admin"
-                                        Command="{Binding OpenPostInstallAdminCommand}" />
-                            </StackPanel>
+                            <controls:SiteCustomCommandsToolbar Margin="0,12,0,0"
+                                                                ShowOpenSiteButton="True"
+                                                                ShowOpenAdminButton="True" />
                         </StackPanel>
 
                         <!-- Right: Square thumbnail -->
@@ -370,54 +366,6 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <!-- Custom command status bars -->
-                            <ItemsControl ItemsSource="{Binding ActiveCommandStatuses}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0,0,0,4" Padding="10,8"
-                                                Background="#121A26"
-                                                BorderBrush="{StaticResource StackrootBorderBrush}"
-                                                BorderThickness="1" CornerRadius="8">
-                                            <DockPanel LastChildFill="True">
-                                                <Button DockPanel.Dock="Right"
-                                                        Width="28"
-                                                        Height="28"
-                                                        Padding="0"
-                                                        Margin="8,0,0,0"
-                                                        ToolTip="Dismiss"
-                                                        Style="{StaticResource StackrootIconButtonStyle}"
-                                                        Command="{Binding DataContext.DismissCustomStatusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Visibility="{Binding ShowDismissStatus, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
-                                                               FontSize="12"
-                                                               Text="&#xE711;" />
-                                                </Button>
-                                                <Button DockPanel.Dock="Right"
-                                                        Margin="8,0,0,0"
-                                                        Padding="8,4"
-                                                        FontSize="12"
-                                                        Content="Cancel"
-                                                        Command="{Binding CancelCommand}"
-                                                        Visibility="{Binding ShowCancelStatus, Converter={StaticResource BoolToVis}}" />
-                                                <Button DockPanel.Dock="Right"
-                                                        Margin="8,0,0,0"
-                                                        Padding="8,4"
-                                                        FontSize="12"
-                                                        Content="View log"
-                                                        ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
-                                                        PreviewMouseLeftButtonDown="OnCustomCommandViewLogClick"
-                                                        Visibility="{Binding ShowViewLogButton, Converter={StaticResource BoolToVis}}" />
-                                                <TextBlock VerticalAlignment="Center"
-                                                           Foreground="{StaticResource StackrootTextMutedBrush}"
-                                                           FontSize="12"
-                                                           Text="{Binding Status}" />
-                                            </DockPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
                             <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource StackrootAccentTextBrush}">
                                 <Run Text="🔺 Laravel" />
                                 <Run Text="{Binding PostInstallLaravelVersion, Mode=OneWay, StringFormat=' {}', TargetNullValue=''}" />
@@ -425,61 +373,82 @@
                             <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
                                        Text="Installed and ready" />
 
-                            <!-- Open site + custom commands + add -->
-                            <WrapPanel Margin="0,8,0,0">
-                                <Button Padding="10,6"
-                                        Content="Open site"
-                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                        Command="{Binding OpenSiteCommand}" />
-                                <ItemsControl ItemsSource="{Binding CustomCommandItems}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Button Margin="4,0,0,0"
-                                                    Padding="10,6"
-                                                    ToolTip="{Binding Command}"
-                                                    Command="{Binding RunCommand}">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasCustomChrome}" Value="True">
-                                                                <Setter Property="Background" Value="{Binding CustomBackgroundBrush}" />
-                                                                <Setter Property="Foreground" Value="{Binding CustomForegroundBrush}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Image Width="16"
-                                                           Height="16"
-                                                           Margin="0,0,6,0"
-                                                           Source="{Binding IconSource}"
-                                                           Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
-                                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayLabel}" />
-                                                </StackPanel>
-                                            </Button>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <Button Margin="4,0,0,0"
-                                        Width="34"
-                                        Height="34"
-                                        Padding="0"
-                                        ToolTip="Manage custom commands"
-                                        Style="{StaticResource StackrootIconButtonStyle}"
-                                        Command="{Binding ManageCustomCommandsCommand}">
-                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
-                                               FontSize="14"
-                                               Text="&#xE8FD;" />
-                                </Button>
-                            </WrapPanel>
+                            <controls:SiteCustomCommandsToolbar ShowOpenSiteButton="True" />
                         </StackPanel>
 
                         <!-- Right: Square thumbnail -->
+                        <Border Grid.Column="1"
+                                Margin="20,0,0,0"
+                                Width="200" Height="200"
+                                Background="#0A0F1A"
+                                BorderBrush="{StaticResource StackrootBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                ClipToBounds="True"
+                                Visibility="{Binding ShowThumbnailColumn, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Border Visibility="{Binding IsCapturing, Converter={StaticResource BoolToVis}}"
+                                        Background="#990A0F1A">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Capturing…" FontSize="12"
+                                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Margin="0,6,0,0" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <Image Source="{Binding ThumbnailImage}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+                                <Button HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Margin="0,0,4,4"
+                                        Width="28" Height="28"
+                                        Padding="2"
+                                        ToolTip="Refresh screenshot"
+                                        Style="{StaticResource StackrootIconButtonStyle}"
+                                        Command="{Binding CaptureThumbnailCommand}"
+                                        Visibility="{Binding ShowRefreshButton, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                               FontSize="12"
+                                               Text="&#xE72C;" />
+                                </Button>
+                                <Button VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        MinWidth="100"
+                                        Padding="14,8"
+                                        Content="Capture"
+                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                                        Command="{Binding CaptureThumbnailCommand}"
+                                        Visibility="{Binding ShowCaptureButton, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Static site card + thumbnail -->
+                <Border Margin="0,14,0,0"
+                        Padding="14"
+                        Background="{StaticResource StackrootCardBrush}"
+                        BorderBrush="{StaticResource StackrootBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Visibility="{Binding ShowStaticSiteCard, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource StackrootAccentTextBrush}"
+                                       Text="{Binding TemplateLabel, Mode=OneWay}" />
+                            <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       Text="Ready" />
+
+                            <controls:SiteCustomCommandsToolbar ShowOpenSiteButton="True" />
+                        </StackPanel>
+
                         <Border Grid.Column="1"
                                 Margin="20,0,0,0"
                                 Width="200" Height="200"

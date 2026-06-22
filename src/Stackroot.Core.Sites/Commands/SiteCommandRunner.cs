@@ -285,17 +285,18 @@ public sealed class SiteCommandRunner
                 if (cancelToken.IsCancellationRequested)
                 {
                     TryKillProcessTree(process);
-                    Task.WaitAll(stdoutTask, stderrTask);
+                    process.WaitForExit(2000);
+                    WaitForPumpTasks(stdoutTask, stderrTask, TimeSpan.FromMilliseconds(500));
                     return new ProcessResult(
                         -1,
                         stdoutBuilder.ToString(),
                         TrimWithMessage(stderrBuilder, "Command cancelled."));
                 }
 
-                process.WaitForExit(250);
+                process.WaitForExit(50);
             }
 
-            Task.WaitAll(stdoutTask, stderrTask);
+            WaitForPumpTasks(stdoutTask, stderrTask, TimeSpan.FromSeconds(30));
 
             if (cancelToken.IsCancellationRequested)
             {
@@ -311,6 +312,11 @@ public sealed class SiteCommandRunner
         {
             _runRegistry.Complete(logPath);
         }
+    }
+
+    private static void WaitForPumpTasks(Task stdoutTask, Task stderrTask, TimeSpan timeout)
+    {
+        Task.WaitAny(stdoutTask, stderrTask, Task.Delay(timeout));
     }
 
     private static void TryKillProcessTree(Process process)

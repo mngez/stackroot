@@ -45,6 +45,14 @@
             <StackPanel DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal">
+                <Button Margin="0,0,10,0"
+                        Padding="10,6"
+                        VerticalAlignment="Center"
+                        Content="Run again"
+                        ToolTip="Run this command again"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding RunAgainCommand}"
+                        Visibility="{Binding ShowRunAgainButton, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Margin="0,0,10,0"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource StackrootAccentTextBrush}"
@@ -113,11 +121,12 @@
                       Content="Live updates"
                       IsChecked="{Binding LiveUpdates}" />
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Width="88"
+                <Button Width="100"
                         Margin="0,0,8,0"
-                        Content="Cancel"
+                        Content="{Binding CancelButtonLabel}"
                         Command="{Binding CancelCommand}"
-                        Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}" />
+                        IsEnabled="{Binding CanCancelCommand}"
+                        Visibility="{Binding ShowCancelButton, Converter={StaticResource BoolToVis}}" />
                 <Button Width="88"
                         Margin="0,0,8,0"
                         Content="Refresh"

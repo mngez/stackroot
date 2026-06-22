@@ -109,6 +109,10 @@ public sealed class CustomCommandEditItemViewModel : ViewModelBase
     public Media.Brush? PreviewBackgroundBrush =>
         CustomCommandChromeHelper.TryBrush(BackgroundHex);
 
+    public Media.Brush? CustomForegroundBrush => PreviewForegroundBrush;
+
+    public Media.Brush? CustomBackgroundBrush => PreviewBackgroundBrush;
+
     public string PreviewLabel => string.IsNullOrWhiteSpace(Label) ? "Preview" : Label;
 
     public bool CanDelete => !IsRunning;
@@ -173,6 +177,8 @@ public sealed class CustomCommandEditItemViewModel : ViewModelBase
         RaisePropertyChanged(nameof(HasCustomChrome));
         RaisePropertyChanged(nameof(PreviewForegroundBrush));
         RaisePropertyChanged(nameof(PreviewBackgroundBrush));
+        RaisePropertyChanged(nameof(CustomForegroundBrush));
+        RaisePropertyChanged(nameof(CustomBackgroundBrush));
         RaisePropertyChanged(nameof(PreviewLabel));
     }
 }
@@ -200,6 +206,8 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
 
         AddCommand = new RelayCommand(_ => AddNewCommand());
         DeleteCommand = new RelayCommand(_ => DeleteSelected(), _ => Selected?.CanDelete == true);
+        PickForegroundColorCommand = new RelayCommand(_ => PickForegroundColor(), _ => Selected is not null);
+        PickBackgroundColorCommand = new RelayCommand(_ => PickBackgroundColor(), _ => Selected is not null);
         BrowseIconCommand = new RelayCommand(_ => BrowseIcon(), _ => Selected is not null);
         ClearIconCommand = new RelayCommand(_ => Selected?.ClearIcon(), _ => Selected?.HasIcon == true);
         ClearColorsCommand = new RelayCommand(_ => Selected?.ClearColors(), _ => Selected is not null);
@@ -225,6 +233,8 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
             BrowseIconCommand.RaiseCanExecuteChanged();
             ClearIconCommand.RaiseCanExecuteChanged();
             ClearColorsCommand.RaiseCanExecuteChanged();
+            PickForegroundColorCommand.RaiseCanExecuteChanged();
+            PickBackgroundColorCommand.RaiseCanExecuteChanged();
             SaveCommand.RaiseCanExecuteChanged();
         }
     }
@@ -235,6 +245,8 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
 
     public RelayCommand AddCommand { get; }
     public RelayCommand DeleteCommand { get; }
+    public RelayCommand PickForegroundColorCommand { get; }
+    public RelayCommand PickBackgroundColorCommand { get; }
     public RelayCommand BrowseIconCommand { get; }
     public RelayCommand ClearIconCommand { get; }
     public RelayCommand ClearColorsCommand { get; }
@@ -294,6 +306,34 @@ public sealed class CustomCommandsDialogViewModel : ViewModelBase
 
         Selected.TryImportIcon(Application.Current?.MainWindow);
         ClearIconCommand.RaiseCanExecuteChanged();
+    }
+
+    private void PickForegroundColor()
+    {
+        if (Selected is null)
+        {
+            return;
+        }
+
+        var hex = ColorPickerDialog.PickHex(Application.Current?.MainWindow, Selected.ForegroundHex);
+        if (hex is not null)
+        {
+            Selected.ForegroundHex = hex;
+        }
+    }
+
+    private void PickBackgroundColor()
+    {
+        if (Selected is null)
+        {
+            return;
+        }
+
+        var hex = ColorPickerDialog.PickHex(Application.Current?.MainWindow, Selected.BackgroundHex);
+        if (hex is not null)
+        {
+            Selected.BackgroundHex = hex;
+        }
     }
 
     private void CleanupRemovedIcons()

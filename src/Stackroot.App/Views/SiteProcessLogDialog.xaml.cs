@@ -80,6 +80,14 @@ public partial class SiteProcessLogDialog : Window
             return;
         }
 
+        if (IsPlaceholder(content))
+        {
+            Interlocked.Increment(ref _applyGeneration);
+            LogColorizer.ApplySegments(LogViewer, LogColorizer.ParseSegments(content));
+            _lastAppliedContent = content;
+            return;
+        }
+
         var previous = _lastAppliedContent;
         var canAppend =
             previous is not null
@@ -136,4 +144,7 @@ public partial class SiteProcessLogDialog : Window
                 });
             }, TaskScheduler.Default);
     }
+
+    private static bool IsPlaceholder(string content) =>
+        content is "(no output yet)" or "(starting…)" or "(log file not found)";
 }

@@ -2335,7 +2335,9 @@ public sealed class DashboardViewModel : ViewModelBase
             return;
         }
 
-        var dialogVm = new FileLogDialogViewModel(logPath, $"Log — {Path.GetFileName(logPath)}");
+        var dialogVm = new FileLogDialogViewModel(
+            new SiteLogSession(logPath),
+            $"Log — {Path.GetFileName(logPath)}");
         var owner = Application.Current?.MainWindow;
         var dialog = new SiteProcessLogDialog
         {

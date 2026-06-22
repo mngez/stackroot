@@ -130,6 +130,58 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="StackrootCustomCommandButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource StackrootAccentTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource StackrootAccentSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource StackrootAccentBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChromeBorder"
+                                CornerRadius="8"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ChromeBorder" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChromeBorder" Property="Opacity" Value="0.88" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasCustomChrome}" Value="True">
+                    <Setter Property="Background" Value="{Binding CustomBackgroundBrush}" />
+                    <Setter Property="Foreground" Value="{Binding CustomForegroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{Binding CustomBackgroundBrush}" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
+                        <Condition Binding="{Binding HasCustomChrome}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="{StaticResource StackrootAccentSoftHoverBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource StackrootAccentBrush}" />
+                    <Setter Property="Foreground" Value="{StaticResource StackrootTextBrush}" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="StackrootInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource StackrootButtonStyle}">
             <Setter Property="Padding" Value="10,2" />
             <Setter Property="MinHeight" Value="24" />

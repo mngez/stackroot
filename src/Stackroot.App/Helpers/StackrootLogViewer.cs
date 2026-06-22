@@ -18,8 +18,6 @@ public static class StackrootLogViewer
         bool openInExternalEditor,
         SettingsStore settingsStore,
         Window? owner = null,
-        Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null,
         SiteLogChrome? chrome = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
@@ -33,7 +31,7 @@ public static class StackrootLogViewer
         }
         else
         {
-            ShowInApp(logPath, title, owner, cancelAsync, isRunning, chrome);
+            ShowInApp(logPath, title, owner, chrome);
         }
     }
 
@@ -41,8 +39,6 @@ public static class StackrootLogViewer
         string logPath,
         string title,
         Window? owner = null,
-        Func<Task>? cancelAsync = null,
-        Func<bool>? isRunning = null,
         SiteLogChrome? chrome = null)
     {
         if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
@@ -51,7 +47,13 @@ public static class StackrootLogViewer
         }
 
         owner ??= Application.Current?.MainWindow;
-        var dialogVm = new FileLogDialogViewModel(logPath, title, cancelAsync, isRunning, chrome);
+        var session = chrome?.Session ?? new SiteLogSession(logPath);
+        if (!string.Equals(session.LogPath, logPath, StringComparison.Ordinal))
+        {
+            session.LogPath = logPath;
+        }
+
+        var dialogVm = new FileLogDialogViewModel(session, title);
         var dialog = new SiteProcessLogDialog
         {
             DataContext = dialogVm,

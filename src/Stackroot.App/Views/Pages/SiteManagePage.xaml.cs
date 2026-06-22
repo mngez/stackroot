@@ -12,17 +12,6 @@ public partial class SiteManagePage : System.Windows.Controls.UserControl
         InitializeComponent();
     }
 
-    private void OnCustomCommandViewLogClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not System.Windows.Controls.Button { DataContext: SiteCustomCommandViewModel cmd })
-        {
-            return;
-        }
-
-        cmd.OpenLog(Keyboard.Modifiers == ModifierKeys.Control);
-        e.Handled = true;
-    }
-
     private void OnQuickActionViewLogClick(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is SiteManageViewModel vm)

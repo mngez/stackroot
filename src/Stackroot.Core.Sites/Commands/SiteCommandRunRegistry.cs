@@ -32,6 +32,18 @@ public sealed class SiteCommandRunRegistry
 
         entry.Cancellation.Cancel();
         TryKillProcessTree(entry.Process);
+        try
+        {
+            if (!entry.Process.HasExited)
+            {
+                entry.Process.WaitForExit(2000);
+            }
+        }
+        catch
+        {
+            // Best effort.
+        }
+
         return true;
     }
 
