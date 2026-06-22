@@ -466,6 +466,14 @@ public sealed class SettingsStore
         });
     }
 
+    public AppSettings UpdateNginxHttp(NginxHttpSettings patch)
+    {
+        return Mutate(settings => settings with
+        {
+            NginxHttp = NginxHttpSettingsSanitizer.Sanitize(patch)
+        });
+    }
+
     private AppSettings Mutate(Func<AppSettings, AppSettings> mutator)
     {
         EnsureCanPersist();
@@ -580,6 +588,7 @@ public sealed class SettingsStore
                 Enabled = stored.TestDns?.Enabled ?? legacyTestDnsEnabled,
                 AutoStart = stored.TestDns?.AutoStart ?? (stored.TestDns?.Enabled ?? legacyTestDnsEnabled)
             },
+            NginxHttp = NginxHttpSettingsSanitizer.Sanitize(stored.NginxHttp),
             Services = MergeServices(defaults.Services, stored.Services)
         };
 

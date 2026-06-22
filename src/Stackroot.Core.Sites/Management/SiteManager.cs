@@ -304,7 +304,8 @@ public sealed class SiteManager
                 fastCgi,
                 phpRc,
                 ResolveNginxHttpsPort(),
-                sslEnabled);
+                sslEnabled,
+                settings.NginxHttp);
             if (AutoHosts && syncHosts)
             {
                 SyncManagedHosts();

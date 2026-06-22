@@ -307,6 +307,56 @@ public record class TestDnsSettings
     public bool AutoStart { get; set; } = true;
 }
 
+/// <summary>
+/// Global nginx <c>http {}</c> tuning — written into the main nginx.conf.
+/// </summary>
+public record class NginxHttpSettings
+{
+    /// <summary><c>auto</c> or a worker count (1-128).</summary>
+    public string WorkerProcesses { get; set; } = "auto";
+
+    public int WorkerConnections { get; set; } = 1024;
+
+    public int KeepaliveTimeout { get; set; } = 65;
+
+    public bool Sendfile { get; set; } = true;
+
+    public bool TcpNopush { get; set; } = true;
+
+    public string ClientMaxBodySize { get; set; } = "512M";
+
+    public int TypesHashMaxSize { get; set; } = 2048;
+
+    public int ServerNamesHashBucketSize { get; set; } = 128;
+
+    public bool GzipEnabled { get; set; } = true;
+
+    public int GzipCompLevel { get; set; } = 5;
+
+    public int GzipMinLength { get; set; } = 256;
+
+    /// <summary>When true, Stackroot does not rewrite the main nginx.conf file.</summary>
+    public bool ManageMainConfigManually { get; set; }
+
+    public bool MultiAccept { get; set; } = true;
+
+    public bool AccessLogEnabled { get; set; } = true;
+
+    public string ErrorLogLevel { get; set; } = "warn";
+
+    public int FastCgiConnectTimeoutSeconds { get; set; } = 60;
+
+    public int FastCgiSendTimeoutSeconds { get; set; } = 600;
+
+    public int FastCgiReadTimeoutSeconds { get; set; } = 600;
+
+    public int ProxyConnectTimeoutSeconds { get; set; } = 60;
+
+    public int ProxySendTimeoutSeconds { get; set; } = 600;
+
+    public int ProxyReadTimeoutSeconds { get; set; } = 600;
+}
+
 public record class DatabaseCredentials
 {
     public string Username { get; set; } = "root";
@@ -368,6 +418,7 @@ public record class AppSettings
     public PhpRedisAdminSettings Phpredisadmin { get; set; } = new();
     public MailpitSettings Mailpit { get; set; } = new();
     public TestDnsSettings TestDns { get; set; } = new();
+    public NginxHttpSettings NginxHttp { get; set; } = new();
     public Dictionary<ServiceId, ServicePortSettings> Services { get; set; } = [];
 }
 

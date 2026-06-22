@@ -116,6 +116,12 @@ public sealed class NginxWebStackRebuilder
 
     public void WriteAppDomainConfig() => _appDomainConfigWriter.Write();
 
+    public async Task ApplyMainNginxConfigAndReloadAsync(CancellationToken cancellationToken = default)
+    {
+        _webStackCoordinator.WriteMainNginxConfig();
+        await FinalizeAndReloadAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     private async Task ReloadNginxAsync(CancellationToken cancellationToken, bool forceRestart = false)
     {
         var settings = _settingsStore.Load();

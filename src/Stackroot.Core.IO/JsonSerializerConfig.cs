@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Stackroot.Core.IO;
 
@@ -9,7 +10,8 @@ public static class JsonSerializerConfig
     {
         WriteIndented = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true
+        AllowTrailingCommas = true,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver()
     };
 
     static JsonSerializerConfig()

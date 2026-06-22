@@ -25,7 +25,8 @@ public sealed class ServiceSettingsDialogViewModel : ViewModelBase
         SettingsStore settingsStore,
         ServiceDefinition definition,
         ServicePortSettings settings,
-        string? activePackageLabel)
+        string? activePackageLabel,
+        Action? openNginxHttpSettings = null)
     {
         _settingsStore = settingsStore;
         _serviceId = definition.Id;
@@ -34,6 +35,7 @@ public sealed class ServiceSettingsDialogViewModel : ViewModelBase
         Title = $"{definition.Name} settings";
         ShowNetworkFields = definition.DefaultPort > 0;
         ShowSslFields = definition.Id == ServiceId.Nginx && definition.DefaultSslPort is > 0;
+        ShowNginxHttpSettings = openNginxHttpSettings is not null;
 
         _enabled = settings.Enabled;
         _autoStart = settings.AutoStart;
@@ -46,11 +48,13 @@ public sealed class ServiceSettingsDialogViewModel : ViewModelBase
 
         SaveCommand = new RelayCommand(_ => SaveHostAndPorts());
         CloseCommand = new RelayCommand(_ => RequestClose?.Invoke(this, EventArgs.Empty));
+        OpenNginxHttpSettingsCommand = new RelayCommand(_ => openNginxHttpSettings?.Invoke(), _ => openNginxHttpSettings is not null);
     }
 
     public string Title { get; }
     public bool ShowNetworkFields { get; }
     public bool ShowSslFields { get; }
+    public bool ShowNginxHttpSettings { get; }
 
     public bool Enabled
     {
@@ -135,6 +139,7 @@ public sealed class ServiceSettingsDialogViewModel : ViewModelBase
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand CloseCommand { get; }
+    public RelayCommand OpenNginxHttpSettingsCommand { get; }
 
     public event EventHandler? RequestClose;
     public event EventHandler? SettingsSaved;

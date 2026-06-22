@@ -5,6 +5,10 @@
              xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Views/Controls/SettingHintIcon.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         <SolidColorBrush x:Key="StackrootWindowBrush" Color="#0C1118" />
         <SolidColorBrush x:Key="StackrootSidebarBrush" Color="#121A26" />
         <SolidColorBrush x:Key="StackrootCardBrush" Color="#192333" />
@@ -757,5 +761,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

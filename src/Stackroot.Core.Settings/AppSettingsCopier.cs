@@ -28,6 +28,7 @@ public static class AppSettingsCopier
             Phpredisadmin = source.Phpredisadmin with { },
             Mailpit = source.Mailpit with { },
             TestDns = source.TestDns with { },
+            NginxHttp = source.NginxHttp with { },
             Services = CopyServices(source.Services)
         };
     }

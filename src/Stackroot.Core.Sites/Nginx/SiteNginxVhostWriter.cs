@@ -1,6 +1,7 @@
 using System.Text;
 using Stackroot.Core.Nginx;
 using Stackroot.Core.Sites.Models;
+using NginxHttpSettings = Stackroot.Core.Abstractions.NginxHttpSettings;
 
 namespace Stackroot.Core.Sites.Nginx;
 
@@ -35,11 +36,12 @@ public sealed class SiteNginxVhostWriter
         string? phpFastCgiEndpoint = null,
         string? phpRcDirectory = null,
         int? httpsPort = null,
-        bool sslEnabled = false)
+        bool sslEnabled = false,
+        NginxHttpSettings? httpSettings = null)
     {
         ArgumentNullException.ThrowIfNull(site);
         Directory.CreateDirectory(NginxSitesEnabledDirectory);
-        var config = BuildConfig(site, httpPort, phpFastCgiEndpoint ?? _phpFastCgiEndpoint, phpRcDirectory, httpsPort, sslEnabled);
+        var config = BuildConfig(site, httpPort, phpFastCgiEndpoint ?? _phpFastCgiEndpoint, phpRcDirectory, httpsPort, sslEnabled, httpSettings);
         File.WriteAllText(GetConfigPath(site), config);
     }
 
@@ -58,7 +60,8 @@ public sealed class SiteNginxVhostWriter
         string? phpFastCgiEndpoint = null,
         string? phpRcDirectory = null,
         int? httpsPort = null,
-        bool sslEnabled = false)
+        bool sslEnabled = false,
+        NginxHttpSettings? httpSettings = null)
     {
         ArgumentNullException.ThrowIfNull(site);
         var fastCgi = string.IsNullOrWhiteSpace(phpFastCgiEndpoint) ? _phpFastCgiEndpoint : phpFastCgiEndpoint.Trim();
@@ -79,18 +82,18 @@ public sealed class SiteNginxVhostWriter
                 sb.AppendLine();
             }
 
-            AppendServerBlock(sb, site, sslPort, normalizedRoot, fastCgi, phpRc, ssl: true);
+            AppendServerBlock(sb, site, sslPort, normalizedRoot, fastCgi, phpRc, ssl: true, httpSettings);
 
             if (site.ForceHttps != true)
             {
                 sb.AppendLine();
-                AppendServerBlock(sb, site, httpPort, normalizedRoot, fastCgi, phpRc, ssl: false);
+                AppendServerBlock(sb, site, httpPort, normalizedRoot, fastCgi, phpRc, ssl: false, httpSettings);
             }
 
             return sb.ToString();
         }
 
-        AppendServerBlock(sb, site, httpPort, normalizedRoot, fastCgi, phpRc, ssl: false);
+        AppendServerBlock(sb, site, httpPort, normalizedRoot, fastCgi, phpRc, ssl: false, httpSettings);
         return sb.ToString();
     }
 
@@ -101,7 +104,8 @@ public sealed class SiteNginxVhostWriter
         string normalizedRoot,
         string fastCgi,
         string? phpRc,
-        bool ssl)
+        bool ssl,
+        NginxHttpSettings? httpSettings)
     {
         sb.AppendLine("server {");
         sb.AppendLine(ssl ? $"    listen {listenPort} ssl;" : $"    listen {listenPort};");
@@ -114,7 +118,6 @@ public sealed class SiteNginxVhostWriter
 
         sb.AppendLine($"    root {normalizedRoot};");
         sb.AppendLine("    index index.php index.html index.htm;");
-        sb.AppendLine("    client_max_body_size 128m;");
         sb.AppendLine();
         sb.AppendLine("    location / {");
         sb.AppendLine($"        {BuildMainTryFiles(site)}");
@@ -142,7 +145,7 @@ public sealed class SiteNginxVhostWriter
                 sb.AppendLine("        proxy_set_header Connection \"upgrade\";");
             }
 
-            NginxStabilityDirectives.AppendProxyLocation(sb);
+            NginxStabilityDirectives.AppendProxyLocation(sb, httpSettings);
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -158,7 +161,7 @@ public sealed class SiteNginxVhostWriter
         }
 
         sb.AppendLine($"        fastcgi_pass {fastCgi};");
-        NginxStabilityDirectives.AppendFastCgiLocation(sb);
+        NginxStabilityDirectives.AppendFastCgiLocation(sb, httpSettings);
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }

@@ -2,7 +2,7 @@
 
 Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-**Current target:** next release after published **0.2.5**.
+**Current target:** **0.2.6** (unreleased).
 
 ### How publishing works
 

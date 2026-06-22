@@ -1,6 +1,7 @@
 using System.Text;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
+using Stackroot.Core.Settings;
 
 namespace Stackroot.Core.Nginx;
 
@@ -15,6 +16,9 @@ public static class NginxRuntime
 
     public static string SitesEnabledDirectory(StackrootPaths paths) =>
         Path.Combine(nginxPrefix(paths), "conf", "sites-enabled");
+
+    public static string MainConfigPath(StackrootPaths paths) =>
+        Path.Combine(nginxPrefix(paths), "conf", "nginx.conf");
 
     public static void setupNginxRuntime(StackrootPaths paths, string nginxInstallPath)
     {
@@ -60,8 +64,17 @@ public static class NginxRuntime
         }
     }
 
-    public static void writeNginxConfig(StackrootPaths paths, ServicePortSettings settings)
+    public static void writeNginxConfig(
+        StackrootPaths paths,
+        ServicePortSettings portSettings,
+        NginxHttpSettings? httpSettings = null)
     {
+        var http = NginxHttpSettingsSanitizer.Sanitize(httpSettings);
+        if (http.ManageMainConfigManually)
+        {
+            return;
+        }
+
         var prefix = nginxPrefix(paths);
         var confDir = Path.Combine(prefix, "conf");
         Directory.CreateDirectory(confDir);
@@ -83,28 +96,51 @@ public static class NginxRuntime
             File.WriteAllText(accessLogPath, string.Empty, Utf8NoBom);
         }
 
-        var httpPort = settings.Port;
-        var httpsPort = settings.SslPort ?? 443;
-        var host = string.IsNullOrWhiteSpace(settings.Host) ? "127.0.0.1" : settings.Host;
+        var httpPort = portSettings.Port;
+        var httpsPort = portSettings.SslPort ?? 443;
+        var host = string.IsNullOrWhiteSpace(portSettings.Host) ? "127.0.0.1" : portSettings.Host;
 
         var confBuilder = new StringBuilder();
-        confBuilder.AppendLine("worker_processes  1;");
-        confBuilder.AppendLine($"error_log  {NormalizePath(errorLogPath)} warn;");
+        confBuilder.AppendLine($"worker_processes  {http.WorkerProcesses};");
+        confBuilder.AppendLine($"error_log  {NormalizePath(errorLogPath)} {http.ErrorLogLevel};");
         confBuilder.AppendLine("pid        logs/nginx.pid;");
         confBuilder.AppendLine();
         confBuilder.AppendLine("events {");
-        confBuilder.AppendLine("    worker_connections  8192;");
-        confBuilder.AppendLine("    multi_accept on;");
+        confBuilder.AppendLine($"    worker_connections  {http.WorkerConnections};");
+        if (http.MultiAccept)
+        {
+            confBuilder.AppendLine("    multi_accept on;");
+        }
+
         confBuilder.AppendLine("}");
         confBuilder.AppendLine();
         confBuilder.AppendLine("http {");
         confBuilder.AppendLine("    include       mime.types;");
         confBuilder.AppendLine("    default_type  application/octet-stream;");
-        confBuilder.AppendLine($"    access_log    {NormalizePath(accessLogPath)} combined;");
-        confBuilder.AppendLine("    sendfile      on;");
-        confBuilder.AppendLine("    tcp_nopush    on;");
-        confBuilder.AppendLine("    keepalive_timeout  75;");
-        NginxStabilityDirectives.AppendHttpDefaults(confBuilder);
+        if (http.AccessLogEnabled)
+        {
+            confBuilder.AppendLine($"    access_log    {NormalizePath(accessLogPath)} combined;");
+        }
+        else
+        {
+            confBuilder.AppendLine("    access_log    off;");
+        }
+        if (http.Sendfile)
+        {
+            confBuilder.AppendLine("    sendfile      on;");
+        }
+
+        if (http.TcpNopush)
+        {
+            confBuilder.AppendLine("    tcp_nopush    on;");
+        }
+
+        confBuilder.AppendLine($"    keepalive_timeout  {http.KeepaliveTimeout};");
+        confBuilder.AppendLine($"    types_hash_max_size {http.TypesHashMaxSize};");
+        confBuilder.AppendLine($"    server_names_hash_bucket_size {http.ServerNamesHashBucketSize};");
+        confBuilder.AppendLine($"    client_max_body_size {http.ClientMaxBodySize};");
+        AppendGzipDirectives(confBuilder, http);
+        NginxStabilityDirectives.AppendHttpDefaults(confBuilder, http);
         confBuilder.AppendLine();
         confBuilder.AppendLine("    server {");
         confBuilder.AppendLine($"        listen       {httpPort};");
@@ -121,7 +157,7 @@ public static class NginxRuntime
         confBuilder.AppendLine("}");
         var conf = confBuilder.ToString();
 
-        if (settings.SslEnabled != false)
+        if (portSettings.SslEnabled != false)
         {
             var crtPath = Path.Combine(confDir, "ssl", "dev.crt");
             var keyPath = Path.Combine(confDir, "ssl", "dev.key");
@@ -149,6 +185,27 @@ public static class NginxRuntime
         }
 
         File.WriteAllText(Path.Combine(confDir, "nginx.conf"), conf, Utf8NoBom);
+    }
+
+    private static void AppendGzipDirectives(StringBuilder confBuilder, NginxHttpSettings http)
+    {
+        if (!http.GzipEnabled)
+        {
+            return;
+        }
+
+        confBuilder.AppendLine("    gzip  on;");
+        confBuilder.AppendLine($"    gzip_comp_level {http.GzipCompLevel};");
+        confBuilder.AppendLine($"    gzip_min_length {http.GzipMinLength};");
+        confBuilder.AppendLine("    gzip_proxied any;");
+        confBuilder.AppendLine("    gzip_vary on;");
+        confBuilder.AppendLine("    gzip_types");
+        foreach (var type in NginxHttpDefaults.GzipTypes)
+        {
+            confBuilder.AppendLine($"        {type}");
+        }
+
+        confBuilder.AppendLine("    ;");
     }
 
     private static string NormalizePath(string path)

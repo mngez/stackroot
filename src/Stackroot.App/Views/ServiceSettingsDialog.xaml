@@ -77,6 +77,13 @@
                           Content="Enable HTTPS (SSL)"
                           IsChecked="{Binding SslEnabled}" />
             </StackPanel>
+
+            <Button Margin="0,16,0,0"
+                    HorizontalAlignment="Left"
+                    Padding="12,6"
+                    Visibility="{Binding ShowNginxHttpSettings, Converter={StaticResource BoolToVis}}"
+                    Content="HTTP performance settings…"
+                    Command="{Binding OpenNginxHttpSettingsCommand}" />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0,18,0,0">

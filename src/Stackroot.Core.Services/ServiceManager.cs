@@ -1399,7 +1399,7 @@ public sealed class ServiceManager : IDisposable
         }
         else
         {
-            NginxRuntime.writeNginxConfig(_paths, serviceSettings);
+            NginxRuntime.writeNginxConfig(_paths, serviceSettings, settings.NginxHttp);
         }
 
         var siteStore = new SiteStore(_paths.DataRoot, _settingsStore);

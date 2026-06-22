@@ -44,6 +44,12 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 6:
                 EnsureShellMetricsCpuRefreshSeconds(obj);
                 break;
+            case 7:
+                EnsureNginxHttpSettings(obj);
+                break;
+            case 8:
+                EnsureNginxHttpExtendedSettings(obj);
+                break;
         }
     }
 
@@ -129,6 +135,69 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         if (general["shellMetricsEnabled"] is null)
         {
             general["shellMetricsEnabled"] = true;
+        }
+    }
+
+    private static void EnsureNginxHttpSettings(JsonObject root)
+    {
+        var defaults = new NginxHttpSettings();
+        var nginxHttp = root["nginxHttp"] as JsonObject ?? new JsonObject();
+
+        SetStringIfMissing(nginxHttp, "workerProcesses", defaults.WorkerProcesses);
+        SetIntIfMissing(nginxHttp, "workerConnections", defaults.WorkerConnections);
+        SetIntIfMissing(nginxHttp, "keepaliveTimeout", defaults.KeepaliveTimeout);
+        SetBoolIfMissing(nginxHttp, "sendfile", defaults.Sendfile);
+        SetBoolIfMissing(nginxHttp, "tcpNopush", defaults.TcpNopush);
+        SetStringIfMissing(nginxHttp, "clientMaxBodySize", defaults.ClientMaxBodySize);
+        SetIntIfMissing(nginxHttp, "typesHashMaxSize", defaults.TypesHashMaxSize);
+        SetIntIfMissing(nginxHttp, "serverNamesHashBucketSize", defaults.ServerNamesHashBucketSize);
+        SetBoolIfMissing(nginxHttp, "gzipEnabled", defaults.GzipEnabled);
+        SetIntIfMissing(nginxHttp, "gzipCompLevel", defaults.GzipCompLevel);
+        SetIntIfMissing(nginxHttp, "gzipMinLength", defaults.GzipMinLength);
+
+        root["nginxHttp"] = nginxHttp;
+    }
+
+    private static void EnsureNginxHttpExtendedSettings(JsonObject root)
+    {
+        var defaults = new NginxHttpSettings();
+        var nginxHttp = root["nginxHttp"] as JsonObject ?? new JsonObject();
+
+        SetBoolIfMissing(nginxHttp, "manageMainConfigManually", defaults.ManageMainConfigManually);
+        SetBoolIfMissing(nginxHttp, "multiAccept", defaults.MultiAccept);
+        SetBoolIfMissing(nginxHttp, "accessLogEnabled", defaults.AccessLogEnabled);
+        SetStringIfMissing(nginxHttp, "errorLogLevel", defaults.ErrorLogLevel);
+        SetIntIfMissing(nginxHttp, "fastCgiConnectTimeoutSeconds", defaults.FastCgiConnectTimeoutSeconds);
+        SetIntIfMissing(nginxHttp, "fastCgiSendTimeoutSeconds", defaults.FastCgiSendTimeoutSeconds);
+        SetIntIfMissing(nginxHttp, "fastCgiReadTimeoutSeconds", defaults.FastCgiReadTimeoutSeconds);
+        SetIntIfMissing(nginxHttp, "proxyConnectTimeoutSeconds", defaults.ProxyConnectTimeoutSeconds);
+        SetIntIfMissing(nginxHttp, "proxySendTimeoutSeconds", defaults.ProxySendTimeoutSeconds);
+        SetIntIfMissing(nginxHttp, "proxyReadTimeoutSeconds", defaults.ProxyReadTimeoutSeconds);
+
+        root["nginxHttp"] = nginxHttp;
+    }
+
+    private static void SetStringIfMissing(JsonObject obj, string key, string value)
+    {
+        if (obj[key] is null)
+        {
+            obj[key] = value;
+        }
+    }
+
+    private static void SetIntIfMissing(JsonObject obj, string key, int value)
+    {
+        if (obj[key] is null)
+        {
+            obj[key] = value;
+        }
+    }
+
+    private static void SetBoolIfMissing(JsonObject obj, string key, bool value)
+    {
+        if (obj[key] is null)
+        {
+            obj[key] = value;
         }
     }
 

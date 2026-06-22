@@ -186,6 +186,7 @@ public static class SettingsDefaults
                 Enabled = false,
                 AutoStart = true
             },
+            NginxHttp = new NginxHttpSettings(),
             Services = DefaultServices()
         };
 

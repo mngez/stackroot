@@ -73,11 +73,13 @@ public sealed class NginxWebStackCoordinator
             return;
         }
 
-        NginxRuntime.writeNginxConfig(_paths, nginxSettings);
+        NginxRuntime.writeNginxConfig(_paths, nginxSettings, settings.NginxHttp);
         _diagnostics?.LogActivity(
             "Nginx",
-            DevSslCertificateManager.CertificatesExist(_paths)
-                ? "HTTPS certificates ready — nginx config updated."
-                : "nginx config updated (HTTP only until HTTPS certificates are available).");
+            settings.NginxHttp.ManageMainConfigManually
+                ? "Main nginx.conf is managed manually — skipped auto-generation."
+                : DevSslCertificateManager.CertificatesExist(_paths)
+                    ? "HTTPS certificates ready — nginx config updated."
+                    : "nginx config updated (HTTP only until HTTPS certificates are available).");
     }
 }

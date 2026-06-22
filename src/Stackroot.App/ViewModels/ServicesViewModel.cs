@@ -413,7 +413,8 @@ public sealed class ServicesViewModel : ViewModelBase
             _settingsStore,
             item.Definition,
             settings,
-            ResolvePackageLabel(settings.PackageId ?? item.Definition.PackageId));
+            ResolvePackageLabel(settings.PackageId ?? item.Definition.PackageId),
+            id == ServiceId.Nginx ? OpenNginxHttpSettings : null);
 
         var owner = Application.Current?.MainWindow;
         var dialog = new ServiceSettingsDialog
@@ -1527,6 +1528,38 @@ public sealed class ServicesViewModel : ViewModelBase
         {
             item.Message = ex.Message;
             return new ServiceInfo { Id = "testdns", Message = ex.Message };
+        }
+    }
+
+    private void OpenNginxHttpSettings()
+    {
+        var dialogVm = new NginxHttpSettingsDialogViewModel(
+            _settingsStore,
+            _paths,
+            reloadNginxAsync: ct => _nginxWebStackRebuilder.ApplyMainNginxConfigAndReloadAsync(ct));
+        var owner = Application.Current?.MainWindow;
+        var dialog = new NginxHttpSettingsDialog
+        {
+            DataContext = dialogVm,
+            Owner = owner
+        };
+
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+
+        SettingsSaveFeedback.DeferredSettingsSave? deferred = null;
+        dialogVm.SettingsSaved += (_, _) =>
+        {
+            deferred = new SettingsSaveFeedback.DeferredSettingsSave(
+                "Saving nginx HTTP settings…",
+                dialogVm.StatusMessage,
+                async () => await RefreshAsync(force: true));
+        };
+
+        dialog.ShowDialog();
+
+        if (deferred is { } save)
+        {
+            _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save);
         }
     }
 
