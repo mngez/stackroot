@@ -51,8 +51,16 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             CancelCommand = new RelayCommand(_ => _ = CancelAsync(), _ => CanCancel);
         }
 
+        if (isRunning?.Invoke() == false)
+        {
+            LiveUpdates = false;
+        }
+
         _ = RefreshAsync();
-        StartPolling();
+        if (LiveUpdates)
+        {
+            StartPolling();
+        }
     }
 
     public string Title
@@ -133,6 +141,8 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
                 return;
             }
 
+            RaisePropertyChanged(nameof(ShowRefreshButton));
+
             if (value)
             {
                 StartPolling();
@@ -143,6 +153,8 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
+    public bool ShowRefreshButton => !LiveUpdates;
 
     public bool CanCancel
     {
@@ -214,8 +226,13 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
             StatusMessage = string.Empty;
             if (_isRunning is not null)
             {
-                CanCancel = _isRunning();
+                var running = _isRunning();
+                CanCancel = running;
                 RaisePropertyChanged(nameof(RunningLabel));
+                if (!running)
+                {
+                    DisableLiveUpdates();
+                }
             }
 
             UpdateLogFooter();
@@ -274,6 +291,16 @@ public sealed class FileLogDialogViewModel : ViewModelBase, IDisposable
         LogFooterLine = completion is { } result
             ? $"# exit {result.ExitCode} · {result.DurationMs}ms"
             : string.Empty;
+    }
+
+    private void DisableLiveUpdates()
+    {
+        if (!LiveUpdates)
+        {
+            return;
+        }
+
+        LiveUpdates = false;
     }
 
     public void Dispose()

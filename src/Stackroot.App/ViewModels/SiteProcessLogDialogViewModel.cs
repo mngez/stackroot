@@ -87,6 +87,8 @@ public sealed class SiteProcessLogDialogViewModel : ViewModelBase, IDisposable
                 return;
             }
 
+            RaisePropertyChanged(nameof(ShowRefreshButton));
+
             if (value)
             {
                 StartPolling();
@@ -97,6 +99,8 @@ public sealed class SiteProcessLogDialogViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
+    public bool ShowRefreshButton => !LiveUpdates;
 
     public bool IsRunning
     {
@@ -177,6 +181,21 @@ public sealed class SiteProcessLogDialogViewModel : ViewModelBase, IDisposable
         Pid = log.Pid?.ToString();
         RaisePropertyChanged(nameof(RunningLabel));
         RaisePropertyChanged(nameof(PidLabel));
+
+        if (!log.Running)
+        {
+            DisableLiveUpdates();
+        }
+    }
+
+    private void DisableLiveUpdates()
+    {
+        if (!LiveUpdates)
+        {
+            return;
+        }
+
+        LiveUpdates = false;
     }
 
     public void Dispose()

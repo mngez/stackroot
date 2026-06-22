@@ -121,7 +121,8 @@
                 <Button Width="88"
                         Margin="0,0,8,0"
                         Content="Refresh"
-                        Command="{Binding RefreshCommand}" />
+                        Command="{Binding RefreshCommand}"
+                        Visibility="{Binding ShowRefreshButton, Converter={StaticResource BoolToVis}}" />
                 <Button Width="88"
                         Content="Close"
                         Style="{StaticResource StackrootPrimaryButtonStyle}"

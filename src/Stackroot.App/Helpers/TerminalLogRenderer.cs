@@ -71,7 +71,7 @@ internal static class TerminalLogRenderer
                 continue;
             }
 
-            if (!string.IsNullOrEmpty(cell.Content) && !IsEmptyCell(cell))
+            if (!string.IsNullOrEmpty(cell.Content) && !IsTrimmableCell(cell))
             {
                 return false;
             }
@@ -83,13 +83,13 @@ internal static class TerminalLogRenderer
     private static void AppendLineSegments(List<LogSegment> results, BufferLine line, int columns)
     {
         var firstColumn = 0;
-        while (firstColumn < columns && IsEmptyCell(line[firstColumn]))
+        while (firstColumn < columns && IsTrimmableCell(line[firstColumn]))
         {
             firstColumn++;
         }
 
         var lastColumn = columns - 1;
-        while (lastColumn >= firstColumn && IsEmptyCell(line[lastColumn]))
+        while (lastColumn >= firstColumn && IsTrimmableCell(line[lastColumn]))
         {
             lastColumn--;
         }
@@ -138,8 +138,40 @@ internal static class TerminalLogRenderer
         results.Add(new LogSegment(Environment.NewLine, DefaultLogHex, null));
     }
 
-    private static bool IsEmptyCell(BufferCell cell) =>
-        cell.Width == 0 || string.IsNullOrEmpty(cell.Content) || cell.Content is " ";
+    private static bool IsTrimmableCell(BufferCell cell)
+    {
+        if (cell.Width == 0 || string.IsNullOrEmpty(cell.Content))
+        {
+            return true;
+        }
+
+        if (cell.Content is not " ")
+        {
+            return false;
+        }
+
+        // Only strip unstyled spaces (line padding). Keep ANSI-padded badge cells.
+        return HasDefaultAttributes(cell.Attributes);
+    }
+
+    private static bool HasDefaultAttributes(AttributeData attributes)
+    {
+        if (attributes.IsBold()
+            || attributes.IsItalic()
+            || attributes.IsUnderline()
+            || attributes.IsDim()
+            || attributes.IsInverse())
+        {
+            return false;
+        }
+
+        if (attributes.GetFgColor() is not (256 or 257))
+        {
+            return false;
+        }
+
+        return attributes.GetBgColor() is 256 or 257;
+    }
 
     private static LogSegment CellToSegment(BufferCell cell)
     {

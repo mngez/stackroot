@@ -44,17 +44,28 @@ public sealed class TerminalLogRendererTests
     }
 
     [Fact]
-    public void PassBadgeUsesBlackOnGreen()
+    public void ColoredBadgePreservesInteriorPaddingSpaces()
     {
-        var ansi = "  \u001b[30m\u001b[42m\u001b[1m PASS \u001b[m Tests\\Unit\\HelpersTest\r\n";
+        var ansi = "\u001b[30m\u001b[42m\u001b[1m XY \u001b[m\r\n";
 
         var segments = LogColorizer.ParseSegments(ansi);
 
         Assert.Contains(segments, static segment =>
-            segment.Text.Contains("PASS", StringComparison.Ordinal)
+            string.Equals(segment.Text, " XY ", StringComparison.Ordinal)
             && string.Equals(segment.ForegroundHex, "#0C0C0C", StringComparison.OrdinalIgnoreCase)
             && string.Equals(segment.BackgroundHex, "#16C60C", StringComparison.OrdinalIgnoreCase)
             && segment.Bold);
+    }
+
+    [Fact]
+    public void BoldOnlyBadgePreservesPaddingSpaces()
+    {
+        var ansi = "\u001b[1m AB \u001b[m\r\n";
+
+        var segments = LogColorizer.ParseSegments(ansi);
+
+        Assert.Contains(segments, static segment =>
+            string.Equals(segment.Text, " AB ", StringComparison.Ordinal) && segment.Bold);
     }
 
     [Fact]
