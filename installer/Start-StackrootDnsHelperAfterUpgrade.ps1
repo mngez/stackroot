@@ -29,7 +29,7 @@ if ($query -match 'RUNNING') {
     exit 0
 }
 
-& sc.exe config $ServiceName start= delayed-auto 2>&1 | Out-Null
+& sc.exe config $ServiceName start= auto 2>&1 | Out-Null
 
 & sc.exe start $ServiceName 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {

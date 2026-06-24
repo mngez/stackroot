@@ -9,6 +9,7 @@ public sealed class DnsHelperHostedLoop : IAsyncDisposable
     public async Task RunAsync(CancellationToken stoppingToken)
     {
         Directory.CreateDirectory(StackrootDnsHelperConstants.ConfigDirectory);
+        StackrootDnsServiceInstaller.TryEnsureAutomaticStart(out _);
         StartWatcher();
         await ApplyLatestAsync(stoppingToken).ConfigureAwait(false);
 

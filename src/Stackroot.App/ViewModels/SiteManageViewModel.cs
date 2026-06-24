@@ -1597,7 +1597,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         var site = Site;
         var settings = _settingsStore.Load();
         var templates = _services.GetRequiredService<IReadOnlyList<SiteTemplateDefinition>>();
-        var dialogVm = new EditSiteDialogViewModel(site, templates, PhpVersions, settings.General.WwwPath);
+        var dialogVm = new EditSiteDialogViewModel(site, templates, PhpVersions, settings.General.WwwPath, settings.NginxHttp);
         var dialog = new EditSiteDialog
         {
             DataContext = dialogVm,

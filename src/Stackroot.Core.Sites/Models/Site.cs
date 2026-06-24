@@ -9,6 +9,8 @@ public sealed class SiteDevProxy
     public string LocationPath { get; set; } = "/";
     public string TargetUrl { get; set; } = string.Empty;
     public bool? Websocket { get; set; }
+    /// <summary>Per-proxy nginx directive overrides (keys match SiteDevProxyDirectives format).</summary>
+    public Dictionary<string, string>? DirectiveOverrides { get; set; }
 }
 
 public sealed class SiteCustomCommand

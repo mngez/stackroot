@@ -12,6 +12,8 @@ using Stackroot.Core.Sites;
 
 using Stackroot.Core.Sites.Models;
 
+using NginxHttpSettings = Stackroot.Core.Abstractions.NginxHttpSettings;
+
 
 
 namespace Stackroot.App.ViewModels;
@@ -23,6 +25,8 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
     private readonly Site _site;
 
     private readonly string _configuredWwwPath;
+
+    private readonly NginxHttpSettings _nginxHttp;
 
     private string _selectedTemplate;
 
@@ -50,13 +54,17 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
         IEnumerable<PhpVersionOptionViewModel> phpVersions,
 
-        string? configuredWwwPath)
+        string? configuredWwwPath,
+
+        NginxHttpSettings? nginxHttp = null)
 
     {
 
         _site = site;
 
         _configuredWwwPath = configuredWwwPath ?? string.Empty;
+
+        _nginxHttp = nginxHttp ?? new NginxHttpSettings();
 
         Domain = site.Domain;
 
@@ -104,7 +112,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
         {
 
-            DevProxies.Add(new DevProxyRowViewModel(proxy, RemoveProxy, RaiseProxySummaryChanged));
+            DevProxies.Add(new DevProxyRowViewModel(proxy, RemoveProxy, RaiseProxySummaryChanged, _nginxHttp));
 
         }
 
@@ -344,7 +352,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
 
-        DevProxies.Add(new DevProxyRowViewModel(null, RemoveProxy, RaiseProxySummaryChanged, expand: true));
+        DevProxies.Add(new DevProxyRowViewModel(null, RemoveProxy, RaiseProxySummaryChanged, _nginxHttp, expand: true));
 
         RaiseProxySummaryChanged();
 
@@ -361,6 +369,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
             null,
             RemoveProxy,
             RaiseProxySummaryChanged,
+            _nginxHttp,
             expand: true,
             defaultKind: SiteDevProxyLocationKind.Regex));
 

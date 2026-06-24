@@ -82,7 +82,7 @@ public sealed class SslTrustPromptCoordinator
             return;
         }
 
-        RunOnUi(() => _viewModel.SetBusy("Installing local CA to Windows trusted roots…"));
+        RunOnUi(() => _viewModel.SetBusy("Installing local CA to Windows trusted roots (all users)…"));
 
         try
         {

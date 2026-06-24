@@ -10,6 +10,26 @@ public static class NginxControl
 {
     public sealed record NginxReloadResult(bool Ok, bool Restarted, string? Message = null, int? Pid = null);
 
+    public sealed record NginxConfigTestResult(bool Ok, string? Message);
+
+    public static NginxConfigTestResult TestConfiguration(
+        StackrootPaths paths,
+        string nginxInstallPath,
+        IProcessJobManager jobManager)
+    {
+        var prefix = NginxRuntime.nginxPrefix(paths);
+        var binPath = PackageBinaryResolver.ResolvePackageBinary(nginxInstallPath, "nginx.exe");
+        if (binPath is null)
+        {
+            return new NginxConfigTestResult(false, "nginx.exe not found");
+        }
+
+        var test = RunManagedUtility(binPath, ["-t", "-p", prefix], prefix, jobManager);
+        return test.ExitCode == 0
+            ? new NginxConfigTestResult(true, null)
+            : new NginxConfigTestResult(false, test.ErrorOutput ?? test.Output ?? "Configuration test failed");
+    }
+
     public static void stopNginx(string prefix, string binPath, IProcessJobManager jobManager)
     {
         StopNginx(prefix, binPath, jobManager);

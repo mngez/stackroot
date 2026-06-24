@@ -207,6 +207,7 @@ public static class StackrootBootstrap
             provider.GetRequiredService<InstallRegistryStore>(),
             provider.GetRequiredService<SiteCommandRunner>(),
             provider.GetRequiredService<StackrootPaths>(),
+            provider.GetRequiredService<IProcessJobManager>(),
             provider.GetRequiredService<DatabaseManager>(),
             provider.GetRequiredService<SiteInstallerRegistry>(),
             provider.GetRequiredService<IDiagnosticsReporter>(),

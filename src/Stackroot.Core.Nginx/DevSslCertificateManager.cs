@@ -255,16 +255,15 @@ public static class DevSslCertificateManager
                 : new DevSslTrustResult(true, "Local CA is already trusted.");
         }
 
-        var addResult = RunProcess("certutil", ["-addstore", "-user", "Root", caPath]);
-        if (addResult.ExitCode != 0)
+        var addResult = TryInstallCaToMachineRoot(caPath);
+        if (!addResult.Ok)
         {
-            var detail = FirstNonEmpty(addResult.Error, addResult.Output, "certutil failed to install the CA.");
-            return new DevSslTrustResult(false, detail);
+            return new DevSslTrustResult(false, addResult.Message);
         }
 
         var message = removed > 0
-            ? $"Local CA installed to Windows trusted roots. Removed {removed} outdated Stackroot CA certificate(s)."
-            : "Local CA installed to Windows trusted roots.";
+            ? $"Local CA installed to Windows trusted roots (all users). Removed {removed} outdated Stackroot CA certificate(s)."
+            : "Local CA installed to Windows trusted roots (all users).";
         return new DevSslTrustResult(true, message);
     }
 
@@ -280,7 +279,7 @@ public static class DevSslCertificateManager
             ? new DevSslTrustResult(
                 true,
                 $"Removed {removed} outdated Stackroot CA certificate(s) from Windows trusted roots.")
-            : new DevSslTrustResult(true, "No outdated Stackroot CA certificates were found in your trust store.");
+            : new DevSslTrustResult(true, "No outdated Stackroot CA certificates were found in Windows trusted roots.");
     }
 
     public static int CountTrustedStackrootLocalCas(StackrootPaths paths)
@@ -415,8 +414,9 @@ public static class DevSslCertificateManager
             return false;
         }
 
-        return ListTrustedStackrootLocalCas().Any(candidate =>
-            string.Equals(candidate, normalized, StringComparison.OrdinalIgnoreCase));
+        return ListTrustedStackrootLocalCas(StoreLocation.LocalMachine)
+            .Concat(ListTrustedStackrootLocalCas(StoreLocation.CurrentUser))
+            .Any(candidate => string.Equals(candidate, normalized, StringComparison.OrdinalIgnoreCase));
     }
 
     private static int PruneStaleTrustedLocalCas(string? keepThumbprint)
@@ -426,53 +426,79 @@ public static class DevSslCertificateManager
             return 0;
         }
 
+        return PruneStore(StoreLocation.LocalMachine, keepThumbprint)
+               + PruneStore(StoreLocation.CurrentUser, keepThumbprint);
+    }
+
+    private static int PruneStore(StoreLocation location, string? keepThumbprint)
+    {
         var keep = NormalizeThumbprint(keepThumbprint);
-        using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-        store.Open(OpenFlags.ReadWrite);
-
-        var toRemove = new List<X509Certificate2>();
-        foreach (var certificate in store.Certificates.Cast<X509Certificate2>())
+        try
         {
-            if (!IsStackrootLocalCa(certificate))
+            using var store = new X509Store(StoreName.Root, location);
+            store.Open(OpenFlags.ReadWrite);
+
+            var toRemove = new List<X509Certificate2>();
+            foreach (var certificate in store.Certificates.Cast<X509Certificate2>())
             {
-                continue;
+                if (!IsStackrootLocalCa(certificate))
+                {
+                    continue;
+                }
+
+                var thumbprint = NormalizeThumbprint(certificate.Thumbprint);
+                if (!string.IsNullOrEmpty(keep)
+                    && string.Equals(thumbprint, keep, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                toRemove.Add(certificate);
             }
 
-            var thumbprint = NormalizeThumbprint(certificate.Thumbprint);
-            if (!string.IsNullOrEmpty(keep)
-                && string.Equals(thumbprint, keep, StringComparison.OrdinalIgnoreCase))
+            foreach (var certificate in toRemove)
             {
-                continue;
+                store.Remove(certificate);
             }
 
-            toRemove.Add(certificate);
+            return toRemove.Count;
         }
-
-        foreach (var certificate in toRemove)
+        catch
         {
-            store.Remove(certificate);
+            return 0;
         }
-
-        return toRemove.Count;
     }
 
     private static IReadOnlyList<string> ListTrustedStackrootLocalCas()
+        => ListTrustedStackrootLocalCas(StoreLocation.LocalMachine)
+            .Concat(ListTrustedStackrootLocalCas(StoreLocation.CurrentUser))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static IReadOnlyList<string> ListTrustedStackrootLocalCas(StoreLocation location)
     {
         if (!OperatingSystem.IsWindows())
         {
             return Array.Empty<string>();
         }
 
-        using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-        store.Open(OpenFlags.ReadOnly);
+        try
+        {
+            using var store = new X509Store(StoreName.Root, location);
+            store.Open(OpenFlags.ReadOnly);
 
-        return store.Certificates
-            .Cast<X509Certificate2>()
-            .Where(IsStackrootLocalCa)
-            .Select(static certificate => NormalizeThumbprint(certificate.Thumbprint))
-            .Where(static thumbprint => !string.IsNullOrEmpty(thumbprint))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            return store.Certificates
+                .Cast<X509Certificate2>()
+                .Where(IsStackrootLocalCa)
+                .Select(static certificate => NormalizeThumbprint(certificate.Thumbprint))
+                .Where(static thumbprint => !string.IsNullOrEmpty(thumbprint))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private static bool IsStackrootLocalCa(X509Certificate2 certificate)
@@ -485,6 +511,63 @@ public static class DevSslCertificateManager
         string.IsNullOrWhiteSpace(thumbprint)
             ? string.Empty
             : thumbprint.Replace(":", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+
+    private static DevSslTrustResult TryInstallCaToMachineRoot(string caPath)
+    {
+        var direct = RunProcess("certutil", ["-addstore", "Root", caPath]);
+        if (direct.ExitCode == 0)
+        {
+            return new DevSslTrustResult(true);
+        }
+
+        var elevated = RunElevatedProcess("certutil", ["-addstore", "Root", caPath]);
+        if (elevated.ExitCode == 0)
+        {
+            return new DevSslTrustResult(true);
+        }
+
+        var detail = FirstNonEmpty(
+            elevated.Error,
+            elevated.Output,
+            direct.Error,
+            direct.Output,
+            "Could not install the CA to Windows trusted roots. Administrator approval may be required.");
+        return new DevSslTrustResult(false, detail);
+    }
+
+    private static ProcessResult RunElevatedProcess(string fileName, IReadOnlyList<string> args)
+    {
+        var arguments = string.Join(' ', args.Select(static arg => arg.Contains(' ') ? $"\"{arg}\"" : arg));
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
+
+            if (process is null)
+            {
+                return new ProcessResult(1, string.Empty, $"Failed to start elevated: {fileName}");
+            }
+
+            process.WaitForExit(120_000);
+            return process.ExitCode == 0
+                ? new ProcessResult(0, string.Empty, null)
+                : new ProcessResult(process.ExitCode, string.Empty, "Administrator approval is required to trust the certificate for all users.");
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return new ProcessResult(1, string.Empty, "Administrator approval was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            return new ProcessResult(1, string.Empty, ex.Message);
+        }
+    }
 
     private static ProcessResult RunProcess(string fileName, IReadOnlyList<string> args)
     {

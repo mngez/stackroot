@@ -31,6 +31,7 @@ public sealed class SiteManager
     private readonly SiteInstallerRegistry? _installerRegistry;
     private readonly IDiagnosticsReporter? _diagnostics;
     private readonly StackrootPaths _paths;
+    private readonly IProcessJobManager _jobManager;
     private readonly Func<Task>? _refreshLocalDns;
 
     public SiteManager(
@@ -41,6 +42,7 @@ public sealed class SiteManager
         InstallRegistryStore registryStore,
         SiteCommandRunner commandRunner,
         StackrootPaths paths,
+        IProcessJobManager jobManager,
         DatabaseManager? databaseManager = null,
         SiteInstallerRegistry? installerRegistry = null,
         IDiagnosticsReporter? diagnostics = null,
@@ -55,6 +57,7 @@ public sealed class SiteManager
         _registryStore = registryStore;
         _commandRunner = commandRunner;
         _paths = paths;
+        _jobManager = jobManager;
         _databaseManager = databaseManager;
         _installerRegistry = installerRegistry;
         _diagnostics = diagnostics;
@@ -92,12 +95,14 @@ public sealed class SiteManager
             SiteProvisioner.ScaffoldDirectory(site.Path, site.DocumentRoot);
             SiteProvisioner.ScaffoldFiles(site);
             _ = EnsureDevSslForCurrentDomains();
+            EnsureNginxConfigValid(site);
             SyncSiteRuntime(site);
             return site;
         }
         catch
         {
             _store.Remove(site.Id);
+            _vhostWriter.Remove(site);
             if (!customPath && Directory.Exists(site.Path))
             {
                 TryDeleteDirectory(site.Path);
@@ -145,6 +150,8 @@ public sealed class SiteManager
                               !string.IsNullOrWhiteSpace(patch.Template) &&
                               !string.Equals(previous.Template, patch.Template, StringComparison.OrdinalIgnoreCase);
 
+        var candidate = _store.BuildUpdateCandidate(id, patch);
+        EnsureNginxConfigValid(candidate);
         var site = _store.Update(id, patch);
 
         if (templateChanged)
@@ -301,19 +308,8 @@ public sealed class SiteManager
     {
         if (site.Enabled)
         {
-            var settings = _settingsStore.Load();
-            var fastCgi = SitePhpFastCgiEndpoint.Resolve(settings, _registryStore, site.PhpVersionId);
-            var phpRc = SitePhpFastCgiEndpoint.ResolvePhpRcPath(_paths, settings, site.PhpVersionId);
             sslPaths ??= DevSslCertificateManager.TryGetExisting(_paths);
-            var sslEnabled = ResolveNginxSslEnabled() && sslPaths is not null;
-            _vhostWriter.Write(
-                site,
-                ResolveNginxHttpPort(),
-                fastCgi,
-                phpRc,
-                ResolveNginxHttpsPort(),
-                sslEnabled,
-                settings.NginxHttp);
+            WriteSiteVhost(site);
             if (AutoHosts && syncHosts)
             {
                 SyncManagedHosts();
@@ -397,6 +393,82 @@ public sealed class SiteManager
         }
 
         return hostEntries;
+    }
+
+    private void EnsureNginxConfigValid(SiteModel site)
+    {
+        if (!site.Enabled)
+        {
+            return;
+        }
+
+        var installPath = TryResolveNginxInstallPath();
+        if (installPath is null)
+        {
+            return;
+        }
+
+        var configPath = _vhostWriter.GetConfigPath(site);
+        string? backup = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+        try
+        {
+            WriteSiteVhost(site);
+            var result = NginxControl.TestConfiguration(_paths, installPath, _jobManager);
+            if (!result.Ok)
+            {
+                throw new InvalidOperationException(result.Message ?? "Nginx configuration test failed.");
+            }
+        }
+        catch
+        {
+            if (backup is null)
+            {
+                _vhostWriter.Remove(site);
+            }
+            else
+            {
+                File.WriteAllText(configPath, backup);
+            }
+
+            throw;
+        }
+    }
+
+    private void WriteSiteVhost(SiteModel site)
+    {
+        var settings = _settingsStore.Load();
+        var fastCgi = SitePhpFastCgiEndpoint.Resolve(settings, _registryStore, site.PhpVersionId);
+        var phpRc = SitePhpFastCgiEndpoint.ResolvePhpRcPath(_paths, settings, site.PhpVersionId);
+        var sslPaths = DevSslCertificateManager.TryGetExisting(_paths);
+        var sslEnabled = ResolveNginxSslEnabled() && sslPaths is not null;
+        _vhostWriter.Write(
+            site,
+            ResolveNginxHttpPort(),
+            fastCgi,
+            phpRc,
+            ResolveNginxHttpsPort(),
+            sslEnabled,
+            settings.NginxHttp);
+    }
+
+    private string? TryResolveNginxInstallPath()
+    {
+        var settings = _settingsStore.Load();
+        var definition = SettingsDefaults.ServiceDefinitions.First(static d => d.Id == ServiceId.Nginx);
+        if (!settings.Services.TryGetValue(ServiceId.Nginx, out var nginxSettings))
+        {
+            return null;
+        }
+
+        var packageId = string.IsNullOrWhiteSpace(nginxSettings.PackageId)
+            ? definition.PackageId
+            : nginxSettings.PackageId;
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            return null;
+        }
+
+        return _registryStore.GetById(packageId)?.InstallPath;
     }
 
     private int ResolveNginxHttpPort()

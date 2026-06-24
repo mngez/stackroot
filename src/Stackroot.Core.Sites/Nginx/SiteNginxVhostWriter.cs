@@ -126,7 +126,7 @@ public sealed class SiteNginxVhostWriter
 
         foreach (var proxy in site.DevProxies ?? [])
         {
-            if (!proxy.Enabled || string.IsNullOrWhiteSpace(proxy.TargetUrl))
+            if (!proxy.Enabled || string.IsNullOrWhiteSpace(SiteDevProxyDirectives.TryGetProxyPass(proxy, httpSettings)))
             {
                 continue;
             }
@@ -139,18 +139,7 @@ public sealed class SiteNginxVhostWriter
 
             var location = SiteDevProxyLocation.Format(kind, pattern);
             sb.AppendLine($"    location {location} {{");
-            sb.AppendLine($"        proxy_pass {proxy.TargetUrl.Trim()};");
-            sb.AppendLine("        proxy_http_version 1.1;");
-            sb.AppendLine("        proxy_set_header Host $host;");
-            sb.AppendLine("        proxy_set_header X-Real-IP $remote_addr;");
-            sb.AppendLine("        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;");
-            sb.AppendLine("        proxy_set_header X-Forwarded-Proto $scheme;");
-            if (proxy.Websocket == true)
-            {
-                sb.AppendLine("        proxy_set_header Upgrade $http_upgrade;");
-                sb.AppendLine("        proxy_set_header Connection \"upgrade\";");
-            }
-
+            SiteDevProxyDirectives.AppendLocationBlock(sb, proxy, httpSettings);
             NginxStabilityDirectives.AppendProxyLocation(sb, httpSettings);
             sb.AppendLine("    }");
             sb.AppendLine();

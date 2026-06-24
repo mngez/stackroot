@@ -156,6 +156,24 @@ public sealed class SiteStore
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(patch);
 
+        var updated = BuildUpdateCandidate(id, patch);
+        var registry = Load();
+        var index = registry.Sites.FindIndex(site => site.Id == id);
+        if (index < 0)
+        {
+            throw new KeyNotFoundException($"Site not found: {id}");
+        }
+
+        registry.Sites[index] = updated;
+        Save(registry);
+        return CloneSite(updated);
+    }
+
+    public Site BuildUpdateCandidate(string id, UpdateSiteInput patch)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(patch);
+
         var registry = Load();
         var index = registry.Sites.FindIndex(site => site.Id == id);
         if (index < 0)
@@ -164,6 +182,11 @@ public sealed class SiteStore
         }
 
         var current = registry.Sites[index];
+        return BuildUpdatedSite(current, patch, registry.Sites);
+    }
+
+    private Site BuildUpdatedSite(Site current, UpdateSiteInput patch, IReadOnlyList<Site> allSites)
+    {
         var updatedDomain = string.IsNullOrWhiteSpace(patch.Domain) ? current.Domain : patch.Domain.Trim();
         var updatedAliases = patch.DomainAliases is null
             ? current.DomainAliases
@@ -179,7 +202,9 @@ public sealed class SiteStore
             Domain = updatedDomain,
             DomainAliases = updatedAliases
         };
-        var duplicateDomain = registry.Sites.Any(site => SiteDomainNames.SharesBoundName(candidate, site));
+        var duplicateDomain = allSites.Any(site =>
+            !string.Equals(site.Id, current.Id, StringComparison.Ordinal)
+            && SiteDomainNames.SharesBoundName(candidate, site));
         if (duplicateDomain)
         {
             throw new InvalidOperationException($"Site already exists: {updatedDomain}");
@@ -224,9 +249,7 @@ public sealed class SiteStore
             UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
         };
 
-        registry.Sites[index] = updated;
-        Save(registry);
-        return CloneSite(updated);
+        return updated;
     }
 
     public Site? Remove(string id)
@@ -314,7 +337,10 @@ public sealed class SiteStore
                 LocationKind = kind,
                 LocationPath = pattern,
                 TargetUrl = proxy.TargetUrl,
-                Websocket = proxy.Websocket
+                Websocket = proxy.Websocket,
+                DirectiveOverrides = proxy.DirectiveOverrides is null
+                    ? null
+                    : new Dictionary<string, string>(proxy.DirectiveOverrides, StringComparer.OrdinalIgnoreCase)
             };
         }).ToList();
     }

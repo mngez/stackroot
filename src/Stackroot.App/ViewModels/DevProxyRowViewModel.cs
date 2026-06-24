@@ -1,8 +1,38 @@
+using System.Collections.ObjectModel;
 using Stackroot.App.Commands;
+using Stackroot.Core.Abstractions;
 using Stackroot.Core.Sites.Models;
 using Stackroot.Core.Sites.Nginx;
+using SiteDevProxy = Stackroot.Core.Sites.Models.SiteDevProxy;
 
 namespace Stackroot.App.ViewModels;
+
+public sealed class DevProxyDirectiveRowViewModel : ViewModelBase
+{
+    private string _key = string.Empty;
+    private string _value = string.Empty;
+
+    public DevProxyDirectiveRowViewModel(string key, string value, Action<DevProxyDirectiveRowViewModel>? onRemove = null)
+    {
+        _key = key;
+        _value = value;
+        RemoveCommand = new RelayCommand(_ => onRemove?.Invoke(this), _ => onRemove is not null);
+    }
+
+    public string Key
+    {
+        get => _key;
+        set => SetProperty(ref _key, value);
+    }
+
+    public string Value
+    {
+        get => _value;
+        set => SetProperty(ref _value, value);
+    }
+
+    public RelayCommand RemoveCommand { get; }
+}
 
 public sealed class DevProxyLocationKindOption
 {
@@ -43,10 +73,10 @@ public sealed class DevProxyRowViewModel : ViewModelBase
 
     private readonly Action<DevProxyRowViewModel> _onRemove;
     private readonly Action _onEnabledChanged;
+    private readonly NginxHttpSettings _httpSettings;
     private string _name = string.Empty;
     private SiteDevProxyLocationKind _locationKind = SiteDevProxyLocationKind.Prefix;
     private string _locationPath = "/";
-    private string _targetUrl = string.Empty;
     private bool _enabled = true;
     private bool _websocket;
     private bool _isExpanded;
@@ -55,11 +85,13 @@ public sealed class DevProxyRowViewModel : ViewModelBase
         SiteDevProxy? source,
         Action<DevProxyRowViewModel> onRemove,
         Action onEnabledChanged,
+        NginxHttpSettings httpSettings,
         bool expand = false,
         SiteDevProxyLocationKind? defaultKind = null)
     {
         _onRemove = onRemove;
         _onEnabledChanged = onEnabledChanged;
+        _httpSettings = httpSettings ?? new NginxHttpSettings();
         Id = source?.Id ?? Guid.NewGuid().ToString("N");
         _name = source?.Name ?? string.Empty;
         if (source is null)
@@ -76,13 +108,22 @@ public sealed class DevProxyRowViewModel : ViewModelBase
             _websocket = source.Websocket ?? normalized.Kind is SiteDevProxyLocationKind.Regex or SiteDevProxyLocationKind.RegexIgnoreCase;
         }
 
-        _targetUrl = source?.TargetUrl ?? string.Empty;
         _enabled = source?.Enabled ?? (source is null);
         _isExpanded = expand;
+        Directives = new ObservableCollection<DevProxyDirectiveRowViewModel>();
+        LoadDirectives(source);
         RemoveCommand = new RelayCommand(_ => _onRemove(this));
+        AddDirectiveCommand = new RelayCommand(_ => Directives.Add(new DevProxyDirectiveRowViewModel(string.Empty, string.Empty, RemoveDirective)));
+        ResetDirectivesCommand = new RelayCommand(_ => ResetDirectives());
     }
 
     public string Id { get; }
+
+    public ObservableCollection<DevProxyDirectiveRowViewModel> Directives { get; }
+
+    public RelayCommand AddDirectiveCommand { get; }
+
+    public RelayCommand ResetDirectivesCommand { get; }
 
     public string Name
     {
@@ -143,12 +184,6 @@ public sealed class DevProxyRowViewModel : ViewModelBase
         }
     }
 
-    public string TargetUrl
-    {
-        get => _targetUrl;
-        set => SetProperty(ref _targetUrl, value);
-    }
-
     public bool Enabled
     {
         get => _enabled;
@@ -165,7 +200,13 @@ public sealed class DevProxyRowViewModel : ViewModelBase
     public bool Websocket
     {
         get => _websocket;
-        set => SetProperty(ref _websocket, value);
+        set
+        {
+            if (SetProperty(ref _websocket, value))
+            {
+                RebuildDirectiveRowsFromOverrides(CollectDirectiveOverrides());
+            }
+        }
     }
 
     public bool IsExpanded
@@ -185,16 +226,27 @@ public sealed class DevProxyRowViewModel : ViewModelBase
 
     public RelayCommand RemoveCommand { get; }
 
-    public SiteDevProxy ToModel() => new()
+    public SiteDevProxy ToModel()
     {
-        Id = Id,
-        Name = Name.Trim(),
-        LocationKind = LocationKind,
-        LocationPath = LocationPath.Trim(),
-        TargetUrl = TargetUrl.Trim(),
-        Enabled = Enabled,
-        Websocket = Websocket
-    };
+        var entries = Directives
+            .Select(row => new KeyValuePair<string, string>(row.Key.Trim(), row.Value.Trim()))
+            .Where(entry => !string.IsNullOrWhiteSpace(entry.Key))
+            .ToList();
+
+        var proxy = new SiteDevProxy
+        {
+            Id = Id,
+            Name = Name.Trim(),
+            LocationKind = LocationKind,
+            LocationPath = LocationPath.Trim(),
+            TargetUrl = GetDirectiveValue("proxy_pass"),
+            Enabled = Enabled,
+            Websocket = Websocket
+        };
+
+        proxy.DirectiveOverrides = SiteDevProxyDirectives.ComputeOverrides(proxy, entries, _httpSettings);
+        return proxy;
+    }
 
     public string? Validate()
     {
@@ -209,17 +261,63 @@ public sealed class DevProxyRowViewModel : ViewModelBase
             return locationError;
         }
 
-        if (string.IsNullOrWhiteSpace(TargetUrl))
+        foreach (var row in Directives)
         {
-            return "Target URL is required.";
+            var error = SiteDevProxyDirectives.ValidateEntry(row.Key, row.Value);
+            if (error is not null)
+            {
+                return error;
+            }
         }
 
-        if (!Uri.TryCreate(TargetUrl.Trim(), UriKind.Absolute, out var uri) ||
-            uri.Scheme is not "http" and not "https")
-        {
-            return "Target URL must use http:// or https://.";
-        }
+        var proxy = ToModel();
+        return SiteDevProxyDirectives.ValidateProxy(proxy, _httpSettings);
+    }
 
-        return null;
+    private void RemoveDirective(DevProxyDirectiveRowViewModel row) => Directives.Remove(row);
+
+    private void LoadDirectives(SiteDevProxy? source)
+    {
+        RebuildDirectiveRowsFromOverrides(source?.DirectiveOverrides, source?.TargetUrl);
+    }
+
+    private void ResetDirectives()
+    {
+        var proxyPass = GetDirectiveValue("proxy_pass");
+        RebuildDirectiveRowsFromOverrides(null, proxyPass);
+    }
+
+    private Dictionary<string, string> CollectDirectiveOverrides()
+        => SiteDevProxyDirectives.ComputeOverrides(
+            BuildProxyShell(),
+            Directives.Select(row => new KeyValuePair<string, string>(row.Key, row.Value)).ToList(),
+            _httpSettings)
+           ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    private SiteDevProxy BuildProxyShell() =>
+        new()
+        {
+            TargetUrl = GetDirectiveValue("proxy_pass"),
+            Websocket = Websocket
+        };
+
+    private string GetDirectiveValue(string key) =>
+        Directives.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase))?.Value.Trim()
+        ?? string.Empty;
+
+    private void RebuildDirectiveRowsFromOverrides(Dictionary<string, string>? overrides, string? targetUrl = null)
+    {
+        var proxy = new SiteDevProxy
+        {
+            TargetUrl = targetUrl ?? GetDirectiveValue("proxy_pass"),
+            Websocket = Websocket,
+            DirectiveOverrides = overrides
+        };
+
+        Directives.Clear();
+        foreach (var entry in SiteDevProxyDirectives.BuildMerged(proxy, _httpSettings))
+        {
+            Directives.Add(new DevProxyDirectiveRowViewModel(entry.Key, entry.Value, RemoveDirective));
+        }
     }
 }

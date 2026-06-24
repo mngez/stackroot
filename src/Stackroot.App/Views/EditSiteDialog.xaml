@@ -351,15 +351,48 @@
                                                FontFamily="Consolas"
                                                Text="{Binding NginxLocationPreview}"
                                                TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,8,0,0"
-                                               Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Target URL" />
-                                    <TextBox Margin="0,4,0,0"
-                                             Padding="8,4"
-                                             Text="{Binding TargetUrl, UpdateSourceTrigger=PropertyChanged}" />
                                     <CheckBox Margin="0,8,0,0"
                                               Content="WebSocket support"
                                               IsChecked="{Binding Websocket}" />
+                                    <DockPanel Margin="0,12,0,0" LastChildFill="False">
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="Proxy directives" />
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Margin="0,0,8,0"
+                                                    Padding="8,2"
+                                                    Content="Reset defaults"
+                                                    Command="{Binding ResetDirectivesCommand}" />
+                                            <Button Padding="8,2"
+                                                    Content="Add directive"
+                                                    Command="{Binding AddDirectiveCommand}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Set proxy_pass to the upstream URL. Add other nginx directives as needed; they are saved with the site."
+                                               TextWrapping="Wrap" />
+                                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding Directives}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,6" LastChildFill="True">
+                                                    <Button DockPanel.Dock="Right"
+                                                            Margin="8,0,0,0"
+                                                            Padding="8,2"
+                                                            Content="Remove"
+                                                            Command="{Binding RemoveCommand}" />
+                                                    <TextBox Margin="0,0,6,0"
+                                                             DockPanel.Dock="Left"
+                                                             Width="180"
+                                                             Padding="6,3"
+                                                             FontFamily="Consolas"
+                                                             Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBox Padding="6,3"
+                                                             FontFamily="Consolas"
+                                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Expander>
                         </DataTemplate>

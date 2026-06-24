@@ -637,7 +637,7 @@ public sealed class SitesViewModel : ViewModelBase
 
         var settings = _settingsStore.Load();
 
-        var dialogVm = new EditSiteDialogViewModel(site, _templates, PhpVersions, settings.General.WwwPath);
+        var dialogVm = new EditSiteDialogViewModel(site, _templates, PhpVersions, settings.General.WwwPath, settings.NginxHttp);
 
         var owner = Application.Current?.MainWindow;
 

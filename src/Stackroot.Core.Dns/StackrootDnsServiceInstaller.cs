@@ -321,29 +321,36 @@ public static class StackrootDnsServiceInstaller
         var binPath = FormatBinPath(helperExePath);
         var name = StackrootDnsHelperConstants.ServiceName;
         return
-            $"sc create {name} binPath= {binPath} start= delayed-auto DisplayName= \"{StackrootDnsHelperConstants.ServiceDisplayName}\" obj= LocalSystem & sc description {name} \"{StackrootDnsHelperConstants.ServiceDescription}\"";
+            $"sc create {name} binPath= {binPath} start= auto DisplayName= \"{StackrootDnsHelperConstants.ServiceDisplayName}\" obj= LocalSystem & sc description {name} \"{StackrootDnsHelperConstants.ServiceDescription}\"";
     }
 
-    private static bool TryEnsureAutomaticStart(out string? error)
+    /// <summary>
+    /// Ensures the helper starts with Windows immediately (not delayed-auto).
+    /// Upgrades legacy delayed-auto registrations on existing machines.
+    /// </summary>
+    public static bool TryEnsureAutomaticStart(out string? error)
     {
         error = null;
-        if (!IsInstalled() || IsAutomaticStartType())
+        if (!IsInstalled() || IsImmediateAutomaticStart())
         {
             return true;
         }
 
-        var args = $"config {StackrootDnsHelperConstants.ServiceName} start= delayed-auto";
+        var args = $"config {StackrootDnsHelperConstants.ServiceName} start= auto";
         if (TryRunSc(args, elevate: false, out error) || TryRunSc(args, elevate: true, out error))
         {
             error = null;
-            return IsAutomaticStartType();
+            return IsImmediateAutomaticStart();
         }
 
         error ??= "Could not configure the Stackroot DNS Helper service to start automatically with Windows.";
         return false;
     }
 
-    private static bool IsAutomaticStartType()
+    private static bool IsAutomaticStartType() =>
+        IsImmediateAutomaticStart() || IsDelayedAutomaticStart();
+
+    private static bool IsImmediateAutomaticStart()
     {
         if (!TryQueryServiceConfig(out var output))
         {
@@ -351,7 +358,17 @@ public static class StackrootDnsServiceInstaller
         }
 
         return output.Contains("AUTO_START", StringComparison.OrdinalIgnoreCase)
-            || output.Contains("DELAYED", StringComparison.OrdinalIgnoreCase);
+            && !output.Contains("DELAYED", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDelayedAutomaticStart()
+    {
+        if (!TryQueryServiceConfig(out var output))
+        {
+            return false;
+        }
+
+        return output.Contains("DELAYED", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryUpdateBinPath(string helperExePath, out string? error)
