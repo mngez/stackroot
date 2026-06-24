@@ -14,7 +14,7 @@ public sealed class ProcessSupervisor : IDisposable
     private readonly Dictionary<string, LogBuffer> _logs = new(StringComparer.OrdinalIgnoreCase);
     private readonly IProcessJobManager _jobManager;
     private Func<ProcessScope, ProcessRunTarget?>? _resolveTarget;
-    private bool _disposed;
+    private int _disposed;
 
     public ProcessSupervisor(IProcessJobManager jobManager)
     {
@@ -68,25 +68,27 @@ public sealed class ProcessSupervisor : IDisposable
         bool running;
         int? pid;
         string? cmdLine;
+        Process? processRef;
         lock (_sync)
         {
             _logs.TryGetValue(key, out var log);
             _running.TryGetValue(key, out var m);
             content = log?.Content.ToString() ?? string.Empty;
             cmdLine = m?.CommandLine ?? log?.CommandLine ?? commandLine;
-            // Snapshot the Process reference so we can check HasExited / Id
-            // OUTSIDE the lock — both can hang on zombie processes.
-            var process = m?.Process;
-            if (process is not null)
-            {
-                running = IsProcessRunning(process);
-                pid = TryGetProcessId(process);
-            }
-            else
-            {
-                running = false;
-                pid = null;
-            }
+            // Snapshot the Process reference only — HasExited / Id are checked
+            // OUTSIDE the lock because they can hang on zombie processes.
+            processRef = m?.Process;
+        }
+
+        if (processRef is not null)
+        {
+            running = IsProcessRunning(processRef);
+            pid = TryGetProcessId(processRef);
+        }
+        else
+        {
+            running = false;
+            pid = null;
         }
 
         return new ProcessLog
@@ -159,7 +161,7 @@ public sealed class ProcessSupervisor : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
@@ -175,7 +177,6 @@ public sealed class ProcessSupervisor : IDisposable
             Stop(scope, ignoreDisposed: true);
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -564,7 +565,7 @@ public sealed class ProcessSupervisor : IDisposable
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
     }
 
     private sealed class ManagedProcess

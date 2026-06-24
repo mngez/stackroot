@@ -41,7 +41,7 @@ public sealed class ServiceProcessToolsStartTests
             BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
 
-        var result = method!.Invoke(null, [fileName, arguments, Environment.CurrentDirectory, jobManager, null]);
+        var result = method!.Invoke(null, [fileName, arguments, Environment.CurrentDirectory, jobManager, null, null]);
         Assert.NotNull(result);
         return Assert.IsType<Process>(result);
     }

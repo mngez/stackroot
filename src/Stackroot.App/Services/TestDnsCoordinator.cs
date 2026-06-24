@@ -50,29 +50,26 @@ public sealed class TestDnsCoordinator
     public string? LastError => _client.ReadCachedStatus()?.LastError;
 
     /// <summary>
-    /// File-only status for polling — no sc.exe or NRPT PowerShell.
+    /// File-only status for polling — reconciles stale helper status when the Windows service is stopped.
     /// </summary>
     public TestDnsStatus GetCachedStatus()
     {
         var settings = _settingsStore.Load().TestDns;
-        var runtime = _client.ReadCachedStatus();
-        var listenerRunning = runtime?.ListenerRunning ?? false;
-        var nrptRulesPresent = settings.Enabled && (runtime?.NrptActive ?? false);
-        var nrptActive = settings.Enabled && nrptRulesPresent;
-        var message = ResolveStatusMessage(settings.Enabled, listenerRunning, nrptRulesPresent, runtime?.LastError);
-        return new TestDnsStatus(settings.Enabled, listenerRunning, nrptActive, message);
+        var suffixes = NormalizeConfiguredSuffixes(settings);
+        var serviceRunning = CheckHelperServiceRunning();
+        SyncStaleRuntimeStatusIfNeeded(settings, suffixes, serviceRunning);
+        return BuildStatus(settings, suffixes, serviceRunning, probeNrpt: false);
     }
 
     public TestDnsStatus GetStatus()
     {
         var settings = _settingsStore.Load().TestDns;
         var suffixes = NormalizeConfiguredSuffixes(settings);
+        var serviceRunning = CheckHelperServiceRunning();
+        SyncStaleRuntimeStatusIfNeeded(settings, suffixes, serviceRunning);
+
         var runtime = _client.ReadCachedStatus();
-
-        MaybeSyncCachedStatusWithServiceState(settings, suffixes, runtime);
-        runtime = _client.ReadCachedStatus();
-
-        if (IsRuntimeStatusFresh(runtime))
+        if (serviceRunning && IsRuntimeStatusFresh(runtime))
         {
             var listenerRunning = runtime!.ListenerRunning;
             var nrptRulesPresent = settings.Enabled && runtime.NrptActive;
@@ -81,33 +78,19 @@ public sealed class TestDnsCoordinator
             return new TestDnsStatus(settings.Enabled, listenerRunning, nrptActive, message);
         }
 
-        var listenerRunningProbe = ResolveListenerRunning(runtime);
-        var nrptRulesPresentProbe = ResolveNrptRulesPresent(settings, suffixes, runtime, listenerRunningProbe);
-        var nrptActiveProbe = settings.Enabled
-            && (listenerRunningProbe && runtime is not null
-                ? runtime.NrptActive
-                : nrptRulesPresentProbe);
-        var messageProbe = ResolveStatusMessage(
-            settings.Enabled,
-            listenerRunningProbe,
-            nrptRulesPresentProbe,
-            runtime?.LastError);
-        return new TestDnsStatus(
-            settings.Enabled,
-            listenerRunningProbe,
-            nrptActiveProbe,
-            messageProbe);
+        return BuildStatus(settings, suffixes, serviceRunning, probeNrpt: true);
     }
 
     public async Task<TestDnsStatus> EnsureAutoStartAsync(CancellationToken cancellationToken = default)
     {
-        if (!_settingsStore.Load().TestDns.Enabled)
+        var testDns = _settingsStore.Load().TestDns;
+        if (!testDns.Enabled)
         {
             _diagnostics?.LogActivity("Test DNS", "Auto-start skipped (disabled in settings)");
             return GetStatus();
         }
 
-        if (!_settingsStore.Load().TestDns.AutoStart)
+        if (!testDns.AutoStart)
         {
             _diagnostics?.LogActivity("Test DNS", "Auto-start skipped (auto-start off in settings)");
             return GetStatus();
@@ -183,20 +166,22 @@ public sealed class TestDnsCoordinator
         var config = BuildConfig(enabled: false, listen: false);
         try
         {
-            if (StackrootDnsServiceInstaller.IsInstalled() && StackrootDnsServiceInstaller.IsRunning())
+            StackrootDnsServiceInstaller.InvalidateServiceStateCache();
+            if (CheckHelperServiceRunning())
             {
                 await _client.EnsureRunningAsync(config, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 await _client.PublishAndRefreshAsync(config, cancellationToken).ConfigureAwait(false);
-                if (!_nrpt.TryDisable(out var error, allowElevation: true))
-                {
-                    throw new InvalidOperationException(error ?? "Could not remove Stackroot DNS routing rules.");
-                }
-
-                WriteStoppedStatus();
             }
+
+            if (!_nrpt.TryDisable(out var error, allowElevation: true))
+            {
+                throw new InvalidOperationException(error ?? "Could not remove Stackroot DNS routing rules.");
+            }
+
+            WriteStoppedStatus();
         }
         catch (Exception ex)
         {
@@ -248,10 +233,11 @@ public sealed class TestDnsCoordinator
 
     public async Task StopRuntimeAsync(CancellationToken cancellationToken = default)
     {
+        StackrootDnsServiceInstaller.InvalidateServiceStateCache();
         var config = BuildConfig(enabled: true, listen: false);
         await _client.PublishAndRefreshAsync(config, cancellationToken).ConfigureAwait(false);
 
-        if (StackrootDnsServiceInstaller.IsRunning())
+        if (CheckHelperServiceRunning())
         {
             await _client.WaitForHealthyAsync(config, TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
         }
@@ -262,6 +248,10 @@ public sealed class TestDnsCoordinator
                 throw new InvalidOperationException("Could not remove Stackroot DNS routing rules.");
             }
 
+            WriteStoppedStatus();
+        }
+        else
+        {
             WriteStoppedStatus();
         }
 
@@ -290,13 +280,13 @@ public sealed class TestDnsCoordinator
         var settings = _settingsStore.Load();
         if (!settings.TestDns.Enabled)
         {
-            await _client.PublishAndRefreshAsync(BuildConfig(enabled: false, listen: false), cancellationToken)
+            await _client.PublishAndRefreshAsync(BuildConfig(settings, enabled: false, listen: false), cancellationToken)
                 .ConfigureAwait(false);
             return;
         }
 
-        var listen = ResolveDesiredListenState();
-        var config = BuildConfig(listen: listen);
+        var listen = ResolveDesiredListenState(settings.TestDns);
+        var config = BuildConfig(settings, listen: listen);
         await _client.PublishAndRefreshAsync(config, cancellationToken).ConfigureAwait(false);
 
         if (!StackrootDnsServiceInstaller.IsInstalled() || !StackrootDnsServiceInstaller.IsRunning())
@@ -312,6 +302,7 @@ public sealed class TestDnsCoordinator
         catch (Exception ex)
         {
             _diagnostics?.LogUserError("Test DNS", $"DNS catalog was published but the helper did not apply it: {ex.Message}");
+            throw;
         }
     }
 
@@ -321,9 +312,10 @@ public sealed class TestDnsCoordinator
         return await Task.Run(() => _nrpt.TryDisable(out _, allowElevation: true), cancellationToken).ConfigureAwait(false);
     }
 
-    private bool ResolveDesiredListenState()
+    private bool ResolveDesiredListenState(TestDnsSettings? testDns = null)
     {
-        if (!_settingsStore.Load().TestDns.Enabled)
+        testDns ??= _settingsStore.Load().TestDns;
+        if (!testDns.Enabled)
         {
             return false;
         }
@@ -352,8 +344,10 @@ public sealed class TestDnsCoordinator
     }
 
     private DnsHelperRuntimeConfig BuildConfig(bool? enabled = null, bool? listen = null)
+        => BuildConfig(_settingsStore.Load(), enabled, listen);
+
+    private DnsHelperRuntimeConfig BuildConfig(AppSettings settings, bool? enabled = null, bool? listen = null)
     {
-        var settings = _settingsStore.Load();
         var siteNames = _siteManager.List()
             .Where(static site => site.Enabled)
             .SelectMany(SiteDomainNames.GetServerNames)
@@ -398,20 +392,32 @@ public sealed class TestDnsCoordinator
            && runtime.UpdatedAt != default
            && DateTimeOffset.UtcNow - runtime.UpdatedAt < RuntimeStatusTrustTtl;
 
-    private void MaybeSyncCachedStatusWithServiceState(
-        TestDnsSettings settings,
-        IReadOnlyList<string> suffixes,
-        DnsHelperRuntimeStatus? runtime)
+    private static bool CheckHelperServiceRunning()
     {
-        _ = settings;
-        _ = suffixes;
+        if (!StackrootDnsServiceInstaller.IsInstalled())
+        {
+            return false;
+        }
 
-        if (!StackrootDnsServiceInstaller.IsInstalled() || StackrootDnsServiceInstaller.IsRunning())
+        StackrootDnsServiceInstaller.InvalidateServiceStateCache();
+        return StackrootDnsServiceInstaller.IsRunningUncached();
+    }
+
+    private void SyncStaleRuntimeStatusIfNeeded(TestDnsSettings settings, IReadOnlyList<string> suffixes, bool serviceRunning)
+    {
+        if (!StackrootDnsServiceInstaller.IsInstalled())
         {
             return;
         }
 
-        if (runtime is not { ListenerRunning: true } and not { NrptActive: true })
+        if (serviceRunning)
+        {
+            return;
+        }
+
+        var runtime = _client.ReadCachedStatus();
+        var nrptActive = settings.Enabled && _nrpt.AreAllRulesPresent(suffixes);
+        if (runtime is { ListenerRunning: false, NrptActive: var cachedNrpt } && cachedNrpt == nrptActive)
         {
             return;
         }
@@ -419,24 +425,47 @@ public sealed class TestDnsCoordinator
         DnsHelperConfigStore.WriteStatus(new DnsHelperRuntimeStatus
         {
             ListenerRunning = false,
-            NrptActive = runtime.NrptActive,
-            LastError = runtime.LastError,
+            NrptActive = nrptActive,
+            LastError = runtime?.LastError,
             UpdatedAt = DateTimeOffset.UtcNow
         });
+    }
+
+    private TestDnsStatus BuildStatus(TestDnsSettings settings, IReadOnlyList<string> suffixes, bool serviceRunning, bool probeNrpt)
+    {
+        var runtime = _client.ReadCachedStatus();
+        var listenerRunning = serviceRunning && (runtime?.ListenerRunning ?? false);
+        var nrptRulesPresent = ResolveNrptRulesPresent(
+            settings,
+            suffixes,
+            runtime,
+            listenerRunning,
+            serviceRunning,
+            probeNrpt);
+        var nrptActive = settings.Enabled && nrptRulesPresent;
+        var message = ResolveStatusMessage(settings.Enabled, listenerRunning, nrptRulesPresent, runtime?.LastError);
+        return new TestDnsStatus(settings.Enabled, listenerRunning, nrptActive, message);
     }
 
     private bool ResolveNrptRulesPresent(
         TestDnsSettings settings,
         IReadOnlyList<string> suffixes,
         DnsHelperRuntimeStatus? runtime,
-        bool listenerRunning)
+        bool listenerRunning,
+        bool serviceRunning,
+        bool probeNrpt)
     {
         if (!settings.Enabled)
         {
             return false;
         }
 
-        if (listenerRunning && runtime is not null)
+        if (listenerRunning && runtime is not null && serviceRunning)
+        {
+            return runtime.NrptActive;
+        }
+
+        if (!probeNrpt && runtime is not null)
         {
             return runtime.NrptActive;
         }
@@ -461,20 +490,5 @@ public sealed class TestDnsCoordinator
         }
 
         return null;
-    }
-
-    private bool ResolveListenerRunning(DnsHelperRuntimeStatus? runtime)
-    {
-        if (!StackrootDnsServiceInstaller.IsInstalled())
-        {
-            return false;
-        }
-
-        if (!StackrootDnsServiceInstaller.IsRunning())
-        {
-            return false;
-        }
-
-        return runtime?.ListenerRunning ?? false;
     }
 }

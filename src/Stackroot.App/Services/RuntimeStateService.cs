@@ -31,9 +31,9 @@ public sealed class RuntimeStateService : IDisposable
     private int _powerSavingCount;
     private int _coalescedRefreshPending;
     private int _pollTick;
+    private int _disposed;
     private string? _lastPresentationFingerprint;
     private CancellationTokenSource? _debounceCts;
-    private bool _disposed;
 
     public RuntimeStateService(
         ServiceManager serviceManager,
@@ -107,9 +107,15 @@ public sealed class RuntimeStateService : IDisposable
             return;
         }
 
-        if (Interlocked.Decrement(ref _detailedPollCount) <= 0)
+        int prev, next;
+        do
         {
-            Interlocked.Exchange(ref _detailedPollCount, 0);
+            prev = _detailedPollCount;
+            next = Math.Max(0, prev - 1);
+        }
+        while (Interlocked.CompareExchange(ref _detailedPollCount, next, prev) != prev);
+        if (next == 0 && prev > 0)
+        {
             ReapplyPollingInterval();
         }
     }
@@ -126,9 +132,15 @@ public sealed class RuntimeStateService : IDisposable
             return;
         }
 
-        if (Interlocked.Decrement(ref _powerSavingCount) <= 0)
+        int prev, next;
+        do
         {
-            Interlocked.Exchange(ref _powerSavingCount, 0);
+            prev = _powerSavingCount;
+            next = Math.Max(0, prev - 1);
+        }
+        while (Interlocked.CompareExchange(ref _powerSavingCount, next, prev) != prev);
+        if (next == 0 && prev > 0)
+        {
             ReapplyPollingInterval();
         }
     }
@@ -284,7 +296,7 @@ public sealed class RuntimeStateService : IDisposable
             return;
         }
 
-        RequestRefresh("PollTimer");
+        _ = RequestRefresh("PollTimer");
     }
 
     private void ScheduleDebouncedRefresh(string trigger)
@@ -397,7 +409,9 @@ public sealed class RuntimeStateService : IDisposable
             ? await _serviceManager.ListLiveAsync(cancellationToken).ConfigureAwait(false)
             : await _serviceManager.ListLiveQuickAsync(cancellationToken).ConfigureAwait(false);
         var mailpit = await _mailpitManager.GetStatusAsync(cancellationToken).ConfigureAwait(false);
-        var testDns = _testDnsCoordinator.GetCachedStatus();
+        var testDns = useFullProbe
+            ? _testDnsCoordinator.GetStatus()
+            : _testDnsCoordinator.GetCachedStatus();
         var phpListeners = BuildPhpListenerStates(settings);
         var processes = _processManager.List()
             .Select(process => new RuntimeProcessState
@@ -492,12 +506,12 @@ public sealed class RuntimeStateService : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        _disposed = true;
+        _pollTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         lock (_debounceGate)
         {
             _debounceCts?.Cancel();

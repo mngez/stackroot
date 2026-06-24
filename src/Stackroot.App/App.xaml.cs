@@ -496,7 +496,9 @@ public partial class App : System.Windows.Application
             try
             {
                 var shutdown = _services.GetRequiredService<StackrootShutdownCoordinator>();
-                shutdown.ShutdownAsync(StackrootShutdownCoordinator.DefaultShutdownTimeout)
+                // Run on the thread pool so dispatcher continuations inside ShutdownAsync
+                // are not blocked by this Wait() holding the UI thread.
+                Task.Run(() => shutdown.ShutdownAsync(StackrootShutdownCoordinator.DefaultShutdownTimeout))
                     .Wait(StackrootShutdownCoordinator.DefaultShutdownTimeout + TimeSpan.FromSeconds(3));
             }
             catch

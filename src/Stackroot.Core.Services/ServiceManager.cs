@@ -27,13 +27,13 @@ public sealed class ServiceManager : IDisposable
     private readonly ConcurrentDictionary<string, DateTimeOffset> _phpRecoveryAttemptedAt = new(StringComparer.OrdinalIgnoreCase);
     private int _phpRecoveryInFlight;
     private static readonly TimeSpan PhpRecoveryRetryCooldown = TimeSpan.FromSeconds(30);
-    private readonly ConcurrentDictionary<ServiceId, DateTime> _supervisionCooldowns = new();
+    private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _supervisionCooldowns = new();
     private readonly ConcurrentDictionary<ServiceId, int> _supervisionFailures = new();
     private readonly ConcurrentDictionary<ServiceId, bool> _supervisionEligible = new();
     /// <summary>User explicitly stopped — keep-alive must not restart until manual Start.</summary>
     private readonly ConcurrentDictionary<ServiceId, byte> _userStoppedServices = new();
     private readonly ConcurrentDictionary<ServiceId, byte> _supervisionRestartInFlight = new();
-    private readonly ConcurrentDictionary<ServiceId, DateTime> _supervisionRecoveredAt = new();
+    private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _supervisionRecoveredAt = new();
     private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _unexpectedStopHandledAt = new();
     private readonly object _unexpectedStopSync = new();
     private const int MaxSupervisionFailures = 10;
@@ -47,7 +47,7 @@ public sealed class ServiceManager : IDisposable
     private System.Timers.Timer? _supervisionTimer;
     private bool _supervisionStarted;
     private int _supervisionTickInFlight;
-    private bool _disposed;
+    private int _disposed;
 
     public event EventHandler<ServiceInfo>? LiveStatusChanged;
 
@@ -308,7 +308,7 @@ public sealed class ServiceManager : IDisposable
 
     private bool IsWithinSupervisionRecoveryGrace(ServiceId serviceId)
         => _supervisionRecoveredAt.TryGetValue(serviceId, out var recoveredAt)
-           && DateTime.UtcNow - recoveredAt < SupervisionRecoveryGrace;
+           && DateTimeOffset.UtcNow - recoveredAt < SupervisionRecoveryGrace;
 
     private ServiceInfo BuildProcessServiceLiveInfo(
         ServiceId serviceId,
@@ -435,9 +435,9 @@ public sealed class ServiceManager : IDisposable
             && !isServing
             && !IsUserStoppedIntent(serviceId))
         {
-            var now = DateTimeOffset.UtcNow;
             lock (_unexpectedStopSync)
             {
+                var now = DateTimeOffset.UtcNow;
                 if (_unexpectedStopHandledAt.TryGetValue(serviceId, out var lastHandled)
                     && now - lastHandled < UnexpectedStopDedupeWindow)
                 {
@@ -2639,7 +2639,8 @@ public sealed class ServiceManager : IDisposable
 
                 TryScheduleSupervisionRestart(
                     definition.Id,
-                    "supervision tick");
+                    "supervision tick",
+                    preloadedSettings: settings);
             }
         }
         finally
@@ -2653,7 +2654,8 @@ public sealed class ServiceManager : IDisposable
     private void TryScheduleSupervisionRestart(
         ServiceId serviceId,
         string trigger,
-        bool confirmedDown = false)
+        bool confirmedDown = false,
+        AppSettings? preloadedSettings = null)
     {
         if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
         {
@@ -2675,7 +2677,7 @@ public sealed class ServiceManager : IDisposable
             return;
         }
 
-        var settings = _settingsStore.Load();
+        var settings = preloadedSettings ?? _settingsStore.Load();
         var definition = SettingsDefaults.ServiceDefinitions.FirstOrDefault(d => d.Id == serviceId);
         if (definition is null
             || definition.Runtime == ServiceRuntime.Library
@@ -2731,7 +2733,7 @@ public sealed class ServiceManager : IDisposable
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         if (_supervisionCooldowns.TryGetValue(serviceId, out var cooldownUntil) && now < cooldownUntil)
         {
             return;
@@ -2739,6 +2741,12 @@ public sealed class ServiceManager : IDisposable
 
         if (!_supervisionRestartInFlight.TryAdd(serviceId, 0))
         {
+            return;
+        }
+
+        if (!TryMarkStarting(serviceId))
+        {
+            _supervisionRestartInFlight.TryRemove(serviceId, out _);
             return;
         }
 
@@ -2761,12 +2769,6 @@ public sealed class ServiceManager : IDisposable
         _diagnostics.LogActivity(
             "ServiceManager",
             $"Supervision: restarting {id} after {trigger} (failure #{failures}, next cooldown {delaySec}s)");
-
-        if (!TryMarkStarting(serviceId))
-        {
-            _supervisionRestartInFlight.TryRemove(serviceId, out _);
-            return;
-        }
 
         NotifyLiveStatusChanged(id, BuildStarting(definition, serviceSettings));
 
@@ -2806,13 +2808,17 @@ public sealed class ServiceManager : IDisposable
                         $"Supervision: {id} recovered successfully");
                     _supervisionFailures.TryRemove(serviceId, out _);
                     _supervisionCooldowns.TryRemove(serviceId, out _);
-                    _supervisionRecoveredAt[serviceId] = DateTime.UtcNow;
+                    _supervisionRecoveredAt[serviceId] = DateTimeOffset.UtcNow;
                     _unexpectedStopHandledAt.TryRemove(serviceId, out _);
                 }
             }
             catch (OperationCanceledException)
             {
                 // Queued supervision restart cancelled during shutdown.
+            }
+            catch (ObjectDisposedException)
+            {
+                // ServiceManager disposed while supervision restart was queued.
             }
             catch (Exception ex)
             {
@@ -2822,7 +2828,8 @@ public sealed class ServiceManager : IDisposable
             {
                 if (slotAcquired)
                 {
-                    _supervisionRestartSlots.Release();
+                    try { _supervisionRestartSlots.Release(); }
+                    catch (ObjectDisposedException) { }
                 }
 
                 UnmarkStarting(serviceId);
@@ -2961,12 +2968,11 @@ public sealed class ServiceManager : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        _disposed = true;
         StopSupervision();
         _supervisionRestartSlots.Dispose();
         GC.SuppressFinalize(this);
