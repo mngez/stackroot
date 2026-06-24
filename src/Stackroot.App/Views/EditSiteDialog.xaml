@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
         xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
+        xmlns:vm="clr-namespace:Stackroot.App.ViewModels"
         Title="Edit web domain"
         Width="580"
         MinWidth="540"
@@ -267,10 +268,15 @@
                                    Text="{Binding EnabledProxyCount, StringFormat={}{0} active}"
                                    TextWrapping="Wrap" />
                     </StackPanel>
-                    <Button DockPanel.Dock="Right"
-                            Padding="10,4"
-                            Content="Add proxy"
-                            Command="{Binding AddProxyCommand}" />
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Margin="0,0,8,0"
+                                Padding="10,4"
+                                Content="Add regex proxy"
+                                Command="{Binding AddRegexProxyCommand}" />
+                        <Button Padding="10,4"
+                                Content="Add proxy"
+                                Command="{Binding AddProxyCommand}" />
+                    </StackPanel>
                 </DockPanel>
 
                 <TextBlock Margin="0,0,0,8"
@@ -316,10 +322,35 @@
                                              Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
                                     <TextBlock Margin="0,8,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Location path" />
+                                               Text="Match type" />
+                                    <ComboBox Margin="0,4,0,0"
+                                              Padding="8,4"
+                                              ItemsSource="{x:Static vm:DevProxyRowViewModel.LocationKindOptions}"
+                                              DisplayMemberPath="Label"
+                                              SelectedItem="{Binding SelectedLocationKindOption}" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Location pattern" />
                                     <TextBox Margin="0,4,0,0"
                                              Padding="8,4"
+                                             AcceptsReturn="False"
                                              Text="{Binding LocationPath, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding LocationPatternHint}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="Paste only the pattern (e.g. ^/path$), not the full nginx location line."
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               FontSize="11"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               FontFamily="Consolas"
+                                               Text="{Binding NginxLocationPreview}"
+                                               TextWrapping="Wrap" />
                                     <TextBlock Margin="0,8,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                                Text="Target URL" />

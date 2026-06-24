@@ -397,7 +397,7 @@ public sealed class RuntimeStateService : IDisposable
             ? await _serviceManager.ListLiveAsync(cancellationToken).ConfigureAwait(false)
             : await _serviceManager.ListLiveQuickAsync(cancellationToken).ConfigureAwait(false);
         var mailpit = await _mailpitManager.GetStatusAsync(cancellationToken).ConfigureAwait(false);
-        var testDns = _testDnsCoordinator.GetStatus();
+        var testDns = _testDnsCoordinator.GetCachedStatus();
         var phpListeners = BuildPhpListenerStates(settings);
         var processes = _processManager.List()
             .Select(process => new RuntimeProcessState
@@ -409,7 +409,7 @@ public sealed class RuntimeStateService : IDisposable
             })
             .ToList();
 
-        return new RuntimeStateSnapshot
+        var snapshot = new RuntimeStateSnapshot
         {
             RefreshedAt = DateTimeOffset.UtcNow,
             Services = services,
@@ -430,6 +430,8 @@ public sealed class RuntimeStateService : IDisposable
                 Message = testDns.Message
             }
         };
+
+        return snapshot;
     }
 
     private IReadOnlyList<RuntimePhpListenerState> BuildPhpListenerStates(AppSettings settings)

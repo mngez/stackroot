@@ -205,10 +205,18 @@
                         <Button Width="160"
                                 Content="Trust SSL"
                                 Command="{Binding TrustSslCommand}" />
+                        <Button Margin="8,0,0,0"
+                                Width="160"
+                                Content="Remove old CAs"
+                                Command="{Binding CleanupSslTrustCommand}" />
                         <TextBlock Margin="12,8,0,0"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                    Text="{Binding StatusMessage}" />
                     </StackPanel>
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="If Windows shows multiple Stackroot Local CA entries, use Remove old CAs to keep only the current development certificate."
+                               TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
     </Grid>

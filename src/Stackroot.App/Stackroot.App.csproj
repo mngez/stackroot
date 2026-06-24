@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>0.2.6</Version>
+    <Version>0.2.7</Version>
     <AssemblyName>Stackroot</AssemblyName>
     <Company>mngez</Company>
     <Authors>mngez</Authors>
@@ -14,6 +14,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>..\..\assets\icons\icon.ico</ApplicationIcon>
+    <!-- Dev: run via `dotnet exec` so a stale/corrupt apphost does not block ./sr dev -->
+    <UseAppHost Condition="'$(Configuration)' == 'Debug'">false</UseAppHost>
+    <RollForward>LatestMinor</RollForward>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Stackroot.App.Tests" />

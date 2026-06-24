@@ -112,8 +112,8 @@ public sealed class SiteNginxVhostWriter
         sb.AppendLine($"    server_name {SiteDomainNames.FormatNginxServerName(site)};");
         if (ssl)
         {
-            sb.AppendLine("    ssl_certificate      ssl/dev.crt;");
-            sb.AppendLine("    ssl_certificate_key  ssl/dev.key;");
+            sb.AppendLine($"    ssl_certificate      {DevSslCertificateManager.NginxSslCertificateRel};");
+            sb.AppendLine($"    ssl_certificate_key  {DevSslCertificateManager.NginxSslCertificateKeyRel};");
         }
 
         sb.AppendLine($"    root {normalizedRoot};");
@@ -131,7 +131,13 @@ public sealed class SiteNginxVhostWriter
                 continue;
             }
 
-            var location = string.IsNullOrWhiteSpace(proxy.LocationPath) ? "/" : proxy.LocationPath.Trim();
+            var (kind, pattern) = SiteDevProxyLocation.Normalize(proxy.LocationKind, proxy.LocationPath);
+            if (SiteDevProxyLocation.Validate(kind, pattern) is not null)
+            {
+                continue;
+            }
+
+            var location = SiteDevProxyLocation.Format(kind, pattern);
             sb.AppendLine($"    location {location} {{");
             sb.AppendLine($"        proxy_pass {proxy.TargetUrl.Trim()};");
             sb.AppendLine("        proxy_http_version 1.1;");

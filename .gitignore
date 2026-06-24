@@ -65,3 +65,4 @@ installer/pinned/*.pdb
 # Local log files
 *.log
 
+TODO.md

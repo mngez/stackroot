@@ -145,15 +145,42 @@ FunctionEnd
 !insertmacro DefineCloseStackrootFunctions ""
 !insertmacro DefineCloseStackrootFunctions "un."
 
-Function GetSetupPowerShell
+!macro DefineGetSetupPowerShell PREFIX
+Function ${PREFIX}GetSetupPowerShell
   ${If} ${RunningX64}
-    IfFileExists "$WINDIR\Sysnative\WindowsPowerShell\v1.0\powershell.exe" 0 setup_ps_system32
+    IfFileExists "$WINDIR\Sysnative\WindowsPowerShell\v1.0\powershell.exe" 0 ${PREFIX}setup_ps_system32
       StrCpy $R8 "$WINDIR\Sysnative\WindowsPowerShell\v1.0\powershell.exe"
       Return
-    setup_ps_system32:
+    ${PREFIX}setup_ps_system32:
   ${EndIf}
   StrCpy $R8 "$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
 FunctionEnd
+!macroend
+
+!insertmacro DefineGetSetupPowerShell ""
+!insertmacro DefineGetSetupPowerShell "un."
+
+!macro DefineStopDnsHelperFunctions PREFIX
+Function ${PREFIX}StopDnsHelperForUpgrade
+  DetailPrint "Stopping Stackroot DNS Helper before updating DNS files..."
+  SetOutPath "$PLUGINSDIR"
+  File "${INSTALLER_DIR}\Stop-StackrootDnsHelper.ps1"
+  Call ${PREFIX}GetSetupPowerShell
+  ${PREFIX}stop_dns_retry:
+  nsExec::ExecToLog '"$R8" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Stop-StackrootDnsHelper.ps1"'
+  Pop $0
+  ${If} $0 != 0
+    MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION \
+      "Stackroot DNS Helper is still running (Test DNS may be active).$\n$\nDisable Test DNS in Stackroot or stop the service, then click Retry." \
+      /SD IDRETRY IDCANCEL ${PREFIX}stop_dns_abort IDRETRY ${PREFIX}stop_dns_retry
+  ${PREFIX}stop_dns_abort:
+    Abort
+  ${EndIf}
+FunctionEnd
+!macroend
+
+!insertmacro DefineStopDnsHelperFunctions ""
+!insertmacro DefineStopDnsHelperFunctions "un."
 
 Function EnsureDotNetDesktopRuntime
   DetailPrint "Checking .NET 8 Desktop Runtime (required for Stackroot)..."
@@ -315,6 +342,17 @@ Section "Install" SecInstall
   SetOutPath "$INSTDIR\app\${PRODUCT_VERSION}"
   File /r "${APP_PAYLOAD_DIR}\*"
 
+  Call StopDnsHelperForUpgrade
+  DetailPrint "Installing DNS helper (stable path)..."
+  SetOutPath "$INSTDIR\dns-helper"
+  File /r "${STAGE_DIR}\dns-helper\*"
+
+  DetailPrint "Restarting Stackroot DNS Helper if Test DNS is enabled..."
+  SetOutPath "$PLUGINSDIR"
+  File "${INSTALLER_DIR}\Start-StackrootDnsHelperAfterUpgrade.ps1"
+  Call GetSetupPowerShell
+  nsExec::ExecToLog '"$R8" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Start-StackrootDnsHelperAfterUpgrade.ps1"'
+
   DetailPrint "Updating active version..."
   FileOpen $0 "$INSTDIR\current.txt" w
   FileWrite $0 "${PRODUCT_VERSION}"
@@ -345,6 +383,9 @@ Section "Uninstall"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\current.txt"
   Delete "$INSTDIR\launcher.version"
+  Call un.StopDnsHelperForUpgrade
+  nsExec::ExecToLog 'sc delete StackrootDnsHelper'
+  RMDir /r "$INSTDIR\dns-helper"
   Delete "$INSTDIR\Stackroot.Launcher.dll"
   Delete "$INSTDIR\Stackroot.Launcher.deps.json"
   Delete "$INSTDIR\Stackroot.Launcher.runtimeconfig.json"

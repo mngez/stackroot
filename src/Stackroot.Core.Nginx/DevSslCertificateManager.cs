@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -20,15 +21,21 @@ public static class DevSslCertificateManager
 {
     private const string DevCert = "dev.crt";
     private const string DevKey = "dev.key";
+    private const string DevFullChainCert = "dev-fullchain.crt";
     private const string CaCert = "stackroot-ca.crt";
     private const string CaKey = "stackroot-ca.key";
     private const string Manifest = "dev-domains.json";
     private const int ServerRenewalLeadDays = 30;
     private const int CaRenewalLeadDays = 365;
+    private const string LocalCaCommonName = "Stackroot Local CA";
+
+    public const string NginxSslCertificateRel = "ssl/dev-fullchain.crt";
+    public const string NginxSslCertificateKeyRel = "ssl/dev.key";
 
     public static DevSslPaths? EnsureDevSslCertificate(
         StackrootPaths paths,
-        IEnumerable<string> domains)
+        IEnumerable<string> domains,
+        IEnumerable<string>? ipAddresses = null)
     {
         MigrateMisplacedSslMaterial(paths);
 
@@ -38,9 +45,16 @@ public static class DevSslCertificateManager
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (uniqueDomains.Count == 0)
+        var uniqueIpAddresses = NormalizeIpAddresses(ipAddresses);
+
+        if (uniqueDomains.Count == 0 && uniqueIpAddresses.Count == 0)
         {
             return null;
+        }
+
+        if (uniqueDomains.Count == 0)
+        {
+            uniqueDomains.Add("localhost");
         }
 
         var confDir = Path.Combine(NginxRuntime.nginxPrefix(paths), "conf");
@@ -52,7 +66,7 @@ public static class DevSslCertificateManager
         var caAbs = Path.Combine(sslDir, CaCert);
         var caKeyAbs = Path.Combine(sslDir, CaKey);
         var manifestAbs = Path.Combine(sslDir, Manifest);
-        var fingerprint = DomainFingerprint(uniqueDomains);
+        var fingerprint = SanFingerprint(uniqueDomains, uniqueIpAddresses);
 
         var hasMaterial = File.Exists(certAbs) && File.Exists(keyAbs);
         var manifestMatches = TryReadManifest(manifestAbs, out var manifest) &&
@@ -67,21 +81,27 @@ public static class DevSslCertificateManager
         var renewalDomains = manifest?.Domains is { Count: > 0 } manifestDomains
             ? manifestDomains
             : uniqueDomains;
+        var renewalIpAddresses = manifest?.IpAddresses is { Count: > 0 } manifestIpAddresses
+            ? manifestIpAddresses
+            : uniqueIpAddresses;
 
         if (manifestMatches &&
             File.Exists(caAbs) &&
             File.Exists(caKeyAbs) &&
             !IsCertificateExpiringSoon(caAbs, CaRenewalLeadDays) &&
             IsCertificateExpiringSoon(certAbs, ServerRenewalLeadDays) &&
-            DevSslDotNetCertificateGenerator.TryRenewServerCertificate(sslDir, renewalDomains))
+            DevSslDotNetCertificateGenerator.TryRenewServerCertificate(sslDir, renewalDomains, renewalIpAddresses))
         {
-            WriteManifest(manifestAbs, fingerprint, renewalDomains, generator: manifest?.Generator ?? "dotnet");
+            WriteManifest(manifestAbs, fingerprint, renewalDomains, renewalIpAddresses, generator: manifest?.Generator ?? "dotnet");
+            EnsureFullChainPem(sslDir);
             return TryGetExisting(paths);
         }
 
-        if (DevSslDotNetCertificateGenerator.TryGenerate(sslDir, uniqueDomains))
+        if (DevSslDotNetCertificateGenerator.TryGenerate(sslDir, uniqueDomains, uniqueIpAddresses))
         {
-            WriteManifest(manifestAbs, fingerprint, uniqueDomains, generator: "dotnet");
+            WriteManifest(manifestAbs, fingerprint, uniqueDomains, uniqueIpAddresses, generator: "dotnet");
+            EnsureFullChainPem(sslDir);
+            PruneStaleTrustedLocalCas(GetLocalCaThumbprint(paths));
             return TryGetExisting(paths);
         }
 
@@ -192,12 +212,18 @@ public static class DevSslCertificateManager
         }
     }
 
-    private static void WriteManifest(string manifestAbs, string fingerprint, IReadOnlyList<string> domains, string generator)
+    private static void WriteManifest(
+        string manifestAbs,
+        string fingerprint,
+        IReadOnlyList<string> domains,
+        IReadOnlyList<string> ipAddresses,
+        string generator)
     {
         var payload = new DevSslManifest
         {
             Fingerprint = fingerprint,
             Domains = domains.ToList(),
+            IpAddresses = ipAddresses.ToList(),
             CaSigned = true,
             Generator = generator
         };
@@ -219,9 +245,14 @@ public static class DevSslCertificateManager
         }
 
         var thumbprint = ReadThumbprint(caPath);
+        var removed = PruneStaleTrustedLocalCas(thumbprint);
         if (!string.IsNullOrWhiteSpace(thumbprint) && IsTrustedInWindows(thumbprint))
         {
-            return new DevSslTrustResult(true, "Local CA is already trusted.");
+            return removed > 0
+                ? new DevSslTrustResult(
+                    true,
+                    $"Removed {removed} outdated Stackroot CA certificate(s). The current CA is already trusted.")
+                : new DevSslTrustResult(true, "Local CA is already trusted.");
         }
 
         var addResult = RunProcess("certutil", ["-addstore", "-user", "Root", caPath]);
@@ -231,7 +262,37 @@ public static class DevSslCertificateManager
             return new DevSslTrustResult(false, detail);
         }
 
-        return new DevSslTrustResult(true, "Local CA installed to Windows trusted roots.");
+        var message = removed > 0
+            ? $"Local CA installed to Windows trusted roots. Removed {removed} outdated Stackroot CA certificate(s)."
+            : "Local CA installed to Windows trusted roots.";
+        return new DevSslTrustResult(true, message);
+    }
+
+    public static DevSslTrustResult CleanupStaleLocalCaTrust(StackrootPaths paths)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return new DevSslTrustResult(false, "Automatic trust cleanup is currently supported on Windows only.");
+        }
+
+        var removed = PruneStaleTrustedLocalCas(GetLocalCaThumbprint(paths));
+        return removed > 0
+            ? new DevSslTrustResult(
+                true,
+                $"Removed {removed} outdated Stackroot CA certificate(s) from Windows trusted roots.")
+            : new DevSslTrustResult(true, "No outdated Stackroot CA certificates were found in your trust store.");
+    }
+
+    public static int CountTrustedStackrootLocalCas(StackrootPaths paths)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return 0;
+        }
+
+        var keep = NormalizeThumbprint(GetLocalCaThumbprint(paths));
+        return ListTrustedStackrootLocalCas()
+            .Count(thumbprint => !string.Equals(thumbprint, keep, StringComparison.OrdinalIgnoreCase));
     }
 
     private static DevSslPaths? Existing(string confDir)
@@ -245,20 +306,73 @@ public static class DevSslCertificateManager
         }
 
         var caAbs = Path.Combine(dir, CaCert);
+        EnsureFullChainPem(dir);
         return new DevSslPaths(
-            "ssl/dev.crt",
-            "ssl/dev.key",
+            NginxSslCertificateRel,
+            NginxSslCertificateKeyRel,
             certAbs,
             keyAbs,
             File.Exists(caAbs) ? caAbs : null);
     }
 
-    private static string DomainFingerprint(IReadOnlyList<string> domains)
+    private static void EnsureFullChainPem(string sslDir)
     {
-        var ordered = domains.OrderBy(static d => d, StringComparer.Ordinal).ToArray();
-        var input = string.Join('\n', ordered);
+        var devPath = Path.Combine(sslDir, DevCert);
+        var caPath = Path.Combine(sslDir, CaCert);
+        var fullChainPath = Path.Combine(sslDir, DevFullChainCert);
+        if (!File.Exists(devPath) || !File.Exists(caPath))
+        {
+            return;
+        }
+
+        var pem = string.Concat(
+            File.ReadAllText(devPath, Encoding.ASCII).TrimEnd(),
+            '\n',
+            File.ReadAllText(caPath, Encoding.ASCII).TrimEnd(),
+            '\n');
+        File.WriteAllText(fullChainPath, pem, Encoding.ASCII);
+    }
+
+    private static string SanFingerprint(IReadOnlyList<string> domains, IReadOnlyList<string> ipAddresses)
+    {
+        var entries = domains
+            .Select(static d => $"dns:{d}")
+            .Concat(ipAddresses.Select(static ip => $"ip:{ip}"))
+            .OrderBy(static entry => entry, StringComparer.Ordinal)
+            .ToArray();
+        var input = string.Join('\n', entries);
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static List<string> NormalizeIpAddresses(IEnumerable<string>? ipAddresses)
+    {
+        var unique = new List<string>();
+        if (ipAddresses is null)
+        {
+            return unique;
+        }
+
+        foreach (var value in ipAddresses)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            if (!IPAddress.TryParse(value.Trim(), out var address))
+            {
+                continue;
+            }
+
+            var normalized = address.ToString();
+            if (!unique.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+            {
+                unique.Add(normalized);
+            }
+        }
+
+        return unique;
     }
 
     private static bool TryReadManifest(string path, out DevSslManifest? manifest)
@@ -295,14 +409,82 @@ public static class DevSslCertificateManager
 
     private static bool IsTrustedInWindows(string thumbprint)
     {
-        var storeResult = RunProcess("certutil", ["-store", "-user", "Root"]);
-        if (storeResult.ExitCode != 0)
+        var normalized = NormalizeThumbprint(thumbprint);
+        if (string.IsNullOrEmpty(normalized))
         {
             return false;
         }
 
-        return (storeResult.Output ?? string.Empty).Contains(thumbprint, StringComparison.OrdinalIgnoreCase);
+        return ListTrustedStackrootLocalCas().Any(candidate =>
+            string.Equals(candidate, normalized, StringComparison.OrdinalIgnoreCase));
     }
+
+    private static int PruneStaleTrustedLocalCas(string? keepThumbprint)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return 0;
+        }
+
+        var keep = NormalizeThumbprint(keepThumbprint);
+        using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+        store.Open(OpenFlags.ReadWrite);
+
+        var toRemove = new List<X509Certificate2>();
+        foreach (var certificate in store.Certificates.Cast<X509Certificate2>())
+        {
+            if (!IsStackrootLocalCa(certificate))
+            {
+                continue;
+            }
+
+            var thumbprint = NormalizeThumbprint(certificate.Thumbprint);
+            if (!string.IsNullOrEmpty(keep)
+                && string.Equals(thumbprint, keep, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            toRemove.Add(certificate);
+        }
+
+        foreach (var certificate in toRemove)
+        {
+            store.Remove(certificate);
+        }
+
+        return toRemove.Count;
+    }
+
+    private static IReadOnlyList<string> ListTrustedStackrootLocalCas()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return Array.Empty<string>();
+        }
+
+        using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+        store.Open(OpenFlags.ReadOnly);
+
+        return store.Certificates
+            .Cast<X509Certificate2>()
+            .Where(IsStackrootLocalCa)
+            .Select(static certificate => NormalizeThumbprint(certificate.Thumbprint))
+            .Where(static thumbprint => !string.IsNullOrEmpty(thumbprint))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool IsStackrootLocalCa(X509Certificate2 certificate)
+    {
+        var commonName = certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false);
+        return string.Equals(commonName, LocalCaCommonName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeThumbprint(string? thumbprint) =>
+        string.IsNullOrWhiteSpace(thumbprint)
+            ? string.Empty
+            : thumbprint.Replace(":", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
 
     private static ProcessResult RunProcess(string fileName, IReadOnlyList<string> args)
     {
@@ -351,6 +533,7 @@ public static class DevSslCertificateManager
     {
         public string? Fingerprint { get; init; }
         public List<string>? Domains { get; init; }
+        public List<string>? IpAddresses { get; init; }
         public bool? CaSigned { get; init; }
         public string? Generator { get; init; }
     }

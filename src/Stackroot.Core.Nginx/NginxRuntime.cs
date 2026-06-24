@@ -159,18 +159,26 @@ public static class NginxRuntime
 
         if (portSettings.SslEnabled != false)
         {
-            var crtPath = Path.Combine(confDir, "ssl", "dev.crt");
+            var crtPath = Path.Combine(confDir, "ssl", "dev-fullchain.crt");
             var keyPath = Path.Combine(confDir, "ssl", "dev.key");
+            if (!File.Exists(crtPath))
+            {
+                crtPath = Path.Combine(confDir, "ssl", "dev.crt");
+            }
+
             if (File.Exists(crtPath) && File.Exists(keyPath))
             {
+                var certDirective = File.Exists(Path.Combine(confDir, "ssl", "dev-fullchain.crt"))
+                    ? DevSslCertificateManager.NginxSslCertificateRel
+                    : "ssl/dev.crt";
                 var sslBlock = $@"
     server {{
         listen       {httpsPort} ssl;
         listen       [::]:{httpsPort} ssl;
         server_name  {host} localhost;
 
-        ssl_certificate      ssl/dev.crt;
-        ssl_certificate_key  ssl/dev.key;
+        ssl_certificate      {certDirective};
+        ssl_certificate_key  {DevSslCertificateManager.NginxSslCertificateKeyRel};
 
         location / {{
             root   html;

@@ -33,7 +33,6 @@ public sealed class StackrootShutdownCoordinator
     private readonly IProcessJobManager _processJobManager;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly ShellViewModel _shellViewModel;
-    private readonly TestDnsCoordinator _testDnsCoordinator;
     private readonly RuntimeStateService _runtimeStateService;
     private readonly RuntimeMetricsService _runtimeMetricsService;
     private int _shutdownCompleted;
@@ -46,7 +45,6 @@ public sealed class StackrootShutdownCoordinator
         IProcessJobManager processJobManager,
         IDiagnosticsReporter diagnostics,
         ShellViewModel shellViewModel,
-        TestDnsCoordinator testDnsCoordinator,
         RuntimeStateService runtimeStateService,
         RuntimeMetricsService runtimeMetricsService)
     {
@@ -57,7 +55,6 @@ public sealed class StackrootShutdownCoordinator
         _processJobManager = processJobManager;
         _diagnostics = diagnostics;
         _shellViewModel = shellViewModel;
-        _testDnsCoordinator = testDnsCoordinator;
         _runtimeStateService = runtimeStateService;
         _runtimeMetricsService = runtimeMetricsService;
     }
@@ -132,8 +129,7 @@ public sealed class StackrootShutdownCoordinator
 
         try
         {
-            _diagnostics.LogActivity("Shutdown", "Stopping local .test DNS…");
-            await _testDnsCoordinator.StopForShutdownAsync().ConfigureAwait(false);
+            _diagnostics.LogActivity("Shutdown", "Leaving Test DNS to Stackroot DNS Helper (if enabled)…");
         }
         catch (Exception ex)
         {

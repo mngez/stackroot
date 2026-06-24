@@ -1,4 +1,5 @@
 using System.IO;
+using Stackroot.App.Services;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Abstractions.DataDocuments;
 using Stackroot.Core.IO;
@@ -13,6 +14,7 @@ public sealed class TaskSchedulerService : IDisposable
     private readonly string _storePath;
     private readonly SiteCommandRunner _commandRunner;
     private readonly SiteStore _siteStore;
+    private readonly StackrootStartupReadyGate _startupReadyGate;
     private List<ScheduledTaskModel> _tasks = [];
     private readonly HashSet<string> _runningTaskIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly System.Timers.Timer _timer;
@@ -27,15 +29,18 @@ public sealed class TaskSchedulerService : IDisposable
     public TaskSchedulerService(
         StackrootPaths paths,
         SiteCommandRunner commandRunner,
-        SiteStore siteStore)
+        SiteStore siteStore,
+        StackrootStartupReadyGate startupReadyGate)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(commandRunner);
         ArgumentNullException.ThrowIfNull(siteStore);
+        ArgumentNullException.ThrowIfNull(startupReadyGate);
 
         _storePath = StackrootPathResolver.ScheduledTasksPath(paths.DataRoot);
         _commandRunner = commandRunner;
         _siteStore = siteStore;
+        _startupReadyGate = startupReadyGate;
 
         Load();
 
@@ -80,11 +85,20 @@ public sealed class TaskSchedulerService : IDisposable
 
     public Task RunNowAsync(string id)
     {
-        return Task.Run(() => ExecuteTask(id));
+        return Task.Run(async () =>
+        {
+            await _startupReadyGate.WaitAsync().ConfigureAwait(false);
+            ExecuteTask(id);
+        });
     }
 
     private void OnTick(object? sender, System.Timers.ElapsedEventArgs e)
     {
+        if (!_startupReadyGate.IsReady)
+        {
+            return;
+        }
+
         if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
         {
             return;

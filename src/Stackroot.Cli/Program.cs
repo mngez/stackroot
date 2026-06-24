@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Stackroot.Cli;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.IO.Migrations;
 using Stackroot.Engine;
@@ -29,6 +30,7 @@ internal static class StackrootCliProgram
             "migrate" => RunMigrate(provider),
             "settings-check" => RunSettingsCheck(provider),
             "health" => RunHealth(provider),
+            "dns" => DnsCliCommands.Run(args[1..], provider),
             _ => UnknownCommand(args[0])
         };
     }
@@ -86,6 +88,9 @@ internal static class StackrootCliProgram
               stackroot migrate          Run JSON data migrations
               stackroot settings-check   Validate settings.json
               stackroot health           Migrate + settings + paths summary (CI)
+              stackroot dns serve        Run local dev DNS (from settings + sites)
+              stackroot dns probe HOST   Test an A-record query against 127.0.0.1:53
+              stackroot dns cleanup      Remove Stackroot NRPT dev-DNS routing rules
               stackroot help             Show this help
             """);
     }

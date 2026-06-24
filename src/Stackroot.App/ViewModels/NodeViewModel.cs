@@ -33,6 +33,7 @@ public sealed class NodeViewModel : ViewModelBase
     private string? _statusMessage;
     private bool _statusIsError;
     private string? _latestNvmCatalogVersion;
+    private int _lazyInitStarted;
 
     public NodeViewModel(
         NodeManager nodeManager,
@@ -73,7 +74,15 @@ public sealed class NodeViewModel : ViewModelBase
         DismissStatusMessageCommand = new RelayCommand(_ => SetStatus(null, isError: false));
 
         LoadLatestNvmCatalogVersion();
-        _ = InitializeAsync();
+    }
+
+    /// <summary>Warm page data after shell startup — safe to call from UI thread.</summary>
+    public void BeginLoading()
+    {
+        if (Interlocked.CompareExchange(ref _lazyInitStarted, 1, 0) == 0)
+        {
+            _ = InitializeAsync();
+        }
     }
 
     public ObservableCollection<NodeVersionRowViewModel> InstalledVersions { get; }

@@ -56,6 +56,18 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 10:
                 DisableRiskyPhpJitDefaults(obj);
                 break;
+            case 11:
+                EnsureTestDnsSuffixes(obj);
+                break;
+            case 12:
+                EnsureTestDnsLogRequests(obj);
+                break;
+            case 13:
+                EnsureTestDnsResolveAddress(obj);
+                break;
+            case 14:
+                EnsureTestDnsAllowDangerousSettings(obj);
+                break;
         }
     }
 
@@ -330,6 +342,42 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         }
 
         return false;
+    }
+
+    private static void EnsureTestDnsSuffixes(JsonObject root)
+    {
+        var testDns = root["testDns"] as JsonObject ?? new JsonObject();
+        if (testDns["suffixes"] is not JsonArray suffixes || suffixes.Count == 0)
+        {
+            testDns["suffixes"] = new JsonArray(".test");
+        }
+
+        root["testDns"] = testDns;
+    }
+
+    private static void EnsureTestDnsLogRequests(JsonObject root)
+    {
+        var testDns = root["testDns"] as JsonObject ?? new JsonObject();
+        SetBoolIfMissing(testDns, "logRequests", false);
+        root["testDns"] = testDns;
+    }
+
+    private static void EnsureTestDnsResolveAddress(JsonObject root)
+    {
+        var testDns = root["testDns"] as JsonObject ?? new JsonObject();
+        if (testDns["resolveAddress"] is not JsonValue)
+        {
+            testDns["resolveAddress"] = "127.0.0.1";
+        }
+
+        root["testDns"] = testDns;
+    }
+
+    private static void EnsureTestDnsAllowDangerousSettings(JsonObject root)
+    {
+        var testDns = root["testDns"] as JsonObject ?? new JsonObject();
+        SetBoolIfMissing(testDns, "allowDangerousSettings", false);
+        root["testDns"] = testDns;
     }
 
     private static void EnsureObject(JsonObject parent, string name)

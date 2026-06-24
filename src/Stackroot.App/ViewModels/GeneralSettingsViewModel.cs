@@ -8,6 +8,7 @@ using Stackroot.Core.Abstractions;
 using Stackroot.Core.IO;
 using Stackroot.Core.AdminTools;
 using Stackroot.Core.Settings;
+using Stackroot.Core.Nginx;
 using Stackroot.Core.Sites.Management;
 using Stackroot.Core.Windows;
 
@@ -83,6 +84,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         CorruptedSettingsBannerText = settingsLoadState.CorruptedSettingsBannerText;
         ShowRestoreBackupButton = settingsLoadState.ShowRestoreBackupButton;
         TrustSslCommand = new RelayCommand(_ => _ = TrustSslAsync(), _ => !IsTrustingSsl);
+        CleanupSslTrustCommand = new RelayCommand(_ => _ = CleanupSslTrustAsync(), _ => !IsTrustingSsl);
         BrowseWwwCommand = new RelayCommand(_ => BrowseWww());
         BrowseEditorCommand = new RelayCommand(_ => BrowseEditor(), _ => PreferredEditor == PreferredEditor.Custom);
         UseDefaultWwwCommand = new RelayCommand(_ => WwwPath = string.Empty);
@@ -99,6 +101,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     }
 
     public RelayCommand TrustSslCommand { get; }
+    public RelayCommand CleanupSslTrustCommand { get; }
     public RelayCommand BrowseWwwCommand { get; }
     public RelayCommand BrowseEditorCommand { get; }
     public RelayCommand UseDefaultWwwCommand { get; }
@@ -279,6 +282,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
             if (SetProperty(ref _isTrustingSsl, value))
             {
                 TrustSslCommand.RaiseCanExecuteChanged();
+                CleanupSslTrustCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -466,6 +470,16 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
 
     private async Task TrustSslAsync()
     {
+        await RunSslTrustActionAsync(_siteManager.TrustDevSslCertificate).ConfigureAwait(false);
+    }
+
+    private async Task CleanupSslTrustAsync()
+    {
+        await RunSslTrustActionAsync(_siteManager.CleanupStaleLocalCaTrust).ConfigureAwait(false);
+    }
+
+    private async Task RunSslTrustActionAsync(Func<DevSslTrustResult> action)
+    {
         if (IsTrustingSsl)
         {
             return;
@@ -474,7 +488,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         IsTrustingSsl = true;
         try
         {
-            var result = await Task.Run(_siteManager.TrustDevSslCertificate).ConfigureAwait(false);
+            var result = await Task.Run(action).ConfigureAwait(false);
             await RunOnUiAsync(() =>
             {
                 StatusMessage = SessionActivityMessages.SslCertificateTrust(result.Ok, result.Message);

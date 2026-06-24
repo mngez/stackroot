@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Stackroot.Core.Catalog\Stackroot.Core.Catalog.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Databases\Stackroot.Core.Databases.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Dns\Stackroot.Core.Dns.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Node\Stackroot.Core.Node.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Nginx\Stackroot.Core.Nginx.csproj" />
     <ProjectReference Include="..\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />

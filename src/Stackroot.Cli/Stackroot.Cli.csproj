@@ -11,5 +11,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Stackroot.Engine\Stackroot.Engine.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Windows\Stackroot.Core.Windows.csproj" />
   </ItemGroup>
 </Project>

@@ -9,7 +9,7 @@ internal static class DevSslDotNetCertificateGenerator
 {
     private const string CaName = "Stackroot Local CA";
 
-    public static bool TryGenerate(string sslDir, IReadOnlyList<string> domains)
+    public static bool TryGenerate(string sslDir, IReadOnlyList<string> domains, IReadOnlyList<string> ipAddresses)
     {
         try
         {
@@ -32,6 +32,7 @@ internal static class DevSslDotNetCertificateGenerator
                 serverKey,
                 caCertificate,
                 domains,
+                ipAddresses,
                 notBefore,
                 DateTimeOffset.UtcNow.AddYears(2));
 
@@ -51,7 +52,7 @@ internal static class DevSslDotNetCertificateGenerator
     /// <summary>
     /// Re-signs dev.crt/dev.key with the existing local CA (avoids re-trusting a new CA).
     /// </summary>
-    public static bool TryRenewServerCertificate(string sslDir, IReadOnlyList<string> domains)
+    public static bool TryRenewServerCertificate(string sslDir, IReadOnlyList<string> domains, IReadOnlyList<string> ipAddresses)
     {
         try
         {
@@ -79,6 +80,7 @@ internal static class DevSslDotNetCertificateGenerator
                 serverKey,
                 caCertificate,
                 domains,
+                ipAddresses,
                 notBefore,
                 DateTimeOffset.UtcNow.AddYears(2));
 
@@ -110,6 +112,7 @@ internal static class DevSslDotNetCertificateGenerator
         RSA serverKey,
         X509Certificate2 issuer,
         IReadOnlyList<string> domains,
+        IReadOnlyList<string> ipAddresses,
         DateTimeOffset notBefore,
         DateTimeOffset notAfter)
     {
@@ -125,8 +128,14 @@ internal static class DevSslDotNetCertificateGenerator
             san.AddDnsName(domain.Trim().ToLowerInvariant());
         }
 
-        san.AddDnsName("localhost");
-        san.AddIpAddress(IPAddress.Loopback);
+        // san.AddDnsName("localhost");
+        foreach (var ipText in ipAddresses.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (IPAddress.TryParse(ipText.Trim(), out var address))
+            {
+                san.AddIpAddress(address);
+            }
+        }
         serverRequest.CertificateExtensions.Add(san.Build());
         serverRequest.CertificateExtensions.Add(
             new X509KeyUsageExtension(

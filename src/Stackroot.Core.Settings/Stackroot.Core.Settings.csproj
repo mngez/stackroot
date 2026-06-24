@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Stackroot.Core.Abstractions\Stackroot.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\Stackroot.Core.Dns\Stackroot.Core.Dns.csproj" />
     <ProjectReference Include="..\Stackroot.Core.IO\Stackroot.Core.IO.csproj" />
   </ItemGroup>
 </Project>

@@ -45,6 +45,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.Cli", "src\Stackr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.App.Tests", "tests\Stackroot.App.Tests\Stackroot.App.Tests.csproj", "{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.DnsHelper", "src\Stackroot.DnsHelper\Stackroot.DnsHelper.csproj", "{A86A944F-5F6C-4D18-9069-79329232CDA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stackroot.Core.Dns", "src\Stackroot.Core.Dns\Stackroot.Core.Dns.csproj", "{581A32D8-2839-4C5A-98B8-8EAC9092050C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +131,14 @@ Global
 		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A86A944F-5F6C-4D18-9069-79329232CDA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86A944F-5F6C-4D18-9069-79329232CDA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A86A944F-5F6C-4D18-9069-79329232CDA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A86A944F-5F6C-4D18-9069-79329232CDA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{581A32D8-2839-4C5A-98B8-8EAC9092050C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{581A32D8-2839-4C5A-98B8-8EAC9092050C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{581A32D8-2839-4C5A-98B8-8EAC9092050C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{581A32D8-2839-4C5A-98B8-8EAC9092050C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +154,7 @@ Global
 		{84D218F6-F305-4F0F-AC11-09582B908CCF} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 		{CAC3D573-AE25-480A-96A3-9D9CB531063B} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 		{138B26C2-ED31-4BF5-8BF3-5A1E350A96C5} = {D1E2F3A4-B5C6-7890-DEF1-234567890ABC}
+		{A86A944F-5F6C-4D18-9069-79329232CDA1} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
+		{581A32D8-2839-4C5A-98B8-8EAC9092050C} = {AB8C94F7-FBE5-4305-99C2-C77FE3E1DE5A}
 	EndGlobalSection
 EndGlobal

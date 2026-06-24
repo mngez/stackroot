@@ -66,6 +66,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private int _pendingRuntimeApply;
     private int _runtimeApplyScheduled;
     private int _visibilityStaleRefreshDone;
+    private int _startupPresentationUpdateScheduled;
     private DateTimeOffset? _lastAppliedSnapshotAt;
     private static readonly TimeSpan StaleSnapshotThreshold = TimeSpan.FromSeconds(45);
     private readonly HashSet<string> _handledCompletedStackPackages = new(StringComparer.OrdinalIgnoreCase);
@@ -131,6 +132,7 @@ public sealed class DashboardViewModel : ViewModelBase
         _processManager.Changed += OnProcessManagerChanged;
         _serviceManager.LiveStatusChanged += OnServiceLiveStatusChanged;
         _serviceManager.SupervisionAlert += OnServiceSupervisionAlert;
+        _services.GetRequiredService<TestDnsCoordinator>().StatusChanged += OnTestDnsStatusChanged;
         _taskScheduler.TaskExecuted += (_, _) => UpdateEnvironmentHealth();
         _taskScheduler.StatusChanged += (_, _) => UpdateEnvironmentHealth();
 
@@ -152,7 +154,11 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public void BeginLoading()
     {
-        _runtimeState.SetDetailedPolling(enabled: true);
+        if (_startupIsComplete)
+        {
+            _runtimeState.SetDetailedPolling(enabled: true);
+        }
+
         if (Interlocked.CompareExchange(ref _shellInitStarted, 1, 0) != 0)
         {
             SyncPresentationWhenVisible();
@@ -176,8 +182,10 @@ public sealed class DashboardViewModel : ViewModelBase
     public void NotifyStartupCompleted()
     {
         _startupIsComplete = true;
+        _runtimeState.SetDetailedPolling(enabled: true);
         _lastAppliedPresentationFingerprint = null;
         SeedExpectRunningForMonitoredServices();
+        SeedExpectRunningForTestDns();
         UpdateEnvironmentHealth();
         ScanKeepAliveServiceNotifications();
     }
@@ -190,7 +198,20 @@ public sealed class DashboardViewModel : ViewModelBase
             return Task.CompletedTask;
         }
 
-        return RefreshAsync(resyncStructure: true);
+        return _dashboardInitialized
+            ? FinishDeferredStartupPresentationAsync()
+            : RefreshAsync(resyncStructure: true);
+    }
+
+    private async Task FinishDeferredStartupPresentationAsync()
+    {
+        // Live service events already updated rows during startup — avoid a redundant full port scan.
+        await SyncQuickLinksAsync().ConfigureAwait(false);
+        await RunOnUiAsync(() =>
+        {
+            ApplyFromRuntimeState(_runtimeState.LatestSnapshot);
+            NotifyAggregatePropertiesChanged();
+        }).ConfigureAwait(false);
     }
 
     private async Task InitializeDashboardShellAsync()
@@ -203,7 +224,7 @@ public sealed class DashboardViewModel : ViewModelBase
                 ApplyServiceShellItems(serviceItems);
                 NotifyStructureChanged();
             }).ConfigureAwait(false);
-            await RunOnUiAsync(SyncProcessesAsync).ConfigureAwait(false);
+            await SyncProcessesAsync().ConfigureAwait(false);
             await RunOnUiAsync(NotifyStructureChanged).ConfigureAwait(false);
         }
         finally
@@ -667,16 +688,13 @@ public sealed class DashboardViewModel : ViewModelBase
             return;
         }
 
-        if (_startupIsComplete)
+        var fingerprint = RuntimeStateSnapshotFingerprint.Compute(snapshot);
+        if (string.Equals(fingerprint, _lastAppliedPresentationFingerprint, StringComparison.Ordinal))
         {
-            var fingerprint = RuntimeStateSnapshotFingerprint.Compute(snapshot);
-            if (string.Equals(fingerprint, _lastAppliedPresentationFingerprint, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _lastAppliedPresentationFingerprint = fingerprint;
+            return;
         }
+
+        _lastAppliedPresentationFingerprint = fingerprint;
 
         ApplyServiceStatusesFromSnapshot(snapshot);
         ApplyPhpListenersFromSnapshot(snapshot);
@@ -890,6 +908,25 @@ public sealed class DashboardViewModel : ViewModelBase
 
             var supervised = IsKeepAliveEnabled(service);
             var retries = supervised ? GetSupervisionFailureCount(service.ServiceKey) : 0;
+
+            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!_startupIsComplete && IsTestDnsAutoStartExpected()
+                    && !(service.IsRunning && string.Equals(service.StatusText, "Running", StringComparison.Ordinal)))
+                {
+                    issues.Add(new HealthIssue(service.Name, 0, "starting", false));
+                }
+                else if (service.StatusText == "Error")
+                {
+                    issues.Add(new HealthIssue(service.Name, 0, "error", false));
+                }
+                else if (!service.IsRunning && !service.IsBusy && service.StatusText == "Stopped")
+                {
+                    issues.Add(new HealthIssue(service.Name, 0, "stopped", false));
+                }
+
+                continue;
+            }
 
             if (service.StatusText == "Error")
             {
@@ -1268,11 +1305,8 @@ public sealed class DashboardViewModel : ViewModelBase
         var settings = _settingsStore.Load();
         foreach (var service in Services)
         {
-            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase)
-                && settings.TestDns.Enabled
-                && settings.TestDns.AutoStart)
+            if (string.Equals(service.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase))
             {
-                service.NoteStarted();
                 continue;
             }
 
@@ -1281,6 +1315,18 @@ public sealed class DashboardViewModel : ViewModelBase
                 service.NoteStarted();
             }
         }
+    }
+
+    private void SeedExpectRunningForTestDns()
+    {
+        if (!IsTestDnsAutoStartExpected())
+        {
+            return;
+        }
+
+        var service = Services.FirstOrDefault(row =>
+            string.Equals(row.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase));
+        service?.NoteStarted();
     }
 
     private int CountServiceErrors()
@@ -1801,14 +1847,62 @@ public sealed class DashboardViewModel : ViewModelBase
     private void OnServiceLiveStatusChanged(object? sender, ServiceInfo info)
     {
         var dispatcher = Application.Current?.Dispatcher;
+        var priority = _startupIsComplete
+            ? DispatcherPriority.Normal
+            : DispatcherPriority.ContextIdle;
         if (dispatcher is null || dispatcher.CheckAccess())
         {
             ApplyLiveServiceInfo(info);
             return;
         }
 
-        dispatcher.BeginInvoke(() => ApplyLiveServiceInfo(info), DispatcherPriority.Normal);
+        dispatcher.BeginInvoke(() => ApplyLiveServiceInfo(info), priority);
     }
+
+    private void OnTestDnsStatusChanged(object? sender, EventArgs e)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.HasShutdownStarted)
+        {
+            return;
+        }
+
+        if (dispatcher.CheckAccess())
+        {
+            ApplyTestDnsRowFromCoordinator();
+            return;
+        }
+
+        dispatcher.BeginInvoke(ApplyTestDnsRowFromCoordinator, DispatcherPriority.ContextIdle);
+    }
+
+    private void ApplyTestDnsRowFromCoordinator()
+    {
+        if (ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        var service = Services.FirstOrDefault(row =>
+            string.Equals(row.ServiceKey, "testdns", StringComparison.OrdinalIgnoreCase));
+        if (service is null)
+        {
+            return;
+        }
+
+        var status = _services.GetRequiredService<TestDnsCoordinator>().GetCachedStatus();
+        ApplyTestDnsRowStatus(service, ToRuntimeTestDnsState(status));
+        ScheduleCoalescedStartupPresentationUpdate();
+    }
+
+    private static RuntimeTestDnsState ToRuntimeTestDnsState(TestDnsStatus status) =>
+        new()
+        {
+            Enabled = status.Enabled,
+            Running = status.Running,
+            NrptActive = status.NrptActive,
+            Message = status.Message
+        };
 
     private void ApplyLiveServiceInfo(ServiceInfo info)
     {
@@ -1825,9 +1919,44 @@ public sealed class DashboardViewModel : ViewModelBase
         }
 
         ApplyDashboardServiceStatusFromLive(service, info, "live-event");
-        UpdateEnvironmentHealth();
-        ScanKeepAliveServiceNotifications();
-        NotifyAggregatePropertiesChanged();
+        ScheduleCoalescedStartupPresentationUpdate();
+    }
+
+    private void ScheduleCoalescedStartupPresentationUpdate()
+    {
+        if (_startupIsComplete)
+        {
+            UpdateEnvironmentHealth();
+            ScanKeepAliveServiceNotifications();
+            NotifyAggregatePropertiesChanged();
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _startupPresentationUpdateScheduled, 1, 0) != 0)
+        {
+            return;
+        }
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.HasShutdownStarted)
+        {
+            Interlocked.Exchange(ref _startupPresentationUpdateScheduled, 0);
+            return;
+        }
+
+        dispatcher.BeginInvoke(
+            () =>
+            {
+                Interlocked.Exchange(ref _startupPresentationUpdateScheduled, 0);
+                if (ApplicationShutdownState.IsClosing || _startupIsComplete)
+                {
+                    return;
+                }
+
+                UpdateEnvironmentHealth();
+                NotifyAggregatePropertiesChanged();
+            },
+            DispatcherPriority.ContextIdle);
     }
 
     private void OnServiceSupervisionAlert(object? sender, ServiceSupervisionAlertEventArgs e)
@@ -2425,8 +2554,13 @@ public sealed class DashboardViewModel : ViewModelBase
                 .Where(process => process.Enabled)
                 .OrderBy(process => process.Featured == true ? 0 : 1)
                 .ThenBy(process => process.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList()).ConfigureAwait(true);
+                .ToList()).ConfigureAwait(false);
 
+        await RunOnUiAsync(() => ApplyProcessShellItems(processes)).ConfigureAwait(true);
+    }
+
+    private void ApplyProcessShellItems(IReadOnlyList<ProcessInfo> processes)
+    {
         foreach (var stale in EnabledProcesses.Where(row => processes.All(process => process.Id != row.Id)).ToList())
         {
             EnabledProcesses.Remove(stale);
@@ -2713,7 +2847,10 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
-    private async Task SyncQuickLinksAsync()
+    private Task SyncQuickLinksAsync()
+        => RunOnUiAsync(SyncQuickLinksOnUiAsync);
+
+    private async Task SyncQuickLinksOnUiAsync()
     {
         var desired = new List<DashboardQuickLinkViewModel>();
         var settings = _settingsStore.Load();
@@ -2739,7 +2876,7 @@ public sealed class DashboardViewModel : ViewModelBase
             desired.Add(CreateQuickLink("phpRedisAdmin", pra.Url));
         }
 
-        var mailpit = await _mailpitManager.GetStatusAsync();
+        var mailpit = await _mailpitManager.GetStatusAsync().ConfigureAwait(true);
         if (mailpit.Enabled && mailpit.Running && !string.IsNullOrWhiteSpace(mailpit.WebUrl))
         {
             desired.Add(CreateQuickLink("Mail", mailpit.WebUrl));
@@ -2830,8 +2967,8 @@ public sealed class DashboardViewModel : ViewModelBase
 
     private async Task SyncServiceRowsAsync()
     {
-        var items = await Task.Run(BuildServiceShellItems).ConfigureAwait(true);
-        ApplyServiceShellItems(items);
+        var items = await Task.Run(BuildServiceShellItems).ConfigureAwait(false);
+        await RunOnUiAsync(() => ApplyServiceShellItems(items)).ConfigureAwait(true);
     }
 
     private List<ServiceShellItem> BuildServiceShellItems()
@@ -2914,20 +3051,26 @@ public sealed class DashboardViewModel : ViewModelBase
 
             if (item.Kind == DashboardShellServiceKind.TestDns)
             {
-                Services.Add(new DashboardServiceRowViewModel
+                var testDnsRow = new DashboardServiceRowViewModel
                 {
                     ServiceKey = "testdns",
                     Name = "Test DNS",
                     Description = "Wildcard .test resolution via 127.0.0.1:53",
                     PortLabel = "53",
                     IsSupervised = false,
-                    StatusText = "Loading",
-                    StatusColor = "#91A0B5",
+                    StatusText = IsTestDnsAutoStartExpected() ? "Starting" : "Loading",
+                    StatusColor = IsTestDnsAutoStartExpected() ? "#E9BD5B" : "#91A0B5",
                     SettingsCommand = new RelayCommand(_ => OpenTestDnsSettings()),
                     StartCommand = new RelayCommand(_ => _ = StartAsync("testdns"), _ => CanStartService("testdns")),
                     StopCommand = new RelayCommand(_ => _ = StopAsync("testdns"), _ => CanStopService("testdns")),
                     RestartCommand = new RelayCommand(_ => _ = RestartAsync("testdns"), _ => CanStopService("testdns"))
-                });
+                };
+                if (IsTestDnsAutoStartExpected())
+                {
+                    testDnsRow.SetStartupProgress(true);
+                }
+
+                Services.Add(testDnsRow);
                 continue;
             }
 
@@ -3032,11 +3175,12 @@ public sealed class DashboardViewModel : ViewModelBase
             && _registryStore.IsInstalled(mailpit.PackageId);
     }
 
-    private static void ApplyTestDnsRowStatus(DashboardServiceRowViewModel row, RuntimeTestDnsState state)
+    private void ApplyTestDnsRowStatus(DashboardServiceRowViewModel row, RuntimeTestDnsState state)
     {
         if (!state.Enabled)
         {
             row.MarkStopped();
+            row.SetStartupProgress(false);
             return;
         }
 
@@ -3044,16 +3188,32 @@ public sealed class DashboardViewModel : ViewModelBase
         {
             row.MarkRunning();
             row.Message = null;
+            row.SetStartupProgress(false);
+            return;
+        }
+
+        if (!_startupIsComplete && IsTestDnsAutoStartExpected())
+        {
+            row.SetStartupProgress(true);
+            row.MarkStarting();
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(state.Message))
         {
             row.MarkError(state.Message);
+            row.SetStartupProgress(false);
             return;
         }
 
         row.MarkStopped();
+        row.SetStartupProgress(false);
+    }
+
+    private bool IsTestDnsAutoStartExpected()
+    {
+        var settings = _settingsStore.Load().TestDns;
+        return settings.Enabled && settings.AutoStart;
     }
 
     private void ApplyServiceRowPresentation(
@@ -3635,9 +3795,15 @@ public sealed class DashboardViewModel : ViewModelBase
         if (deferred is { } save)
         {
             var shouldRestart = restartAfterSave;
+            var rebuildNginx = id == ServiceId.Nginx;
             var serviceKey = id.ToString().ToLowerInvariant();
             _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save, async () =>
             {
+                if (rebuildNginx)
+                {
+                    await _services.GetRequiredService<NginxWebStackRebuilder>().RebuildAsync();
+                }
+
                 await RefreshAsync(resyncStructure: true);
                 if (shouldRestart
                     && _settingsStore.Load().Services[id].Enabled

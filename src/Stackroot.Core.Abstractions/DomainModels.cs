@@ -334,11 +334,29 @@ public record class SiteDefaults
 public record class TestDnsSettings
 {
     /// <summary>
-    /// Route <c>.test</c> queries to Stackroot's local resolver (127.0.0.1:53 via NRPT).
+    /// Route queries for these suffixes to Stackroot's local resolver (127.0.0.1:53 via NRPT).
+    /// Safe suffixes (e.g. .test) resolve any name to loopback; public suffixes only match local sites.
     /// </summary>
     public bool Enabled { get; set; }
 
     public bool AutoStart { get; set; } = true;
+
+    /// <summary>
+    /// Append every DNS query handled by Test DNS to a log file under Logs.
+    /// </summary>
+    public bool LogRequests { get; set; }
+
+    /// <summary>
+    /// Manual settings.json only (not shown in the UI). When true, allows catch-all suffix "." and related risky NRPT modes.
+    /// </summary>
+    public bool AllowDangerousSettings { get; set; }
+
+    /// <summary>
+    /// IPv4/IPv6 returned for local site names and safe dev suffixes. NRPT still targets 127.0.0.1:53.
+    /// </summary>
+    public string ResolveAddress { get; set; } = "127.0.0.1";
+
+    public List<string> Suffixes { get; set; } = [".test"];
 }
 
 /// <summary>
@@ -474,6 +492,7 @@ public record class SiteDevProxy
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; }
+    public string? LocationKind { get; set; }
     public string LocationPath { get; set; } = "/";
     public string TargetUrl { get; set; } = string.Empty;
     public bool? Websocket { get; set; }

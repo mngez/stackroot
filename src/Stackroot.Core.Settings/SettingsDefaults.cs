@@ -108,7 +108,7 @@ public static class SettingsDefaults
             Id = ServiceId.TestDns,
             Name = "Test DNS",
             Category = ServiceCategory.Web,
-            Description = "Wildcard .test resolution via 127.0.0.1:53 (NRPT)",
+            Description = "Configurable dev suffix DNS via 127.0.0.1:53 (NRPT)",
             DefaultPort = 53
         }
     ];
@@ -184,7 +184,10 @@ public static class SettingsDefaults
             TestDns = new TestDnsSettings
             {
                 Enabled = false,
-                AutoStart = true
+                AutoStart = true,
+                LogRequests = false,
+                ResolveAddress = "127.0.0.1",
+                Suffixes = [".test"]
             },
             NginxHttp = new NginxHttpSettings(),
             Services = DefaultServices()

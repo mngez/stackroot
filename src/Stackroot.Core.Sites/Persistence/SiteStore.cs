@@ -303,14 +303,19 @@ public sealed class SiteStore
             return null;
         }
 
-        return proxies.Select(proxy => new SiteDevProxy
+        return proxies.Select(proxy =>
         {
-            Id = proxy.Id,
-            Name = proxy.Name,
-            Enabled = proxy.Enabled,
-            LocationPath = proxy.LocationPath,
-            TargetUrl = proxy.TargetUrl,
-            Websocket = proxy.Websocket
+            var (kind, pattern) = Nginx.SiteDevProxyLocation.Normalize(proxy.LocationKind, proxy.LocationPath);
+            return new SiteDevProxy
+            {
+                Id = proxy.Id,
+                Name = proxy.Name,
+                Enabled = proxy.Enabled,
+                LocationKind = kind,
+                LocationPath = pattern,
+                TargetUrl = proxy.TargetUrl,
+                Websocket = proxy.Websocket
+            };
         }).ToList();
     }
 

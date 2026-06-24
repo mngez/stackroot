@@ -5,6 +5,7 @@ public sealed class SiteDevProxy
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; }
+    public SiteDevProxyLocationKind? LocationKind { get; set; }
     public string LocationPath { get; set; } = "/";
     public string TargetUrl { get; set; } = string.Empty;
     public bool? Websocket { get; set; }

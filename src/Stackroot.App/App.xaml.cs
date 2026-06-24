@@ -229,6 +229,10 @@ public partial class App : System.Windows.Application
         deferredStartup.Completed -= OnDeferredStartupCompleted;
         deferredStartup.Completed += OnDeferredStartupCompleted;
 
+        var startupReadyGate = _services.GetRequiredService<StackrootStartupReadyGate>();
+        startupReadyGate.Ready -= OnStartupFullyReady;
+        startupReadyGate.Ready += OnStartupFullyReady;
+
         _services.GetRequiredService<AppUpdateCoordinator>().Start();
         _services.GetRequiredService<SslTrustPromptCoordinator>().Start();
 
@@ -318,7 +322,6 @@ public partial class App : System.Windows.Application
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     _diagnostics.LogActivity("App", "Core startup finished — deferred tasks continue in background");
-                    _ = _services.GetRequiredService<DashboardViewModel>().RefreshAfterStartupAsync();
                 }, System.Windows.Threading.DispatcherPriority.Background);
             }
         }
@@ -331,25 +334,47 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        // Notify user that startup is complete
+        _ = Task.Run(RunPostStartupPresentationAsync);
+    }
+
+    private async Task RunPostStartupPresentationAsync()
+    {
+        if (_services is null || ApplicationShutdownState.IsClosing)
+        {
+            return;
+        }
+
+        _diagnostics.LogActivity("App", "Deferred startup finished — refreshing dashboard");
+
         try
         {
-            var scheduler = _services.GetRequiredService<TaskSchedulerService>();
-            scheduler.Start();
-            var readyMessage = scheduler.IsStarted
-                ? "All services started — your environment is ready. Cron scheduler running."
-                : "All services started — your environment is ready.";
-            _services.GetRequiredService<IToastService>().Show("Stackroot", readyMessage);
+            await _services.GetRequiredService<DashboardViewModel>()
+                .RefreshAfterStartupAsync()
+                .ConfigureAwait(false);
+
+            // Warm the Services page off the UI thread; no arbitrary delay — runs after dashboard apply finishes.
+            await _services.GetRequiredService<ServicesViewModel>()
+                .RefreshFromExternalAsync()
+                .ConfigureAwait(false);
         }
-        catch { /* toast is best-effort */ }
+        catch
+        {
+            // Post-startup presentation is best-effort.
+        }
 
-        // Signal the dashboard that startup is complete so its auto-refresh
-        // timer may now perform PHP recovery etc.
-        _services.GetRequiredService<DashboardViewModel>().NotifyStartupCompleted();
+        if (ApplicationShutdownState.IsClosing || _services is null)
+        {
+            return;
+        }
 
-        _services.GetRequiredService<ServiceManager>().ActivateServiceSupervision();
+        await Application.Current.Dispatcher.InvokeAsync(
+            WarmSecondaryPages,
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle);
 
-        // Cron scheduler started above (before toast)
+        if (ApplicationShutdownState.IsClosing || _services is null)
+        {
+            return;
+        }
 
         _ = Application.Current.Dispatcher.InvokeAsync(() =>
         {
@@ -363,27 +388,42 @@ public partial class App : System.Windows.Application
                 // Featured nav is best-effort.
             }
         }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    }
 
-        // Dispatch dashboard refresh first, then stagger services refresh to
-        // avoid freezing the UI momentarily when both run their synchronous
-        // setup on the UI thread simultaneously.
-        _ = Application.Current.Dispatcher.InvokeAsync(() =>
+    private void WarmSecondaryPages()
+    {
+        if (_services is null || ApplicationShutdownState.IsClosing)
         {
-            _diagnostics.LogActivity("App", "Deferred startup finished — refreshing dashboard");
-            _ = _services.GetRequiredService<DashboardViewModel>().RefreshAfterStartupAsync();
-        }, System.Windows.Threading.DispatcherPriority.Background);
+            return;
+        }
 
-        _ = Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            _services.GetRequiredService<ServicesViewModel>().RefreshAfterDeferredStartup();
-        }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        // After dashboard + services presentation — warm heavy pages without blocking the post-toast window.
+        _ = _services.GetRequiredService<PhpViewModel>();
+        _services.GetRequiredService<NodeViewModel>().BeginLoading();
+    }
 
-        // Preload heavy pages so they are ready when the user navigates to them
-        _ = Application.Current.Dispatcher.InvokeAsync(() =>
+    private void OnStartupFullyReady()
+    {
+        if (_services is null)
         {
-            _services.GetRequiredService<PhpViewModel>();
-            _services.GetRequiredService<NodeViewModel>();
-        }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            return;
+        }
+
+        try
+        {
+            var scheduler = _services.GetRequiredService<TaskSchedulerService>();
+            var readyMessage = scheduler.IsStarted
+                ? "All services started — your environment is ready. Cron scheduler running."
+                : "All services started — your environment is ready.";
+            _services.GetRequiredService<IToastService>().Show("Stackroot", readyMessage);
+        }
+        catch
+        {
+            // Toast is best-effort.
+        }
+
+        _services.GetRequiredService<DashboardViewModel>().NotifyStartupCompleted();
+        _services.GetRequiredService<ServiceManager>().ActivateServiceSupervision();
     }
 
     private void ReportFailure(Exception ex, string context, bool shutdown)

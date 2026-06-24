@@ -13,6 +13,14 @@ $r = $PSScriptRoot
 switch -Regex ($Cmd.ToLower()) {
     "^(dev|run)$" {
         & "$r/scripts/ensure-pie.ps1" -RepoRoot $r | Out-Null
+        & "$r/scripts/publish-dns-helper.ps1" -Configuration Debug
+        $devBin = Join-Path $r "src/Stackroot.App/bin/Debug/net8.0-windows"
+        $runningDev = Get-Process -Name Stackroot -ErrorAction SilentlyContinue |
+            Where-Object { $_.Path -and $_.Path.StartsWith($devBin, [StringComparison]::OrdinalIgnoreCase) }
+        if ($runningDev) {
+            Write-Warning "Stackroot dev build is already running (PID $($runningDev.Id -join ', ')). Close it first or rebuild may fail."
+        }
+
         dotnet run --project "$r/src/Stackroot.App/Stackroot.App.csproj"
         exit $LASTEXITCODE
     }

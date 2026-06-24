@@ -2,16 +2,21 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Test DNS settings"
-        Width="460"
-        MinWidth="420"
+        Width="720"
+        MinWidth="640"
+        MaxWidth="860"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         Background="{StaticResource StackrootWindowBrush}"
         Foreground="{StaticResource StackrootTextBrush}"
         ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -23,24 +28,168 @@
                        Text="Test DNS settings" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Routes only .test names to Stackroot DNS on 127.0.0.1:53. Supports wildcards like *.app.test. Other domains and internet traffic are unchanged."
+                       Text="Routes configured suffixes to Stackroot DNS on 127.0.0.1:53. Local names resolve to the IP you set below (default 127.0.0.1)."
                        TextWrapping="Wrap" />
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Margin="0,16,0,0" IsEnabled="{Binding IsIdle}">
-            <CheckBox Content="Enabled"
-                      IsChecked="{Binding Enabled}" />
-            <TextBlock Margin="24,6,0,0"
-                       Foreground="{StaticResource StackrootTextMutedBrush}"
-                       FontSize="12"
-                       Text="May require administrator approval once for the Windows NRPT routing rule."
-                       TextWrapping="Wrap" />
-            <CheckBox Margin="0,16,0,0"
-                      Content="Start automatically with Stackroot"
-                      IsChecked="{Binding AutoStart}" />
-        </StackPanel>
+        <Grid Grid.Row="1" Margin="0,16,0,0" IsEnabled="{Binding IsIdle}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="2" Margin="0,18,0,0">
+            <StackPanel Grid.Column="0">
+                <CheckBox Content="Enabled"
+                          IsChecked="{Binding Enabled}" />
+                <TextBlock Margin="24,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="Turn off and Save to stop the helper service and remove NRPT rules. Windows may ask for administrator approval once."
+                           TextWrapping="Wrap" />
+                <TextBlock Margin="0,14,0,4"
+                           Text="Resolve to IP" />
+                <TextBox FontFamily="Consolas"
+                         FontSize="12"
+                         MaxLength="45"
+                         Text="{Binding ResolveAddress, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="IPv4 or IPv6 returned for local sites (default 127.0.0.1). DNS still listens on 127.0.0.1:53; hosts file uses this IP too."
+                           TextWrapping="Wrap" />
+                <TextBlock Margin="0,4,0,0"
+                           Foreground="{StaticResource StackrootDangerBrush}"
+                           FontSize="12"
+                           Text="{Binding ResolveAddressError}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <CheckBox Content="Start automatically with Stackroot"
+                          IsChecked="{Binding AutoStart}" />
+                <CheckBox Margin="0,12,0,0"
+                          Content="Log DNS queries to file"
+                          IsChecked="{Binding LogRequests}" />
+                <TextBlock Margin="24,6,0,0"
+                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Text="Writes each query to Logs\test-dns-queries.jsonl. Off by default."
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+
+        <Expander Grid.Row="2"
+                  Margin="0,16,0,0"
+                  Header="Suffixes and recovery"
+                  IsExpanded="False"
+                  IsEnabled="{Binding IsIdle}">
+            <StackPanel Margin="0,8,0,0">
+                <Border Margin="0,0,0,12"
+                        Padding="12"
+                        Background="#33E88A92"
+                        BorderBrush="{StaticResource StackrootDangerBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{Binding PowerUserModeEnabled, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Foreground="{StaticResource StackrootDangerTextBrush}"
+                               FontSize="12"
+                               LineHeight="18"
+                               Text="Power-user mode is enabled in settings.json (testDns.allowDangerousSettings). Catch-all suffix &quot;.&quot; is allowed and requires confirmation before save."
+                               TextWrapping="Wrap" />
+                </Border>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" MinWidth="240" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" MinWidth="240" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="Suffixes (one per line, include the leading dot):"
+                               TextWrapping="Wrap" />
+                    <TextBox Margin="0,8,0,0"
+                             MinHeight="72"
+                             MaxHeight="120"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             Text="{Binding SuffixesText, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               FontSize="12"
+                               Text="Examples: .test, .dev, .com — public suffixes affect real domains; use only when you need them."
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource StackrootDangerBrush}"
+                               FontSize="12"
+                               Text="{Binding SuffixesError}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource StackrootDangerBrush}"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               Text="{Binding DangerousSuffixWarning}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <Border Padding="12"
+                            Background="#33E88A92"
+                            BorderBrush="{StaticResource StackrootDangerBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold"
+                                       Foreground="{StaticResource StackrootDangerBrush}"
+                                       Text="If the internet stops working"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       FontSize="12"
+                                       LineHeight="18"
+                                       TextWrapping="Wrap">
+                                <Run Text="NRPT may still send matching names to 127.0.0.1 after a crash or failed save. First: turn off " />
+                                <Run FontWeight="SemiBold" Text="Enabled" />
+                                <Run Text=" and click " />
+                                <Run FontWeight="SemiBold" Text="Save" />
+                                <Run Text=". If that fails, copy the command below and run it in " />
+                                <Run FontWeight="SemiBold" Text="Administrator PowerShell" />
+                                <Run Text="." />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Margin="0,12,0,6"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               FontSize="12"
+                               Text="Removes StackrootDnsHelper and all Stackroot NRPT rules:"
+                               TextWrapping="Wrap" />
+                    <TextBox MinHeight="52"
+                             MaxHeight="72"
+                             Padding="8,6"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             TextWrapping="Wrap"
+                             FontFamily="Consolas"
+                             FontSize="11"
+                             Text="{Binding RecoveryCommandText, Mode=OneWay}" />
+                    <Button Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            MinWidth="140"
+                            Padding="12,6"
+                            Content="Copy cleanup command"
+                            Command="{Binding CopyRecoveryCommand}" />
+                </StackPanel>
+            </Grid>
+            </StackPanel>
+        </Expander>
+
+        <StackPanel Grid.Row="3" Margin="0,18,0,0">
             <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
                        FontSize="12"
                        MinHeight="16"

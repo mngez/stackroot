@@ -121,6 +121,7 @@ public static class StackrootBootstrap
         services.AddSingleton<BackgroundWorkQueue>();
         services.AddSingleton<DeferredStartupCoordinator>();
         services.AddSingleton<DashboardShellReadyGate>();
+        services.AddSingleton<StackrootStartupReadyGate>();
         services.AddSingleton<PhpConfigWriter>();
         services.AddSingleton<PhpExtensionsManifestStore>();
         services.AddSingleton<PhpExtensionManager>();
@@ -139,7 +140,20 @@ public static class StackrootBootstrap
         services.AddSingleton<PhpRedisAdminManager>();
         services.AddSingleton<MailpitManager>();
         services.AddSingleton<StackrootShutdownCoordinator>();
-        services.AddSingleton<NginxWebStackRebuilder>();
+        services.AddSingleton<NginxWebStackRebuilder>(provider => new NginxWebStackRebuilder(
+            provider.GetRequiredService<SiteManager>(),
+            provider.GetRequiredService<AppDomainConfigWriter>(),
+            provider.GetRequiredService<PhpMyAdminManager>(),
+            provider.GetRequiredService<PhpRedisAdminManager>(),
+            provider.GetRequiredService<MailpitManager>(),
+            provider.GetRequiredService<SettingsStore>(),
+            provider.GetRequiredService<InstallRegistryStore>(),
+            provider.GetRequiredService<StackrootPaths>(),
+            provider.GetRequiredService<IProcessJobManager>(),
+            provider.GetRequiredService<ServiceManager>(),
+            provider.GetRequiredService<NginxWebStackCoordinator>(),
+            provider.GetService<SslTrustPromptCoordinator>(),
+            provider.GetService<TestDnsCoordinator>()));
 
         services.AddSingleton<SiteStore>(provider =>
         {
@@ -155,9 +169,6 @@ public static class StackrootBootstrap
         });
 
         services.AddSingleton<HostsFileEditor>();
-        services.AddSingleton<TestDnsCoordinator>(provider => new TestDnsCoordinator(
-            provider.GetRequiredService<SettingsStore>(),
-            provider.GetRequiredService<IDiagnosticsReporter>()));
         services.AddSingleton<SiteCommandRunRegistry>();
         services.AddSingleton<SiteCommandRunner>();
         services.AddSingleton<ISiteInstaller, LaravelSiteInstaller>();
@@ -182,7 +193,8 @@ public static class StackrootBootstrap
         services.AddSingleton<TaskSchedulerService>(provider => new TaskSchedulerService(
             provider.GetRequiredService<StackrootPaths>(),
             provider.GetRequiredService<SiteCommandRunner>(),
-            provider.GetRequiredService<SiteStore>()));
+            provider.GetRequiredService<SiteStore>(),
+            provider.GetRequiredService<StackrootStartupReadyGate>()));
         services.AddTransient<ScheduledTaskViewModel>();
         services.AddTransient<ScheduledTasksPage>();
         services.AddTransient<CronTaskDialog>();
@@ -197,6 +209,19 @@ public static class StackrootBootstrap
             provider.GetRequiredService<StackrootPaths>(),
             provider.GetRequiredService<DatabaseManager>(),
             provider.GetRequiredService<SiteInstallerRegistry>(),
+            provider.GetRequiredService<IDiagnosticsReporter>(),
+            refreshLocalDns: async () =>
+            {
+                var coordinator = provider.GetService<TestDnsCoordinator>();
+                if (coordinator is not null)
+                {
+                    await coordinator.RefreshServerConfigurationAsync().ConfigureAwait(false);
+                }
+            }));
+        services.AddSingleton<TestDnsCoordinator>(provider => new TestDnsCoordinator(
+            provider.GetRequiredService<SettingsStore>(),
+            provider.GetRequiredService<SiteManager>(),
+            provider.GetRequiredService<StackrootPaths>(),
             provider.GetRequiredService<IDiagnosticsReporter>()));
         services.AddSingleton<NginxWebStackCoordinator>(provider =>
         {
@@ -354,12 +379,13 @@ public static class StackrootBootstrap
                 diagnostics.LogActivity("Startup", "Nginx config files written (nginx not running yet)");
 
                 var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
-                await activityCoordinator.NotifyCoreStartupFinishedAsync(cancellationToken).ConfigureAwait(false);
-
                 var testDns = services.GetRequiredService<TestDnsCoordinator>();
+                await testDns.EnsureRoutingConsistentAsync(cancellationToken).ConfigureAwait(false);
                 await testDns.EnsureAutoStartAsync(cancellationToken).ConfigureAwait(false);
 
+                // Register deferred work before core-finished so startup gate waits for auto-start.
                 EnqueueDeferredStartupTasks(services);
+                await activityCoordinator.NotifyCoreStartupFinishedAsync(cancellationToken).ConfigureAwait(false);
             },
             cancellationToken).ConfigureAwait(false);
     }

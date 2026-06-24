@@ -7,10 +7,12 @@ using Stackroot.Core.Sites.Nginx;
 using Stackroot.Core.Sites.Persistence;
 using Stackroot.Core.Windows;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Dns;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Sites;
 using Stackroot.Core.Databases;
 using Stackroot.Core.Supervisor;
+using System.Net;
 using SiteModel = Stackroot.Core.Sites.Models.Site;
 using CreateSiteInputModel = Stackroot.Core.Sites.Models.CreateSiteInput;
 using UpdateSiteInputModel = Stackroot.Core.Sites.Models.UpdateSiteInput;
@@ -29,6 +31,7 @@ public sealed class SiteManager
     private readonly SiteInstallerRegistry? _installerRegistry;
     private readonly IDiagnosticsReporter? _diagnostics;
     private readonly StackrootPaths _paths;
+    private readonly Func<Task>? _refreshLocalDns;
 
     public SiteManager(
         SiteStore store,
@@ -42,7 +45,8 @@ public sealed class SiteManager
         SiteInstallerRegistry? installerRegistry = null,
         IDiagnosticsReporter? diagnostics = null,
         int nginxHttpPort = 80,
-        bool autoHosts = true)
+        bool autoHosts = true,
+        Func<Task>? refreshLocalDns = null)
     {
         _store = store;
         _vhostWriter = vhostWriter;
@@ -56,6 +60,7 @@ public sealed class SiteManager
         _diagnostics = diagnostics;
         _ = nginxHttpPort;
         _ = autoHosts;
+        _refreshLocalDns = refreshLocalDns;
     }
 
     public IReadOnlyList<SiteModel> List() => _store.List();
@@ -271,6 +276,9 @@ public sealed class SiteManager
         return DevSslCertificateManager.TrustDevSslCertificate(_paths);
     }
 
+    public DevSslTrustResult CleanupStaleLocalCaTrust()
+        => DevSslCertificateManager.CleanupStaleLocalCaTrust(_paths);
+
     public SitesDashboard GetDashboard()
     {
         var sites = _store.List().OrderBy(site => site.Name, StringComparer.OrdinalIgnoreCase).ToList();
@@ -319,7 +327,42 @@ public sealed class SiteManager
                 SyncManagedHosts();
             }
         }
+
+        TriggerRefreshLocalDns();
     }
+
+    private void TriggerRefreshLocalDns()
+    {
+        if (_refreshLocalDns is null)
+        {
+            return;
+        }
+
+        _ = RefreshLocalDnsSafeAsync();
+    }
+
+    private async Task RefreshLocalDnsSafeAsync()
+    {
+        try
+        {
+            await _refreshLocalDns!().ConfigureAwait(false);
+        }
+        catch
+        {
+            // The coordinator logs user-facing errors.
+        }
+    }
+
+    public void RefreshManagedHosts()
+    {
+        if (AutoHosts)
+        {
+            SyncManagedHosts();
+        }
+    }
+
+    public void RefreshDevSslCertificates()
+        => BuildDevSslCertificates();
 
     private void SyncManagedHosts()
     {
@@ -338,17 +381,18 @@ public sealed class SiteManager
             return hostEntries;
         }
 
+        var resolveAddress = LocalDnsResolveAddress.Normalize(_settingsStore.Load().TestDns.ResolveAddress);
         var appDomain = _settingsStore.Load().General.AppDomain;
         if (!string.IsNullOrWhiteSpace(appDomain))
         {
-            hostEntries[appDomain] = "127.0.0.1";
+            hostEntries[appDomain] = resolveAddress;
         }
 
         foreach (var site in sites.Where(static site => site.Enabled))
         {
             foreach (var host in SiteDomainNames.GetHostsEligibleNames(site))
             {
-                hostEntries[host] = "127.0.0.1";
+                hostEntries[host] = resolveAddress;
             }
         }
 
@@ -435,17 +479,49 @@ public sealed class SiteManager
             domains.Add(appDomain);
         }
 
+        var ipAddresses = CollectSslIpAddresses(settings);
+
         if (domains.Count == 0)
         {
             if (ResolveNginxSslEnabled() && !DevSslCertificateManager.CertificatesExist(_paths))
             {
-                return DevSslCertificateManager.EnsureDevSslCertificate(_paths, ["localhost"]);
+                return DevSslCertificateManager.EnsureDevSslCertificate(_paths, ["localhost"], ipAddresses);
             }
 
             return DevSslCertificateManager.TryGetExisting(_paths);
         }
 
-        return DevSslCertificateManager.EnsureDevSslCertificate(_paths, domains);
+        return DevSslCertificateManager.EnsureDevSslCertificate(_paths, domains, ipAddresses);
+    }
+
+    private static List<string> CollectSslIpAddresses(AppSettings settings)
+    {
+        var ipAddresses = new List<string>();
+        if (settings.Services.TryGetValue(ServiceId.Nginx, out var nginx))
+        {
+            TryAddSslIpAddress(ipAddresses, nginx.Host);
+        }
+
+        return ipAddresses;
+    }
+
+    private static void TryAddSslIpAddress(List<string> ipAddresses, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (!IPAddress.TryParse(value.Trim(), out var address))
+        {
+            return;
+        }
+
+        var normalized = address.ToString();
+        if (!ipAddresses.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+        {
+            ipAddresses.Add(normalized);
+        }
     }
 
     private DevSslPaths? EnsureDevSslForCurrentDomains()

@@ -54,6 +54,23 @@ Write-Host "Publishing Stackroot.App payload: $Configuration $Runtime"
 dotnet publish $appProject @appPublishArgs -o $appDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish Stackroot.App failed ($LASTEXITCODE)" }
 
+$dnsHelperDir = Join-Path $stageRoot "dns-helper"
+New-Item -ItemType Directory -Path $dnsHelperDir -Force | Out-Null
+
+$dnsHelperProject = Join-Path $repoRoot "src/Stackroot.DnsHelper/Stackroot.DnsHelper.csproj"
+Write-Host "Publishing Stackroot.DnsHelper (framework-dependent, single-file): $Configuration $Runtime"
+$dnsHelperPublishArgs = @(
+    "-c", $Configuration,
+    "-r", $Runtime,
+    "--self-contained", "false",
+    "-p:PublishSingleFile=true",
+    "-p:DebugType=none"
+)
+dotnet publish $dnsHelperProject @dnsHelperPublishArgs -o $dnsHelperDir
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish Stackroot.DnsHelper failed ($LASTEXITCODE)" }
+
+Get-ChildItem $dnsHelperDir -Filter "*.pdb" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
+
 $resourcesSource = Join-Path $repoRoot "resources/packages"
 $resourcesDestination = Join-Path $appDir "resources/packages"
 New-Item -ItemType Directory -Path $resourcesDestination -Force | Out-Null

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Dns;
 using Stackroot.Core.IO;
 using Stackroot.Core.IO.Storage;
 
@@ -443,7 +444,13 @@ public sealed class SettingsStore
                 TestDns = settings.TestDns with
                 {
                     Enabled = patch.Enabled,
-                    AutoStart = patch.AutoStart
+                    AutoStart = patch.AutoStart,
+                    LogRequests = patch.LogRequests,
+                    AllowDangerousSettings = settings.TestDns.AllowDangerousSettings,
+                    ResolveAddress = LocalDnsResolveAddress.Normalize(patch.ResolveAddress),
+                    Suffixes = patch.Suffixes is { Count: > 0 }
+                        ? patch.Suffixes.ToList()
+                        : settings.TestDns.Suffixes
                 }
             };
 
@@ -586,7 +593,14 @@ public sealed class SettingsStore
             TestDns = defaults.TestDns with
             {
                 Enabled = stored.TestDns?.Enabled ?? legacyTestDnsEnabled,
-                AutoStart = stored.TestDns?.AutoStart ?? (stored.TestDns?.Enabled ?? legacyTestDnsEnabled)
+                AutoStart = stored.TestDns?.AutoStart ?? (stored.TestDns?.Enabled ?? legacyTestDnsEnabled),
+                LogRequests = stored.TestDns?.LogRequests ?? defaults.TestDns.LogRequests,
+                AllowDangerousSettings = stored.TestDns?.AllowDangerousSettings ?? defaults.TestDns.AllowDangerousSettings,
+                ResolveAddress = LocalDnsResolveAddress.Normalize(
+                    stored.TestDns?.ResolveAddress ?? defaults.TestDns.ResolveAddress),
+                Suffixes = stored.TestDns?.Suffixes is { Count: > 0 } suffixes
+                    ? suffixes
+                    : defaults.TestDns.Suffixes
             },
             NginxHttp = NginxHttpSettingsSanitizer.Sanitize(stored.NginxHttp),
             Services = MergeServices(defaults.Services, stored.Services)

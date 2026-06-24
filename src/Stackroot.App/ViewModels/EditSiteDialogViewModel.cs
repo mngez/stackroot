@@ -16,250 +16,6 @@ using Stackroot.Core.Sites.Models;
 
 namespace Stackroot.App.ViewModels;
 
-
-
-public sealed class DevProxyRowViewModel : ViewModelBase
-
-{
-
-    private readonly Action<DevProxyRowViewModel> _onRemove;
-
-    private readonly Action _onEnabledChanged;
-
-    private string _name = string.Empty;
-
-    private string _locationPath = "/";
-
-    private string _targetUrl = string.Empty;
-
-    private bool _enabled = true;
-
-    private bool _websocket;
-
-    private bool _isExpanded;
-
-
-
-    public DevProxyRowViewModel(
-        SiteDevProxy? source,
-        Action<DevProxyRowViewModel> onRemove,
-        Action onEnabledChanged,
-        bool expand = false)
-
-    {
-
-        _onRemove = onRemove;
-
-        _onEnabledChanged = onEnabledChanged;
-
-        Id = source?.Id ?? Guid.NewGuid().ToString("N");
-
-        _name = source?.Name ?? string.Empty;
-
-        _locationPath = source?.LocationPath ?? "/";
-
-        _targetUrl = source?.TargetUrl ?? string.Empty;
-
-        _enabled = source?.Enabled ?? false;
-
-        _websocket = source?.Websocket ?? false;
-
-        _isExpanded = expand;
-
-        RemoveCommand = new RelayCommand(_ => _onRemove(this));
-
-    }
-
-
-
-    public string Id { get; }
-
-
-
-    public string Name
-
-    {
-
-        get => _name;
-
-        set
-
-        {
-
-            if (SetProperty(ref _name, value))
-
-            {
-
-                RaisePropertyChanged(nameof(HeaderText));
-
-            }
-
-        }
-
-    }
-
-
-
-    public string LocationPath
-
-    {
-
-        get => _locationPath;
-
-        set => SetProperty(ref _locationPath, value);
-
-    }
-
-
-
-    public string TargetUrl
-
-    {
-
-        get => _targetUrl;
-
-        set => SetProperty(ref _targetUrl, value);
-
-    }
-
-
-
-    public bool Enabled
-
-    {
-
-        get => _enabled;
-
-        set
-
-        {
-
-            if (SetProperty(ref _enabled, value))
-
-            {
-
-                RaisePropertyChanged(nameof(StatusHint));
-
-                _onEnabledChanged();
-
-            }
-
-        }
-
-    }
-
-
-
-    public bool Websocket
-
-    {
-
-        get => _websocket;
-
-        set => SetProperty(ref _websocket, value);
-
-    }
-
-
-
-    public bool IsExpanded
-
-    {
-
-        get => _isExpanded;
-
-        set => SetProperty(ref _isExpanded, value);
-
-    }
-
-
-
-    public string HeaderText => string.IsNullOrWhiteSpace(Name) ? "New proxy" : Name.Trim();
-
-
-
-    public string StatusHint => Enabled ? "Active" : "Disabled";
-
-
-
-    public RelayCommand RemoveCommand { get; }
-
-
-
-    public SiteDevProxy ToModel() => new()
-
-    {
-
-        Id = Id,
-
-        Name = Name.Trim(),
-
-        LocationPath = LocationPath.Trim(),
-
-        TargetUrl = TargetUrl.Trim(),
-
-        Enabled = Enabled,
-
-        Websocket = Websocket
-
-    };
-
-
-
-    public string? Validate()
-
-    {
-
-        if (string.IsNullOrWhiteSpace(Name))
-
-        {
-
-            return "Name is required.";
-
-        }
-
-
-
-        if (string.IsNullOrWhiteSpace(LocationPath))
-
-        {
-
-            return "Location path is required.";
-
-        }
-
-
-
-        if (string.IsNullOrWhiteSpace(TargetUrl))
-
-        {
-
-            return "Target URL is required.";
-
-        }
-
-
-
-        if (!Uri.TryCreate(TargetUrl.Trim(), UriKind.Absolute, out var uri) ||
-
-            uri.Scheme is not "http" and not "https")
-
-        {
-
-            return "Target URL must use http:// or https://.";
-
-        }
-
-
-
-        return null;
-
-    }
-
-}
-
-
-
 public sealed class EditSiteDialogViewModel : ViewModelBase
 
 {
@@ -359,6 +115,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
         CloseCommand = new RelayCommand(_ => RequestClose?.Invoke(this, EventArgs.Empty));
 
         AddProxyCommand = new RelayCommand(_ => AddProxy());
+        AddRegexProxyCommand = new RelayCommand(_ => AddRegexProxy());
 
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
 
@@ -511,6 +268,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
     public RelayCommand CloseCommand { get; }
 
     public RelayCommand AddProxyCommand { get; }
+    public RelayCommand AddRegexProxyCommand { get; }
 
     public RelayCommand BrowseFolderCommand { get; }
 
@@ -587,6 +345,24 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
         DevProxies.Add(new DevProxyRowViewModel(null, RemoveProxy, RaiseProxySummaryChanged, expand: true));
+
+        RaiseProxySummaryChanged();
+
+    }
+
+    private void AddRegexProxy()
+    {
+        foreach (var proxy in DevProxies)
+        {
+            proxy.IsExpanded = false;
+        }
+
+        DevProxies.Add(new DevProxyRowViewModel(
+            null,
+            RemoveProxy,
+            RaiseProxySummaryChanged,
+            expand: true,
+            defaultKind: SiteDevProxyLocationKind.Regex));
 
         RaiseProxySummaryChanged();
 

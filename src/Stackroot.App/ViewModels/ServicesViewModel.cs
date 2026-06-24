@@ -101,12 +101,14 @@ public sealed class ServicesViewModel : ViewModelBase
         DismissStackNoticeCommand = new RelayCommand(_ => SetStackNotice(null));
 
         BuildGroups();
-        _ = InitializeInBackgroundAsync();
     }
 
     public void BeginLoading()
     {
-        Interlocked.Increment(ref _pageVisible);
+        if (Interlocked.Increment(ref _pageVisible) == 1 && !_initialized)
+        {
+            _ = InitializeInBackgroundAsync();
+        }
     }
 
     public void EndLoading()
@@ -455,8 +457,14 @@ public sealed class ServicesViewModel : ViewModelBase
         if (deferred is { } save)
         {
             var shouldRestart = restartAfterSave;
+            var rebuildNginx = id == ServiceId.Nginx;
             _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save, async () =>
             {
+                if (rebuildNginx)
+                {
+                    await _nginxWebStackRebuilder.RebuildAsync();
+                }
+
                 await RefreshAsync(force: true);
                 item.Message = save.SuccessMessage;
                 if (shouldRestart
@@ -493,7 +501,7 @@ public sealed class ServicesViewModel : ViewModelBase
             return;
         }
 
-        IsRefreshing = true;
+        await RunOnUiAsync(() => IsRefreshing = true).ConfigureAwait(false);
         var version = Interlocked.Increment(ref _refreshVersion);
         try
         {
@@ -515,7 +523,7 @@ public sealed class ServicesViewModel : ViewModelBase
         }
         finally
         {
-            IsRefreshing = false;
+            await RunOnUiAsync(() => IsRefreshing = false).ConfigureAwait(false);
         }
     }
 
@@ -532,7 +540,7 @@ public sealed class ServicesViewModel : ViewModelBase
             {
                 if (definition.Id == ServiceId.TestDns)
                 {
-                    var testDnsStatus = _testDnsCoordinator.GetStatus();
+                    var testDnsStatus = _testDnsCoordinator.GetCachedStatus();
                     settings.Services.TryGetValue(ServiceId.TestDns, out var testDnsServiceSettings);
                     testDnsServiceSettings ??= SettingsDefaults.DefaultServices()[ServiceId.TestDns];
                     snapshots.Add(new ServiceRefreshSnapshot(
@@ -779,7 +787,7 @@ public sealed class ServicesViewModel : ViewModelBase
         }
 
         var settings = _settingsStore.Load();
-        var status = _testDnsCoordinator.GetStatus();
+        var status = await Task.Run(() => _testDnsCoordinator.GetCachedStatus()).ConfigureAwait(false);
         await RunOnUiAsync(() =>
         {
             item.Settings = settings.Services[ServiceId.TestDns];

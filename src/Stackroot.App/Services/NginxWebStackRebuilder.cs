@@ -25,6 +25,7 @@ public sealed class NginxWebStackRebuilder
     private readonly ServiceManager _serviceManager;
     private readonly NginxWebStackCoordinator _webStackCoordinator;
     private readonly SslTrustPromptCoordinator? _sslTrustPrompt;
+    private readonly TestDnsCoordinator? _testDnsCoordinator;
 
     public NginxWebStackRebuilder(
         SiteManager siteManager,
@@ -38,7 +39,8 @@ public sealed class NginxWebStackRebuilder
         IProcessJobManager jobManager,
         ServiceManager serviceManager,
         NginxWebStackCoordinator webStackCoordinator,
-        SslTrustPromptCoordinator? sslTrustPrompt = null)
+        SslTrustPromptCoordinator? sslTrustPrompt = null,
+        TestDnsCoordinator? testDnsCoordinator = null)
     {
         _siteManager = siteManager;
         _appDomainConfigWriter = appDomainConfigWriter;
@@ -52,12 +54,17 @@ public sealed class NginxWebStackRebuilder
         _serviceManager = serviceManager;
         _webStackCoordinator = webStackCoordinator;
         _sslTrustPrompt = sslTrustPrompt;
+        _testDnsCoordinator = testDnsCoordinator;
     }
 
     public async Task<string> RebuildAsync(CancellationToken cancellationToken = default)
     {
         MigrateLegacySiteVhosts(_paths);
         _siteManager.RegenerateAll();
+        if (_testDnsCoordinator is not null)
+        {
+            await _testDnsCoordinator.RefreshServerConfigurationAsync(cancellationToken).ConfigureAwait(false);
+        }
         await ApplyAdminToolSafelyAsync(() => _phpMyAdminManager.ApplyAsync(cancellationToken));
         await ApplyAdminToolSafelyAsync(() => _phpRedisAdminManager.ApplyAsync(cancellationToken));
         await _mailpitManager.ApplyAsync(cancellationToken);

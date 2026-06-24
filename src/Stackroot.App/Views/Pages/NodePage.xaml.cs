@@ -8,5 +8,6 @@ public partial class NodePage : System.Windows.Controls.UserControl
     {
         DataContext = viewModel;
         InitializeComponent();
+        Loaded += (_, _) => viewModel.BeginLoading();
     }
 }

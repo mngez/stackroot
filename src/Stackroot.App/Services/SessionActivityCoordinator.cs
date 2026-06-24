@@ -1,4 +1,5 @@
 using Stackroot.App.Helpers;
+using Stackroot.App.Scheduling;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.AdminTools;
 using Stackroot.Core.Catalog;
@@ -14,6 +15,8 @@ public sealed class SessionActivityCoordinator : IDisposable
     private readonly MailpitManager _mailpitManager;
     private readonly PackageInstaller _packageInstaller;
     private readonly DeferredStartupCoordinator _deferredStartup;
+    private readonly TaskSchedulerService _taskScheduler;
+    private readonly StackrootStartupReadyGate _startupReadyGate;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly object _sync = new();
     private readonly HashSet<string> _awaitingServiceStarts = new(StringComparer.OrdinalIgnoreCase);
@@ -37,6 +40,8 @@ public sealed class SessionActivityCoordinator : IDisposable
         MailpitManager mailpitManager,
         PackageInstaller packageInstaller,
         DeferredStartupCoordinator deferredStartup,
+        TaskSchedulerService taskScheduler,
+        StackrootStartupReadyGate startupReadyGate,
         IDiagnosticsReporter diagnostics)
     {
         _activity = activity;
@@ -44,6 +49,8 @@ public sealed class SessionActivityCoordinator : IDisposable
         _mailpitManager = mailpitManager;
         _packageInstaller = packageInstaller;
         _deferredStartup = deferredStartup;
+        _taskScheduler = taskScheduler;
+        _startupReadyGate = startupReadyGate;
         _diagnostics = diagnostics;
 
         _serviceManager.LiveStatusChanged += OnServiceLiveStatusChanged;
@@ -99,6 +106,13 @@ public sealed class SessionActivityCoordinator : IDisposable
             string.IsNullOrWhiteSpace(message) ? "Stackroot ready." : message,
             SessionActivityTone.Success);
         _startupProgressId = null;
+
+        if (!_taskScheduler.IsStarted)
+        {
+            _taskScheduler.Start();
+        }
+
+        _startupReadyGate.SignalReady();
     }
 
     public Guid BeginMailpitStartup() => _activity.Begin(SessionActivityMessages.Starting("Mailpit"));
