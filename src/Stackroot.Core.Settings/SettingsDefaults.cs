@@ -130,7 +130,8 @@ public static class SettingsDefaults
                 ThumbnailsEnabled = false,
                 LaunchAtStartup = false,
                 ShellMetricsEnabled = true,
-                ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds
+                ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds,
+                TrustSslCaMachineWide = false
             },
             Php = new PhpSettings
             {

@@ -236,6 +236,8 @@ public record class GeneralSettings
     public bool? ShellMetricsEnabled { get; set; }
     /// <summary>Header CPU refresh interval in seconds (6-120).</summary>
     public int? ShellMetricsCpuRefreshSeconds { get; set; }
+    /// <summary>When true, trust the local HTTPS CA in LocalMachine\Root (all users). Otherwise CurrentUser only.</summary>
+    public bool? TrustSslCaMachineWide { get; set; }
     public string? DownloadCachePath { get; set; }
 }
 

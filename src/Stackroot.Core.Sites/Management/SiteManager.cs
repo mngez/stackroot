@@ -280,7 +280,8 @@ public sealed class SiteManager
     public DevSslTrustResult TrustDevSslCertificate()
     {
         _ = EnsureDevSslForCurrentDomains();
-        return DevSslCertificateManager.TrustDevSslCertificate(_paths);
+        var machineWide = _settingsStore.Load().General.TrustSslCaMachineWide ?? false;
+        return DevSslCertificateManager.TrustDevSslCertificate(_paths, machineWide);
     }
 
     public DevSslTrustResult CleanupStaleLocalCaTrust()

@@ -230,7 +230,7 @@ public static class DevSslCertificateManager
         File.WriteAllText(manifestAbs, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
     }
 
-    public static DevSslTrustResult TrustDevSslCertificate(StackrootPaths paths)
+    public static DevSslTrustResult TrustDevSslCertificate(StackrootPaths paths, bool machineWide = false)
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -255,15 +255,18 @@ public static class DevSslCertificateManager
                 : new DevSslTrustResult(true, "Local CA is already trusted.");
         }
 
-        var addResult = TryInstallCaToMachineRoot(caPath);
+        var addResult = machineWide
+            ? TryInstallCaToMachineRoot(caPath)
+            : TryInstallCaToUserRoot(caPath);
         if (!addResult.Ok)
         {
             return new DevSslTrustResult(false, addResult.Message);
         }
 
+        var scope = machineWide ? "all users" : "current user";
         var message = removed > 0
-            ? $"Local CA installed to Windows trusted roots (all users). Removed {removed} outdated Stackroot CA certificate(s)."
-            : "Local CA installed to Windows trusted roots (all users).";
+            ? $"Local CA installed to Windows trusted roots ({scope}). Removed {removed} outdated Stackroot CA certificate(s)."
+            : $"Local CA installed to Windows trusted roots ({scope}).";
         return new DevSslTrustResult(true, message);
     }
 
@@ -511,6 +514,21 @@ public static class DevSslCertificateManager
         string.IsNullOrWhiteSpace(thumbprint)
             ? string.Empty
             : thumbprint.Replace(":", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+
+    private static DevSslTrustResult TryInstallCaToUserRoot(string caPath)
+    {
+        var direct = RunProcess("certutil", ["-user", "-addstore", "Root", caPath]);
+        if (direct.ExitCode == 0)
+        {
+            return new DevSslTrustResult(true);
+        }
+
+        var detail = FirstNonEmpty(
+            direct.Error,
+            direct.Output,
+            "Could not install the CA to Windows trusted roots for the current user.");
+        return new DevSslTrustResult(false, detail);
+    }
 
     private static DevSslTrustResult TryInstallCaToMachineRoot(string caPath)
     {

@@ -40,6 +40,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private bool _shellMetricsEnabled = true;
     private int _shellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds;
     private bool _launchAtStartup;
+    private bool _trustSslCaMachineWide;
     private string _statusMessage = string.Empty;
     private bool _showCorruptedSettingsBanner;
     private string _corruptedSettingsBannerText = string.Empty;
@@ -235,6 +236,18 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public bool TrustSslCaMachineWide
+    {
+        get => _trustSslCaMachineWide;
+        set
+        {
+            if (SetProperty(ref _trustSslCaMachineWide, value))
+            {
+                Save();
+            }
+        }
+    }
+
     public bool ShellMetricsEnabled
     {
         get => _shellMetricsEnabled;
@@ -306,6 +319,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
             ShellMetricsCpuRefreshSeconds = settings.General.ShellMetricsCpuRefreshSeconds
                 ?? ShellMetricsDefaults.CpuRefreshSeconds;
             LaunchAtStartup = settings.General.LaunchAtStartup ?? false;
+            TrustSslCaMachineWide = settings.General.TrustSslCaMachineWide ?? false;
             StatusMessage = string.Empty;
         }
         finally
@@ -351,7 +365,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         ThumbnailsEnabled = ThumbnailsEnabled,
         ShellMetricsEnabled = ShellMetricsEnabled,
         ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.ClampCpuRefreshSeconds(ShellMetricsCpuRefreshSeconds),
-        LaunchAtStartup = LaunchAtStartup
+        LaunchAtStartup = LaunchAtStartup,
+        TrustSslCaMachineWide = TrustSslCaMachineWide
     };
 
     private async Task SaveAsync(GeneralSettings settings, int version)

@@ -201,7 +201,15 @@
                                Text="When enabled, a headless browser captures screenshots of your sites for the dashboard."
                                TextWrapping="Wrap" />
 
-                    <StackPanel Margin="0,18,0,0" Orientation="Horizontal">
+                    <CheckBox Margin="0,16,0,0"
+                              Content="Trust local HTTPS CA for all Windows users (requires administrator approval)"
+                              IsChecked="{Binding TrustSslCaMachineWide}" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               Text="When off, Trust SSL installs the certificate for your user account only — no administrator prompt."
+                               TextWrapping="Wrap" />
+
+                    <StackPanel Margin="0,14,0,0" Orientation="Horizontal">
                         <Button Width="160"
                                 Content="Trust SSL"
                                 Command="{Binding TrustSslCommand}" />

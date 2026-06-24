@@ -238,6 +238,7 @@ public sealed class SettingsStore
                     ShellMetricsEnabled = patch.ShellMetricsEnabled ?? settings.General.ShellMetricsEnabled,
                     ShellMetricsCpuRefreshSeconds = patch.ShellMetricsCpuRefreshSeconds
                         ?? settings.General.ShellMetricsCpuRefreshSeconds,
+                    TrustSslCaMachineWide = patch.TrustSslCaMachineWide ?? settings.General.TrustSslCaMachineWide,
                     DiagnosticsLogEnabled = patch.DiagnosticsLogEnabled ?? settings.General.DiagnosticsLogEnabled,
                     DownloadCachePath = patch.DownloadCachePath ?? settings.General.DownloadCachePath
                 }
@@ -523,6 +524,7 @@ public sealed class SettingsStore
                 ShellMetricsEnabled = stored.General.ShellMetricsEnabled ?? defaults.General.ShellMetricsEnabled,
                 ShellMetricsCpuRefreshSeconds = stored.General.ShellMetricsCpuRefreshSeconds
                     ?? defaults.General.ShellMetricsCpuRefreshSeconds,
+                TrustSslCaMachineWide = stored.General.TrustSslCaMachineWide ?? defaults.General.TrustSslCaMachineWide,
                 DiagnosticsLogEnabled = stored.General.DiagnosticsLogEnabled ?? defaults.General.DiagnosticsLogEnabled,
                 DownloadCachePath = stored.General.DownloadCachePath ?? defaults.General.DownloadCachePath
             },

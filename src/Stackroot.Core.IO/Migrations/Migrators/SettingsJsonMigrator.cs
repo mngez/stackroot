@@ -68,6 +68,9 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 14:
                 EnsureTestDnsAllowDangerousSettings(obj);
                 break;
+            case 15:
+                EnsureSslTrustMachineWideDefault(obj);
+                break;
         }
     }
 
@@ -378,6 +381,16 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         var testDns = root["testDns"] as JsonObject ?? new JsonObject();
         SetBoolIfMissing(testDns, "allowDangerousSettings", false);
         root["testDns"] = testDns;
+    }
+
+    private static void EnsureSslTrustMachineWideDefault(JsonObject root)
+    {
+        if (root["general"] is not JsonObject general)
+        {
+            return;
+        }
+
+        SetBoolIfMissing(general, "trustSslCaMachineWide", false);
     }
 
     private static void EnsureObject(JsonObject parent, string name)

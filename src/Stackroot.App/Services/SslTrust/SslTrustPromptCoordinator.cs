@@ -82,7 +82,7 @@ public sealed class SslTrustPromptCoordinator
             return;
         }
 
-        RunOnUi(() => _viewModel.SetBusy("Installing local CA to Windows trusted roots (all users)…"));
+        RunOnUi(() => _viewModel.SetBusy(GetTrustBusyMessage()));
 
         try
         {
@@ -188,6 +188,14 @@ public sealed class SslTrustPromptCoordinator
         }
 
         return nginx.SslEnabled != false;
+    }
+
+    private string GetTrustBusyMessage()
+    {
+        var machineWide = _settingsStore.Load().General.TrustSslCaMachineWide ?? false;
+        return machineWide
+            ? "Installing local CA to Windows trusted roots (all users)…"
+            : "Installing local CA to Windows trusted roots (current user)…";
     }
 
     private void RunOnUi(Action action)
