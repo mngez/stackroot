@@ -4,9 +4,9 @@ A local development environment manager for Windows — .NET 8 + WPF.
 
 Stackroot manages services (nginx, MySQL, Redis, etc.), PHP versions, Node.js, sites (WordPress/Laravel), databases, custom processes, and admin tools — all from a single desktop application.
 
-![Stackroot dashboard](assets/screenshots/dashboard.png)
+![Stackroot dashboard](assets/screenshots/dashboard.png?v=2)
 
-![Stackroot services](assets/screenshots/services.png)
+![Stackroot services](assets/screenshots/services.png?v=2)
 
 **[MIT License](LICENSE)** — free to use, modify, and distribute with attribution.
 

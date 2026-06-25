@@ -24,13 +24,15 @@ public sealed class StackrootBinManager
 
     public string LegacyBinDirectory => Path.Combine(_paths.DataRoot, "bin");
 
+    private HashSet<string>? _activeShims;
+
     public Task SyncStackrootBinAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var settings = _settings.Load();
 
         Directory.CreateDirectory(BinDirectory);
-        ClearAllCmdShims();
+        _activeShims = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         SyncPhpShims(settings);
         SyncComposerShim();
@@ -38,6 +40,9 @@ public sealed class StackrootBinManager
         SyncNvmShim();
         SyncServiceShims(settings);
         SyncToolShims();
+
+        ClearStaleShims();
+        _activeShims = null;
 
         RemoveLegacyBinFromUserPath();
 
@@ -53,16 +58,20 @@ public sealed class StackrootBinManager
         return Task.CompletedTask;
     }
 
-    private void ClearAllCmdShims()
+    private void ClearStaleShims()
     {
-        if (!Directory.Exists(BinDirectory))
+        if (!Directory.Exists(BinDirectory) || _activeShims is null)
         {
             return;
         }
 
-        foreach (var file in Directory.EnumerateFiles(BinDirectory, "*.cmd"))
+        foreach (var file in Directory.EnumerateFiles(BinDirectory, "*.cmd")
+            .Concat(Directory.EnumerateFiles(BinDirectory, "*.bat")))
         {
-            File.Delete(file);
+            if (!_activeShims.Contains(file))
+            {
+                File.Delete(file);
+            }
         }
     }
 
@@ -493,7 +502,15 @@ exit /b %ERRORLEVEL%
     private void WriteShim(string fileName, string content)
     {
         var path = Path.Combine(BinDirectory, fileName);
-        File.WriteAllText(path, content.Replace("\n", Environment.NewLine), new UTF8Encoding(false));
+        _activeShims?.Add(path);
+
+        var normalizedContent = content.Replace("\n", Environment.NewLine);
+        if (File.Exists(path) && File.ReadAllText(path, new UTF8Encoding(false)) == normalizedContent)
+        {
+            return;
+        }
+
+        File.WriteAllText(path, normalizedContent, new UTF8Encoding(false));
     }
 
     private static string EscapeForCmd(string path)
