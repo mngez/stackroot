@@ -312,6 +312,7 @@ public sealed class SettingsStore
                 ActiveVersionId = patch.ActiveVersionId ?? settings.Php.ActiveVersionId,
                 FpmHost = string.IsNullOrWhiteSpace(patch.FpmHost) ? settings.Php.FpmHost : patch.FpmHost,
                 FpmPort = patch.FpmPort <= 0 ? settings.Php.FpmPort : patch.FpmPort,
+                FpmPoolSize = patch.FpmPoolSize >= 1 ? patch.FpmPoolSize : settings.Php.FpmPoolSize,
                 Versions = patch.Versions is null ? settings.Php.Versions : new Dictionary<string, PhpVersionSettings>(patch.Versions),
                 MemoryLimit = patch.MemoryLimit ?? settings.Php.MemoryLimit,
                 MaxExecutionTime = patch.MaxExecutionTime ?? settings.Php.MaxExecutionTime,
@@ -533,6 +534,7 @@ public sealed class SettingsStore
                 ActiveVersionId = stored.Php.ActiveVersionId ?? defaults.Php.ActiveVersionId,
                 FpmHost = string.IsNullOrWhiteSpace(stored.Php.FpmHost) ? defaults.Php.FpmHost : stored.Php.FpmHost,
                 FpmPort = stored.Php.FpmPort == 0 ? defaults.Php.FpmPort : stored.Php.FpmPort,
+                FpmPoolSize = stored.Php.FpmPoolSize >= 1 ? stored.Php.FpmPoolSize : defaults.Php.FpmPoolSize,
                 Versions = stored.Php.Versions is null
                     ? defaults.Php.Versions
                     : new Dictionary<string, PhpVersionSettings>(stored.Php.Versions),

@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.Catalog;
+using Stackroot.Core.Nginx;
 using Stackroot.Core.Services.Lifecycle;
 using Stackroot.Core.Windows;
 
@@ -9,9 +11,48 @@ namespace Stackroot.Core.Services;
 
 public static class PhpCgiRuntime
 {
-    private sealed record Listener(string VersionId, int Port, int Pid);
+    /// <summary>
+    /// php-cgi recycles itself after this many requests to bound memory growth.
+    /// With a worker pool in front, a recycling worker causes no downtime — nginx
+    /// load-balances to the siblings and the exited worker is respawned immediately.
+    /// </summary>
+    private const string FcgiMaxRequests = "10000";
 
-    private static readonly ConcurrentDictionary<string, Listener> Managed = new(StringComparer.OrdinalIgnoreCase);
+    private sealed class Worker
+    {
+        public Worker(int port, Process process)
+        {
+            Port = port;
+            Process = process;
+            Pid = process.Id;
+        }
+
+        public int Port { get; }
+        public Process Process { get; }
+        public int Pid { get; }
+
+        /// <summary>Set when the worker is being torn down on purpose so its exit does not trigger a respawn.</summary>
+        public bool Stopping { get; set; }
+    }
+
+    /// <summary>The captured parameters needed to reconcile a version's pool, including after a worker exits unexpectedly.</summary>
+    private sealed record PoolContext(
+        StackrootPaths Paths,
+        InstallRegistryStore Registry,
+        AppSettings Settings,
+        IProcessJobManager JobManager,
+        string Host,
+        IDiagnosticsReporter? Diagnostics);
+
+    private sealed class Pool
+    {
+        public required string VersionId { get; init; }
+        public int AnchorPort { get; set; }
+        public List<Worker> Workers { get; } = [];
+        public PoolContext? Context { get; set; }
+    }
+
+    private static readonly ConcurrentDictionary<string, Pool> Managed = new(StringComparer.OrdinalIgnoreCase);
     private static readonly SemaphoreSlim EnsureSync = new(1, 1);
 
     public static async Task<ServiceLifecycleResult> EnsurePhpFastCgiAsync(
@@ -29,8 +70,13 @@ public static class PhpCgiRuntime
 
         if (versions.Count == 0)
         {
+            // Keep the upstream block in sync with installed versions even when nothing
+            // is required yet, so any vhost referencing a version resolves to a real upstream.
+            WriteUpstreamsConf(paths, settings, registry);
             return new ServiceLifecycleResult(true);
         }
+
+        var context = new PoolContext(paths, registry, settings, jobManager, host, diagnostics);
 
         await EnsureSync.WaitAsync(cancellationToken);
         try
@@ -38,9 +84,9 @@ public static class PhpCgiRuntime
             var staleKeys = Managed.Keys.Where(k => !versions.Contains(k, StringComparer.OrdinalIgnoreCase)).ToList();
             foreach (var stale in staleKeys)
             {
-                if (Managed.TryRemove(stale, out var staleListener))
+                if (Managed.TryRemove(stale, out var stalePool))
                 {
-                    ProcessKiller.TryKill(staleListener.Pid);
+                    KillPool(stalePool);
                 }
             }
 
@@ -48,139 +94,262 @@ public static class PhpCgiRuntime
             foreach (var versionId in versions)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var verWatch = System.Diagnostics.Stopwatch.StartNew();
-                diagnostics?.LogActivity("PHP", $"Starting FastCGI for {versionId}…");
-                var index = PhpCgiPlanner.ResolveVersionIndex(registry, versionId);
-                if (index is null)
+                var failure = await ReconcileVersionLockedAsync(context, versionId, forceRestart, cancellationToken).ConfigureAwait(false);
+                if (failure is not null)
                 {
-                    failures.Add($"PHP package not installed: {versionId}");
-                    continue;
-                }
-
-            var port = PhpCgiPlanner.ResolvePlannedPort(settings, index.Value);
-
-            int? staleTrackedPid = null;
-            if (Managed.TryGetValue(versionId, out var existing))
-            {
-                staleTrackedPid = existing.Pid;
-                if (!IsProcessAlive(existing.Pid))
-                {
-                    Managed.TryRemove(versionId, out _);
-                    staleTrackedPid = existing.Pid;
-                }
-                else if (!forceRestart &&
-                    existing.Port == port &&
-                    IsManagedListenerHealthy(existing) &&
-                    await PortProbe.IsPortOpenAsync(host, port))
-                {
-                    diagnostics?.LogActivity("PHP", $"FastCGI for {versionId} already healthy — skipping");
-                    continue;
-                }
-                else
-                {
-                    diagnostics?.LogActivity("PHP", $"Killing stale listener for {versionId} (pid {existing.Pid})");
-                    ProcessKiller.TryKill(existing.Pid);
-                    Managed.TryRemove(versionId, out _);
+                    failures.Add(failure);
                 }
             }
 
-            var package = registry.GetById(versionId);
-            if (package is null)
-            {
-                failures.Add($"PHP package not installed: {versionId}");
-                continue;
-            }
+            // Topology (which ports back which version) only depends on settings + registry,
+            // so refresh the upstream block once per batch regardless of worker liveness.
+            WriteUpstreamsConf(paths, settings, registry);
 
-            if (!await ReclaimPortAsync(host, port, package.InstallPath, staleTrackedPid, cancellationToken, diagnostics, versionId))
-            {
-                failures.Add($"Could not free FastCGI port {host}:{port} for {versionId}. Close the process using this port and try again.");
-                continue;
-            }
-            ProcessPortTools.InvalidatePortCache(port);
-
-            var phpCgiPath = ResolvePhpCgiPath(package.InstallPath);
-            if (phpCgiPath is null)
-            {
-                failures.Add($"php-cgi.exe not found for {versionId}");
-                continue;
-            }
-
-            Process? process = null;
-            string? lastAttemptFailure = null;
-            var started = false;
-            for (var attempt = 0; attempt < 5 && !started; attempt++)
-            {
-                if (attempt > 0)
-                {
-                    await ReclaimPortAsync(host, port, package.InstallPath, staleTrackedPid, cancellationToken);
-                    ProcessPortTools.InvalidatePortCache(port);
-                }
-
-                try
-                {
-                    var iniPath = PhpConfigPaths.ResolveExistingDefaultIniPath(paths.ConfigRoot, versionId);
-                    if (string.IsNullOrWhiteSpace(iniPath))
-                    {
-                        failures.Add($"php.ini not found for {versionId}. Open Stackroot once or save PHP settings.");
-                        continue;
-                    }
-
-                    if (attempt == 0)
-                        diagnostics?.LogActivity("PHP", $"Spawning php-cgi for {versionId}…");
-                    else
-                        diagnostics?.LogActivity("PHP", $"Retrying php-cgi for {versionId} (attempt {attempt + 1}/5)…");
-                    process = ServiceProcessTools.StartProcess(
-                        phpCgiPath,
-                        ["-b", $"{host}:{port}", "-c", iniPath],
-                        Path.GetDirectoryName(phpCgiPath) ?? package.InstallPath,
-                        jobManager,
-                        stderrLogPath: PhpLogPaths.GetCgiStderrLogPath(paths.LogsRoot, versionId));
-                }
-                catch (Exception ex)
-                {
-                    failures.Add($"Failed to start php-cgi for {versionId}: {ex.Message}");
-                    break;
-                }
-
-                var listening = await PortProbe.WaitForPortAsync(host, port, attempts: 25, delayMs: 200, cancellationToken);
-                var owned = listening && await WaitForPhpCgiOwnershipAsync(process.Id, host, port, cancellationToken).ConfigureAwait(false);
-                if (!listening || !owned)
-                {
-                    ProcessKiller.TryKill(process.Id);
-                    WaitForExit(process, 1000);
-                    lastAttemptFailure = DescribePhpCgiAttemptFailure(process, host, port, listening);
-                    process.Dispose();
-                    process = null;
-                    ProcessPortTools.InvalidatePortCache(port);
-                    continue;
-                }
-
-                started = true;
-                diagnostics?.LogActivity("PHP", $"FastCGI listener for {versionId} bound to {host}:{port} in {verWatch.ElapsedMilliseconds}ms");
-            }
-
-            if (!started || process is null)
-            {
-                diagnostics?.LogActivity("PHP", $"FastCGI listener for {versionId} FAILED after {verWatch.ElapsedMilliseconds}ms");
-                failures.Add(
-                    $"php-cgi did not bind FastCGI on {host}:{port} for {versionId} after automatic recovery attempts."
-                    + (string.IsNullOrWhiteSpace(lastAttemptFailure) ? string.Empty : $" {lastAttemptFailure}"));
-                continue;
-            }
-
-            Managed[versionId] = new Listener(versionId, port, process.Id);
-        }
-
-            if (failures.Count > 0)
-            {
-                return new ServiceLifecycleResult(false, string.Join(Environment.NewLine, failures));
-            }
-
-            return new ServiceLifecycleResult(true);
+            return failures.Count > 0
+                ? new ServiceLifecycleResult(false, string.Join(Environment.NewLine, failures))
+                : new ServiceLifecycleResult(true);
         }
         finally
         {
             EnsureSync.Release();
+        }
+    }
+
+    /// <summary>
+    /// Brings a single version's pool to the desired worker count. Healthy workers are kept;
+    /// missing or dead ones are (re)started; surplus workers (after a pool-size shrink) are killed.
+    /// Caller must hold <see cref="EnsureSync"/>.
+    /// </summary>
+    private static async Task<string?> ReconcileVersionLockedAsync(
+        PoolContext context,
+        string versionId,
+        bool forceRestart,
+        CancellationToken cancellationToken)
+    {
+        var verWatch = Stopwatch.StartNew();
+        var diagnostics = context.Diagnostics;
+        var registry = context.Registry;
+        var settings = context.Settings;
+        var host = context.Host;
+
+        var index = PhpCgiPlanner.ResolveVersionIndex(registry, versionId);
+        if (index is null)
+        {
+            return $"PHP package not installed: {versionId}";
+        }
+
+        var package = registry.GetById(versionId);
+        if (package is null)
+        {
+            return $"PHP package not installed: {versionId}";
+        }
+
+        var phpCgiPath = ResolvePhpCgiPath(package.InstallPath);
+        if (phpCgiPath is null)
+        {
+            return $"php-cgi.exe not found for {versionId}";
+        }
+
+        var iniPath = PhpConfigPaths.ResolveExistingDefaultIniPath(context.Paths.ConfigRoot, versionId);
+        if (string.IsNullOrWhiteSpace(iniPath))
+        {
+            return $"php.ini not found for {versionId}. Open Stackroot once or save PHP settings.";
+        }
+
+        var desiredPorts = PhpCgiPlanner.ResolveWorkerPorts(settings, index.Value);
+        var pool = Managed.GetOrAdd(versionId, static id => new Pool { VersionId = id });
+        pool.Context = context;
+        pool.AnchorPort = desiredPorts.Count > 0 ? desiredPorts[0] : PhpCgiPlanner.ResolvePlannedPort(settings, index.Value);
+
+        // Drop workers that are no longer wanted (port outside the desired block) or that died.
+        for (var i = pool.Workers.Count - 1; i >= 0; i--)
+        {
+            var worker = pool.Workers[i];
+            var portWanted = desiredPorts.Contains(worker.Port);
+            if (forceRestart || !portWanted || !IsProcessAlive(worker.Pid))
+            {
+                worker.Stopping = true;
+                ProcessKiller.TryKill(worker.Pid);
+                ProcessPortTools.InvalidatePortCache(worker.Port);
+                pool.Workers.RemoveAt(i);
+            }
+        }
+
+        var failures = new List<string>();
+        var startedAny = false;
+        foreach (var port in desiredPorts)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var existing = pool.Workers.FirstOrDefault(w => w.Port == port);
+            if (existing is not null
+                && !forceRestart
+                && IsManagedWorkerHealthy(existing)
+                && await PortProbe.IsPortOpenAsync(host, port).ConfigureAwait(false))
+            {
+                continue;
+            }
+
+            if (existing is not null)
+            {
+                existing.Stopping = true;
+                ProcessKiller.TryKill(existing.Pid);
+                pool.Workers.Remove(existing);
+            }
+
+            var (worker, failure) = await SpawnWorkerLockedAsync(
+                context, versionId, package, phpCgiPath, iniPath, port, index.Value, cancellationToken).ConfigureAwait(false);
+            if (worker is null)
+            {
+                failures.Add(failure ?? $"php-cgi did not bind {host}:{port} for {versionId}.");
+                continue;
+            }
+
+            pool.Workers.Add(worker);
+            startedAny = true;
+        }
+
+        if (startedAny)
+        {
+            diagnostics?.LogActivity(
+                "PHP",
+                $"FastCGI pool for {versionId}: {pool.Workers.Count}/{desiredPorts.Count} worker(s) up in {verWatch.ElapsedMilliseconds}ms");
+        }
+
+        if (pool.Workers.Count == 0)
+        {
+            Managed.TryRemove(versionId, out _);
+            return failures.Count > 0
+                ? string.Join(" ", failures)
+                : $"php-cgi did not start any FastCGI worker for {versionId}.";
+        }
+
+        // Partial pool is still serving (nginx fails over), so do not surface a hard error;
+        // the event-driven respawn and the recovery timer will fill the gaps.
+        return null;
+    }
+
+    private static async Task<(Worker? Worker, string? Failure)> SpawnWorkerLockedAsync(
+        PoolContext context,
+        string versionId,
+        InstalledPackage package,
+        string phpCgiPath,
+        string iniPath,
+        int port,
+        int versionIndex,
+        CancellationToken cancellationToken)
+    {
+        var host = context.Host;
+        var diagnostics = context.Diagnostics;
+        var workerIndex = port - PhpCgiPlanner.ResolvePlannedPort(context.Settings, versionIndex);
+        var stderrLogPath = PhpLogPaths.GetCgiWorkerStderrLogPath(context.Paths.LogsRoot, versionId, workerIndex);
+        var environment = new Dictionary<string, string?> { ["PHP_FCGI_MAX_REQUESTS"] = FcgiMaxRequests };
+
+        string? lastAttemptFailure = null;
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!await ReclaimPortAsync(host, port, package.InstallPath, null, cancellationToken, diagnostics, versionId).ConfigureAwait(false))
+            {
+                lastAttemptFailure = $"Could not free FastCGI port {host}:{port}.";
+                continue;
+            }
+
+            ProcessPortTools.InvalidatePortCache(port);
+
+            Process process;
+            try
+            {
+                diagnostics?.LogActivity(
+                    "PHP",
+                    attempt == 0
+                        ? $"Spawning php-cgi for {versionId} on {host}:{port} (worker {workerIndex})…"
+                        : $"Retrying php-cgi for {versionId} on {host}:{port} (attempt {attempt + 1}/5)…");
+                process = ServiceProcessTools.StartProcess(
+                    phpCgiPath,
+                    ["-b", $"{host}:{port}", "-c", iniPath],
+                    Path.GetDirectoryName(phpCgiPath) ?? package.InstallPath,
+                    context.JobManager,
+                    environment: environment,
+                    stderrLogPath: stderrLogPath);
+            }
+            catch (Exception ex)
+            {
+                return (null, $"Failed to start php-cgi for {versionId}: {ex.Message}");
+            }
+
+            var listening = await PortProbe.WaitForPortAsync(host, port, attempts: 25, delayMs: 200, cancellationToken).ConfigureAwait(false);
+            var owned = listening && await WaitForPhpCgiOwnershipAsync(process.Id, host, port, cancellationToken).ConfigureAwait(false);
+            if (!listening || !owned)
+            {
+                ProcessKiller.TryKill(process.Id);
+                WaitForExit(process, 1000);
+                lastAttemptFailure = DescribePhpCgiAttemptFailure(process, host, port, listening);
+                process.Dispose();
+                ProcessPortTools.InvalidatePortCache(port);
+                continue;
+            }
+
+            var worker = new Worker(port, process);
+            WireWorkerExit(versionId, worker);
+            return (worker, null);
+        }
+
+        return (null,
+            $"php-cgi did not bind FastCGI on {host}:{port} for {versionId} after automatic recovery attempts."
+            + (string.IsNullOrWhiteSpace(lastAttemptFailure) ? string.Empty : $" {lastAttemptFailure}"));
+    }
+
+    /// <summary>
+    /// Reacts to a worker exiting (php-cgi recycle after PHP_FCGI_MAX_REQUESTS, or a crash) by
+    /// immediately reconciling that version's pool — no waiting for the recovery poll timer.
+    /// </summary>
+    private static void WireWorkerExit(string versionId, Worker worker)
+    {
+        worker.Process.EnableRaisingEvents = true;
+        worker.Process.Exited += (_, _) =>
+        {
+            if (worker.Stopping || ApplicationShutdownState.IsClosing)
+            {
+                return;
+            }
+
+            _ = RespawnAfterExitAsync(versionId);
+        };
+    }
+
+    private static async Task RespawnAfterExitAsync(string versionId)
+    {
+        try
+        {
+            await EnsureSync.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (ApplicationShutdownState.IsClosing)
+                {
+                    return;
+                }
+
+                if (!Managed.TryGetValue(versionId, out var pool) || pool.Context is null)
+                {
+                    return;
+                }
+
+                pool.Context.Diagnostics?.LogActivity(
+                    "PHP",
+                    $"php-cgi worker for {versionId} exited — respawning immediately…");
+                await ReconcileVersionLockedAsync(pool.Context, versionId, forceRestart: false, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                EnsureSync.Release();
+            }
+        }
+        catch
+        {
+            // Best-effort fast restart; the recovery timer remains the backstop.
         }
     }
 
@@ -219,10 +388,9 @@ public static class PhpCgiRuntime
     public static Task StopAllPhpCgiAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        foreach (var entry in Managed.Values)
+        foreach (var pool in Managed.Values)
         {
-            ProcessKiller.TryKill(entry.Pid);
-            ProcessPortTools.InvalidatePortCache(entry.Port);
+            KillPool(pool);
         }
 
         Managed.Clear();
@@ -237,10 +405,9 @@ public static class PhpCgiRuntime
             return Task.CompletedTask;
         }
 
-        if (Managed.TryRemove(versionId, out var listener))
+        if (Managed.TryRemove(versionId, out var pool))
         {
-            ProcessKiller.TryKill(listener.Pid);
-            ProcessPortTools.InvalidatePortCache(listener.Port);
+            KillPool(pool);
         }
 
         return Task.CompletedTask;
@@ -257,41 +424,124 @@ public static class PhpCgiRuntime
             return;
         }
 
-        var port = PhpCgiPlanner.ResolvePlannedPortForVersion(settings, registry, versionId);
         var package = registry.GetById(versionId);
-        if (port is not int resolvedPort || package is null)
+        if (package is null)
         {
             return;
         }
 
-        StackrootManagedProcessResolver.TryKillPids(
-            StackrootManagedProcessResolver.ResolveOwnedPhpCgiPidsOnPort(
-                resolvedPort,
-                package.InstallPath,
-                staleTrackedPid));
-        ProcessPortTools.InvalidatePortCache(resolvedPort);
+        foreach (var port in PhpCgiPlanner.ResolveWorkerPortsForVersion(settings, registry, versionId))
+        {
+            StackrootManagedProcessResolver.TryKillPids(
+                StackrootManagedProcessResolver.ResolveOwnedPhpCgiPidsOnPort(
+                    port,
+                    package.InstallPath,
+                    staleTrackedPid));
+            ProcessPortTools.InvalidatePortCache(port);
+        }
     }
 
+    /// <summary>versionId → anchor (worker 0) port, for every version with at least one live worker.</summary>
     public static IReadOnlyDictionary<string, int> ActiveListeners()
     {
-        return Managed.Values.ToDictionary(v => v.VersionId, v => v.Port, StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pool in Managed.Values)
+        {
+            if (pool.Workers.Any(w => IsProcessAlive(w.Pid)))
+            {
+                result[pool.VersionId] = pool.AnchorPort;
+            }
+        }
+
+        return result;
     }
 
     public static bool TryGetManagedListenerPid(string versionId, out int pid)
     {
-        if (Managed.TryGetValue(versionId, out var listener))
+        if (Managed.TryGetValue(versionId, out var pool))
         {
-            if (IsProcessAlive(listener.Pid))
+            var alive = pool.Workers.FirstOrDefault(w => IsProcessAlive(w.Pid));
+            if (alive is not null)
             {
-                pid = listener.Pid;
+                pid = alive.Pid;
                 return true;
             }
 
-            Managed.TryRemove(versionId, out _);
+            if (pool.Workers.Count == 0)
+            {
+                Managed.TryRemove(versionId, out _);
+            }
         }
 
         pid = 0;
         return false;
+    }
+
+    /// <summary>All currently-alive worker PIDs for a version (used for memory accounting).</summary>
+    public static IReadOnlyList<int> GetManagedWorkerPids(string versionId)
+    {
+        if (!Managed.TryGetValue(versionId, out var pool))
+        {
+            return [];
+        }
+
+        return pool.Workers.Where(w => IsProcessAlive(w.Pid)).Select(w => w.Pid).ToList();
+    }
+
+    private static void KillPool(Pool pool)
+    {
+        foreach (var worker in pool.Workers)
+        {
+            worker.Stopping = true;
+            ProcessKiller.TryKill(worker.Pid);
+            ProcessPortTools.InvalidatePortCache(worker.Port);
+        }
+
+        pool.Workers.Clear();
+    }
+
+    /// <summary>
+    /// Writes <c>conf/php-upstreams.conf</c> with one upstream per installed PHP version,
+    /// listing every worker port. Written for all installed versions (not just running pools)
+    /// so any site referencing a version resolves to a valid upstream even mid-restart.
+    /// </summary>
+    private static void WriteUpstreamsConf(StackrootPaths paths, AppSettings settings, InstallRegistryStore registry)
+    {
+        try
+        {
+            var host = string.IsNullOrWhiteSpace(settings.Php.FpmHost) ? "127.0.0.1" : settings.Php.FpmHost.Trim();
+            var confDir = Path.Combine(NginxRuntime.nginxPrefix(paths), "conf");
+            Directory.CreateDirectory(confDir);
+
+            var ordered = PhpCgiPlanner.OrderInstalledVersionIds(registry);
+            var sb = new StringBuilder();
+            sb.AppendLine("# Generated by Stackroot — php-cgi worker pools. Do not edit.");
+            for (var index = 0; index < ordered.Count; index++)
+            {
+                var versionId = ordered[index];
+                var ports = PhpCgiPlanner.ResolveWorkerPorts(settings, index);
+                if (ports.Count == 0)
+                {
+                    continue;
+                }
+
+                sb.AppendLine($"upstream {PhpFastCgiNaming.UpstreamName(versionId)} {{");
+                foreach (var port in ports)
+                {
+                    // fail_timeout keeps a recycling worker out of rotation only briefly.
+                    sb.AppendLine($"    server {host}:{port} fail_timeout=5s;");
+                }
+
+                sb.AppendLine("}");
+            }
+
+            var target = Path.Combine(confDir, "php-upstreams.conf");
+            File.WriteAllText(target, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+        catch
+        {
+            // Best-effort; nginx keeps any previously written upstream file.
+        }
     }
 
     private static async Task<bool> ReclaimPortAsync(
@@ -327,14 +577,14 @@ public static class PhpCgiRuntime
         return await PortProbe.WaitForPortClosedAsync(host, port, attempts: 25, cancellationToken: cancellationToken);
     }
 
-    private static bool IsManagedListenerHealthy(Listener listener)
+    private static bool IsManagedWorkerHealthy(Worker worker)
     {
-        if (!IsProcessAlive(listener.Pid))
+        if (!IsProcessAlive(worker.Pid))
         {
             return false;
         }
 
-        var portOwners = ServiceProcessTools.FindPidsListeningOnPort(listener.Port);
+        var portOwners = ServiceProcessTools.FindPidsListeningOnPort(worker.Port);
         if (portOwners.Count == 0)
         {
             // Port scan returned nothing — this could be a netstat failure.
@@ -343,7 +593,7 @@ public static class PhpCgiRuntime
         }
 
         return portOwners.Count == 1 &&
-               portOwners[0] == listener.Pid &&
+               portOwners[0] == worker.Pid &&
                IsPhpCgiProcess(portOwners[0]);
     }
 
@@ -402,13 +652,8 @@ public static class PhpCgiRuntime
             ? $"process exited with code {SafeExitCode(process)}"
             : "process was still running";
         var ownerText = owners.Count == 0 ? "no listener owner was reported" : $"listener owner pid(s): {string.Join(", ", owners)}";
-        var stderr = process.HasExited ? ReadStreamTail(process.StandardError) : string.Empty;
-        var stdout = process.HasExited ? ReadStreamTail(process.StandardOutput) : string.Empty;
-        var output = string.IsNullOrWhiteSpace(stderr) && string.IsNullOrWhiteSpace(stdout)
-            ? string.Empty
-            : $" Output: {string.Join(" | ", new[] { stderr, stdout }.Where(text => !string.IsNullOrWhiteSpace(text)))}";
 
-        return $"Last attempt: {state}; port {host}:{port} listening={listening}; {ownerText}.{output}";
+        return $"Last attempt: {state}; port {host}:{port} listening={listening}; {ownerText}.";
     }
 
     private static string SafeExitCode(Process process)
@@ -420,19 +665,6 @@ public static class PhpCgiRuntime
         catch
         {
             return "unknown";
-        }
-    }
-
-    private static string ReadStreamTail(StreamReader reader)
-    {
-        try
-        {
-            var text = reader.ReadToEnd().Trim();
-            return text.Length <= 500 ? text : text[^500..];
-        }
-        catch
-        {
-            return string.Empty;
         }
     }
 

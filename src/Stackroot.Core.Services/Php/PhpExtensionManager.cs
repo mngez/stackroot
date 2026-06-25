@@ -245,13 +245,14 @@ public sealed class PhpExtensionManager
         _configWriter.WritePhpConfig(settings, versionId);
     }
 
-    public void SaveRuntimeSettings(string fpmHost, int fpmPort)
+    public void SaveRuntimeSettings(string fpmHost, int fpmPort, int fpmPoolSize)
     {
         var settings = _settingsStore.Load();
         settings = _settingsStore.UpdatePhp(settings.Php with
         {
             FpmHost = fpmHost.Trim(),
-            FpmPort = fpmPort
+            FpmPort = fpmPort,
+            FpmPoolSize = Math.Clamp(fpmPoolSize, 1, 8)
         });
         _configWriter.WriteAllPhpConfigs(settings);
     }

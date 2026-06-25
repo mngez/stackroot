@@ -96,6 +96,14 @@ public static class NginxRuntime
             File.WriteAllText(accessLogPath, string.Empty, Utf8NoBom);
         }
 
+        // The PHP FastCGI runtime overwrites this with the real upstream pools when PHP starts.
+        // Create an empty placeholder so the http{} include never fails before PHP has run.
+        var phpUpstreamsPath = Path.Combine(confDir, "php-upstreams.conf");
+        if (!File.Exists(phpUpstreamsPath))
+        {
+            File.WriteAllText(phpUpstreamsPath, "# php-cgi upstreams (populated when PHP starts)\n", Utf8NoBom);
+        }
+
         var httpPort = portSettings.Port;
         var httpsPort = portSettings.SslPort ?? 443;
         var host = string.IsNullOrWhiteSpace(portSettings.Host) ? "127.0.0.1" : portSettings.Host;
@@ -141,6 +149,8 @@ public static class NginxRuntime
         confBuilder.AppendLine($"    client_max_body_size {http.ClientMaxBodySize};");
         AppendGzipDirectives(confBuilder, http);
         NginxStabilityDirectives.AppendHttpDefaults(confBuilder, http);
+        confBuilder.AppendLine();
+        confBuilder.AppendLine("    include php-upstreams.conf;");
         confBuilder.AppendLine();
         confBuilder.AppendLine("    server {");
         confBuilder.AppendLine($"        listen       {httpPort};");

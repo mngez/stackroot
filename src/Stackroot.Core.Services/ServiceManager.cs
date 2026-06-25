@@ -885,6 +885,16 @@ public sealed class ServiceManager : IDisposable
                 continue;
             }
 
+            // Fast-path: port probe may have timed out due to a transient OS hiccup even
+            // though the service is genuinely up. Trust the internal tracking record when
+            // it shows the service is running — avoids a spurious "Starting…" notification.
+            if (_services.TryGetValue(definition.Id, out var cached)
+                && cached.Status == ServiceStatus.Running
+                && cached.PortOpen == true)
+            {
+                continue;
+            }
+
             if (IsUserStoppedIntent(definition.Id))
             {
                 continue;
@@ -1317,6 +1327,7 @@ public sealed class ServiceManager : IDisposable
                 ? versionId
                 : $"PHP {package.Version}";
 
+            var workerPids = PhpCgiRuntime.GetManagedWorkerPids(versionId);
             listeners.Add(new PhpListenerPerformanceInfo
             {
                 Id = versionId,
@@ -1324,7 +1335,7 @@ public sealed class ServiceManager : IDisposable
                 Endpoint = $"{host}:{port}",
                 Status = "Running",
                 Pid = pid,
-                MemoryPids = [pid]
+                MemoryPids = workerPids.Count > 0 ? workerPids : [pid]
             });
         }
 

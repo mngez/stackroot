@@ -5,6 +5,12 @@ namespace Stackroot.Core.Sites.Nginx;
 
 public static class SitePhpFastCgiEndpoint
 {
+    /// <summary>
+    /// Resolves the <c>fastcgi_pass</c> target for a site. Returns the name of the nginx
+    /// upstream that fronts the version's php-cgi worker pool (defined in php-upstreams.conf),
+    /// so nginx load-balances across workers and fails over instantly when one recycles.
+    /// Falls back to a literal host:port only when no installed PHP version can be resolved.
+    /// </summary>
     public static string Resolve(AppSettings settings, InstallRegistryStore registry, string? versionId)
     {
         var host = string.IsNullOrWhiteSpace(settings.Php.FpmHost) ? "127.0.0.1" : settings.Php.FpmHost.Trim();
@@ -15,21 +21,16 @@ public static class SitePhpFastCgiEndpoint
             versionId = settings.Php.ActiveVersionId;
         }
 
-        if (string.IsNullOrWhiteSpace(versionId))
+        if (!string.IsNullOrWhiteSpace(versionId))
         {
-            return $"{host}:{basePort}";
-        }
+            var canonicalId = registry.List(PackageType.Php)
+                .OrderByDescending(package => package.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(package => package.Id)
+                .FirstOrDefault(id => string.Equals(id, versionId, StringComparison.OrdinalIgnoreCase));
 
-        var ordered = registry.List(PackageType.Php)
-            .OrderByDescending(package => package.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(package => package.Id)
-            .ToList();
-
-        for (var index = 0; index < ordered.Count; index++)
-        {
-            if (string.Equals(ordered[index], versionId, StringComparison.OrdinalIgnoreCase))
+            if (canonicalId is not null)
             {
-                return $"{host}:{basePort + index}";
+                return PhpFastCgiNaming.UpstreamName(canonicalId);
             }
         }
 

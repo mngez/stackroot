@@ -324,6 +324,7 @@ public sealed class PhpRedisAdminManager
 
         var root = webRoot.Replace('\\', '/');
         var fcgiHost = string.IsNullOrWhiteSpace(php.FpmHost) ? "127.0.0.1" : php.FpmHost.Trim();
+        var fastCgiPass = ResolveFastCgiPass(php, phpVersionId, fcgiPort);
         var phpRc = PhpConfigPaths.ToNginxPhpRc(phpIniPath);
         var serverName = ResolveBaseDomain(pra, appDomain);
 
@@ -331,7 +332,7 @@ public sealed class PhpRedisAdminManager
         {
             var pathSegment = string.IsNullOrWhiteSpace(pra.Path) ? "phpredisadmin" : pra.Path.Trim('/');
             var appHtmlRoot = AdminToolPathLinker.LinkPathTool(_paths, root, pathSegment);
-            PersistPathModeNginxLocations(BuildPathModeNginxLocations(pra, appHtmlRoot, fcgiHost, fcgiPort, phpRc, phpVersionId));
+            PersistPathModeNginxLocations(BuildPathModeNginxLocations(pra, appHtmlRoot, fastCgiPass, phpRc, phpVersionId));
             RemoveNginxConfig();
             return;
         }
@@ -354,7 +355,7 @@ public sealed class PhpRedisAdminManager
         sb.AppendLine();
         sb.AppendLine("    location ~ \\.php$ {");
         sb.AppendLine("        try_files $uri =404;");
-        sb.AppendLine($"        fastcgi_pass   {fcgiHost}:{fcgiPort};");
+        sb.AppendLine($"        fastcgi_pass   {fastCgiPass};");
         sb.AppendLine("        fastcgi_index  index.php;");
         sb.AppendLine("        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;");
         sb.AppendLine("        include        fastcgi_params;");
@@ -369,8 +370,7 @@ public sealed class PhpRedisAdminManager
     private static string BuildPathModeNginxLocations(
         PhpRedisAdminSettings pra,
         string appHtmlRoot,
-        string fcgiHost,
-        int fcgiPort,
+        string fastCgiPass,
         string phpRc,
         string? phpVersionId = null)
     {
@@ -378,7 +378,7 @@ public sealed class PhpRedisAdminManager
         var pathSegment = string.IsNullOrWhiteSpace(pra.Path) ? "phpredisadmin" : pra.Path.Trim('/');
         var versionComment = string.IsNullOrWhiteSpace(phpVersionId)
             ? string.Empty
-            : $"# PHP {phpVersionId} → {fcgiHost}:{fcgiPort}{Environment.NewLine}        ";
+            : $"# PHP {phpVersionId} → {fastCgiPass}{Environment.NewLine}        ";
         var sb = new StringBuilder();
         sb.AppendLine($"    location = /{pathSegment} {{");
         sb.AppendLine($"        return 301 /{pathSegment}/;");
@@ -393,7 +393,7 @@ public sealed class PhpRedisAdminManager
         sb.AppendLine($"    location ~ ^/{pathSegment}/(.+\\.php)$ {{");
         sb.AppendLine($"        root {root};");
         sb.AppendLine($"        {versionComment}try_files /{pathSegment}/$1 =404;");
-        sb.AppendLine($"        fastcgi_pass   {fcgiHost}:{fcgiPort};");
+        sb.AppendLine($"        fastcgi_pass   {fastCgiPass};");
         sb.AppendLine("        fastcgi_index  index.php;");
         sb.AppendLine("        include        fastcgi_params;");
         sb.AppendLine($"        fastcgi_param  SCRIPT_FILENAME $document_root/{pathSegment}/$1;");
@@ -588,6 +588,23 @@ public sealed class PhpRedisAdminManager
         }
 
         return PhpCgiPlanner.ResolvePlannedPortForVersion(settings, _registryStore, phpVersionId);
+    }
+
+    /// <summary>
+    /// The <c>fastcgi_pass</c> target: the nginx upstream fronting the version's php-cgi worker
+    /// pool (so nginx load-balances and fails over with zero downtime). Falls back to a literal
+    /// host:port only when the version cannot be resolved to an installed package.
+    /// </summary>
+    private string ResolveFastCgiPass(PhpSettings php, string? phpVersionId, int fcgiPort)
+    {
+        var canonicalId = string.IsNullOrWhiteSpace(phpVersionId) ? null : _registryStore.GetById(phpVersionId)?.Id;
+        if (!string.IsNullOrWhiteSpace(canonicalId))
+        {
+            return PhpFastCgiNaming.UpstreamName(canonicalId);
+        }
+
+        var host = string.IsNullOrWhiteSpace(php.FpmHost) ? "127.0.0.1" : php.FpmHost.Trim();
+        return $"{host}:{fcgiPort}";
     }
 
     private static int ResolveNginxPort(AppSettings settings)

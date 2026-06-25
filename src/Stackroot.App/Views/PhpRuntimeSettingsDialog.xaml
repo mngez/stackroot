@@ -23,7 +23,7 @@
                        Text="Advanced — PHP runtime" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Each installed version gets its own php-cgi port (base port + offset). You rarely need to change this."
+                       Text="Each installed version runs a pool of php-cgi workers on a block of ports (base port + offset). You rarely need to change this."
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -39,6 +39,18 @@
             <TextBox Margin="0,6,0,0"
                      Padding="10,6"
                      Text="{Binding FpmPort, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Margin="0,12,0,0"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Workers per version (1–8)" />
+            <TextBox Margin="0,6,0,0"
+                     Padding="10,6"
+                     Text="{Binding FpmPoolSize, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Margin="0,4,0,0"
+                       FontSize="11"
+                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="Running 2+ php-cgi workers lets nginx keep serving while a worker recycles or restarts — no dropped requests."
+                       TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0,18,0,0">

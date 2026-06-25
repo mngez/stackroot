@@ -108,6 +108,20 @@ public static class DevSslCertificateManager
                 return TryGetExisting(paths);
             }
 
+            // Reuse the existing CA when only domains changed — avoids creating a new CA,
+            // which would trigger stale-cert cleanup and a re-trust UAC on machine-wide trust.
+            if (File.Exists(caAbs) &&
+                File.Exists(caKeyAbs) &&
+                !IsCertificateExpiringSoon(caAbs, CaRenewalLeadDays) &&
+                DevSslDotNetCertificateGenerator.TryRenewServerCertificate(sslDir, uniqueDomains, uniqueIpAddresses))
+            {
+                WriteManifest(manifestAbs, fingerprint, uniqueDomains, uniqueIpAddresses, generator: manifest?.Generator ?? "dotnet");
+                EnsureFullChainPem(sslDir);
+                return TryGetExisting(paths);
+            }
+
+            // Full regeneration: no existing CA, or CA is expiring. Creates a new CA,
+            // so stale entries need pruning and the user must re-trust on machine-wide trust.
             if (DevSslDotNetCertificateGenerator.TryGenerate(sslDir, uniqueDomains, uniqueIpAddresses))
             {
                 WriteManifest(manifestAbs, fingerprint, uniqueDomains, uniqueIpAddresses, generator: "dotnet");

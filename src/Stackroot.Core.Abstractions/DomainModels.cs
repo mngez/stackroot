@@ -310,6 +310,13 @@ public record class PhpSettings
     public string? ActiveVersionId { get; set; }
     public int FpmPort { get; set; } = 9000;
     public string FpmHost { get; set; } = "127.0.0.1";
+
+    /// <summary>
+    /// Number of php-cgi worker processes to run per PHP version. With more than
+    /// one worker, nginx load-balances across the pool, so a worker recycling
+    /// (php-cgi exits after PHP_FCGI_MAX_REQUESTS) or crashing causes no downtime.
+    /// </summary>
+    public int FpmPoolSize { get; set; } = 2;
     public Dictionary<string, PhpVersionSettings>? Versions { get; set; }
     public string? MemoryLimit { get; set; }
     public string? MaxExecutionTime { get; set; }

@@ -12,8 +12,51 @@ public static class PhpCgiPlanner
             .Select(p => p.Id)
             .ToList();
 
+    /// <summary>Number of php-cgi workers per PHP version, clamped to a sane range.</summary>
+    public static int ResolvePoolSize(AppSettings settings)
+    {
+        var size = settings.Php.FpmPoolSize;
+        if (size < 1)
+        {
+            return 1;
+        }
+
+        return size > 8 ? 8 : size;
+    }
+
+    private static int ResolveBasePort(AppSettings settings) =>
+        settings.Php.FpmPort <= 0 ? 9000 : settings.Php.FpmPort;
+
+    /// <summary>
+    /// Worker 0's port for a version — also the representative/anchor port used by
+    /// admin tools and dashboard rows. Each version owns a contiguous block of
+    /// <see cref="ResolvePoolSize"/> ports.
+    /// </summary>
     public static int ResolvePlannedPort(AppSettings settings, int index) =>
-        (settings.Php.FpmPort <= 0 ? 9000 : settings.Php.FpmPort) + index;
+        ResolveBasePort(settings) + index * ResolvePoolSize(settings);
+
+    /// <summary>All worker ports for the version at <paramref name="index"/>.</summary>
+    public static IReadOnlyList<int> ResolveWorkerPorts(AppSettings settings, int index)
+    {
+        var basePort = ResolvePlannedPort(settings, index);
+        var poolSize = ResolvePoolSize(settings);
+        var ports = new int[poolSize];
+        for (var i = 0; i < poolSize; i++)
+        {
+            ports[i] = basePort + i;
+        }
+
+        return ports;
+    }
+
+    public static IReadOnlyList<int> ResolveWorkerPortsForVersion(
+        AppSettings settings,
+        InstallRegistryStore registry,
+        string versionId)
+    {
+        var index = ResolveVersionIndex(registry, versionId);
+        return index is null ? [] : ResolveWorkerPorts(settings, index.Value);
+    }
 
     public static int? ResolveVersionIndex(InstallRegistryStore registry, string versionId)
     {

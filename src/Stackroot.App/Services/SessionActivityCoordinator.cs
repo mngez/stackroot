@@ -414,6 +414,9 @@ public sealed class SessionActivityCoordinator : IDisposable
                 var name = FormatServiceLabel(serviceId);
                 if (!liveById.TryGetValue(serviceId, out var info))
                 {
+                    // Service not in live listing — resolve with a neutral message so the
+                    // Progress-tone entry doesn't stay open and show "1 operation running".
+                    resolutions.Add((progressId, SessionActivityMessages.ServiceAction(name, "stopped", true), false));
                     continue;
                 }
 
@@ -425,6 +428,12 @@ public sealed class SessionActivityCoordinator : IDisposable
                 else if (info.Status == ServiceStatus.Error)
                 {
                     resolutions.Add((progressId, SessionActivityMessages.ServiceAction(name, "start", false, info.Message), true));
+                }
+                else
+                {
+                    // Stopped or any other non-running state — close the progress row so it
+                    // doesn't remain stuck as "1 operation running" indefinitely.
+                    resolutions.Add((progressId, SessionActivityMessages.ServiceAction(name, "stopped", true), false));
                 }
             }
         }
@@ -526,10 +535,17 @@ public sealed class SessionActivityCoordinator : IDisposable
                 {
                     lock (_sync)
                     {
-                        _serviceProgressIds[info.Id] = _activity.Begin(SessionActivityMessages.Starting(name));
-                        if (_coreStartupFinished)
+                        // Re-read under the same lock: a concurrent Running notification may have
+                        // arrived between the outer lock (which set status to Starting) and here.
+                        // If the status already advanced, skip creating a progress entry that
+                        // would never be resolved.
+                        if (_lastServiceStatus.GetValueOrDefault(info.Id) == ServiceStatus.Starting)
                         {
-                            _awaitingServiceStarts.Add(info.Id);
+                            _serviceProgressIds[info.Id] = _activity.Begin(SessionActivityMessages.Starting(name));
+                            if (_coreStartupFinished)
+                            {
+                                _awaitingServiceStarts.Add(info.Id);
+                            }
                         }
                     }
                 }

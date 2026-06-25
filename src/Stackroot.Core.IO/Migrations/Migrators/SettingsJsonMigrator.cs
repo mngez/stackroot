@@ -71,6 +71,9 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
             case 15:
                 EnsureSslTrustMachineWideDefault(obj);
                 break;
+            case 16:
+                EnsurePhpFpmPoolSize(obj);
+                break;
         }
     }
 
@@ -381,6 +384,16 @@ internal sealed class SettingsJsonMigrator : JsonDocumentMigrator
         var testDns = root["testDns"] as JsonObject ?? new JsonObject();
         SetBoolIfMissing(testDns, "allowDangerousSettings", false);
         root["testDns"] = testDns;
+    }
+
+    private static void EnsurePhpFpmPoolSize(JsonObject root)
+    {
+        if (root["php"] is not JsonObject php)
+        {
+            return;
+        }
+
+        SetIntIfMissing(php, "fpmPoolSize", new PhpSettings().FpmPoolSize);
     }
 
     private static void EnsureSslTrustMachineWideDefault(JsonObject root)
