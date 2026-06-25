@@ -12,6 +12,7 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
 
     private readonly object _gate = new();
     private readonly SettingsStore _settingsStore;
+    private readonly AppErrorLogger _appErrorLogger;
     private readonly string _logPath;
     private readonly Channel<LogEntry> _logQueue = Channel.CreateUnbounded<LogEntry>(
         new UnboundedChannelOptions
@@ -32,15 +33,20 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
 
     private Action<string>? _countersHandler;
 
-    public DiagnosticsReportLogger(StackrootPaths paths, SettingsStore settingsStore)
+    public DiagnosticsReportLogger(StackrootPaths paths, SettingsStore settingsStore, AppErrorLogger appErrorLogger)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(appErrorLogger);
 
         _settingsStore = settingsStore;
+        _appErrorLogger = appErrorLogger;
         Directory.CreateDirectory(paths.LogsRoot);
         _logPath = Path.Combine(paths.LogsRoot, LogFileName);
-        DevelopmentReportLogRotation.RotateSessionLog(paths.LogsRoot);
+        if (IsEnabledCore())
+        {
+            DevelopmentReportLogRotation.RotateSessionLog(paths.LogsRoot);
+        }
         _writerTask = Task.Run(ProcessQueueAsync);
         _countersHandler = summary => LogActivity("Counters", summary);
         DiagnosticsCounters.SummaryLogged += _countersHandler;
@@ -115,14 +121,21 @@ public sealed class DiagnosticsReportLogger : IDiagnosticsReporter, IDisposable
 
     private void Write(string level, string area, string message, Exception? exception)
     {
-        var alwaysLog = level is "ERROR" or "USER-ERROR";
-        if (!alwaysLog && !IsEnabledCore())
+        var isError = level is "ERROR" or "USER-ERROR";
+        if (!IsEnabledCore())
         {
             _sessionStarted = false;
+            if (isError && !ShouldSuppressDuplicateError(area, message, exception))
+            {
+                if (exception is not null)
+                    _appErrorLogger.Log(exception, area);
+                else
+                    _appErrorLogger.LogError(message, area);
+            }
             return;
         }
 
-        if (alwaysLog && ShouldSuppressDuplicateError(area, message, exception))
+        if (isError && ShouldSuppressDuplicateError(area, message, exception))
         {
             return;
         }

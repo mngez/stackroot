@@ -169,6 +169,7 @@ public sealed class NginxWebStackRebuilder
 
         _appDomainConfigWriter.Write();
 
+        NginxControl.NginxReloadResult reloadResult;
         if (forceRestart)
         {
             NginxControl.StopManagedNginx(
@@ -176,19 +177,36 @@ public sealed class NginxWebStackRebuilder
                 installed.InstallPath,
                 _jobManager,
                 nginxSettings.Port);
-        }
 
-        var reloadResult = await NginxControl.ReloadWithSslRepairAsync(
-            _paths,
-            installed.InstallPath,
-            _jobManager,
-            nginxSettings.Host,
-            nginxSettings.Port,
-            _webStackCoordinator,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+            reloadResult = await NginxControl.ReloadOrStartWithSslRepairAsync(
+                _paths,
+                installed.InstallPath,
+                _jobManager,
+                nginxSettings.Host,
+                nginxSettings.Port,
+                _webStackCoordinator,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            reloadResult = await NginxControl.ReloadWithSslRepairAsync(
+                _paths,
+                installed.InstallPath,
+                _jobManager,
+                nginxSettings.Host,
+                nginxSettings.Port,
+                _webStackCoordinator,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
 
         if (!reloadResult.Ok)
         {
+            if (reloadResult.NginxNotRunning)
+            {
+                // Nginx isn't running; config is written and will be applied when nginx starts.
+                return;
+            }
+
             throw new InvalidOperationException(reloadResult.Message ?? "Failed to reload nginx.");
         }
 

@@ -40,12 +40,6 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        DevelopmentReportLogRotation.RotateSessionLog(
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Stackroot",
-                "logs"));
-
         base.OnStartup(e);
 
         RegisterScrollWheelForwarding();
@@ -76,7 +70,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            TryWriteEarlyDevelopmentReport(ex, "Startup theme");
+            _errorLogger.Log(ex, "Startup theme");
         }
 
         try
@@ -101,7 +95,6 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             _errorLogger.Log(ex, "Startup");
-            TryWriteEarlyDevelopmentReport(ex, "Startup");
             ReportFailure(ex, "Startup", shutdown: true);
         }
     }
@@ -122,26 +115,6 @@ public partial class App : System.Windows.Application
             typeof(ScrollViewer),
             UIElement.PreviewMouseWheelEvent,
             new MouseWheelEventHandler(ScrollWheelForwarder.OnPreviewMouseWheel));
-    }
-
-    private static void TryWriteEarlyDevelopmentReport(Exception ex, string area)
-    {
-        try
-        {
-            var logsRoot = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Stackroot",
-                "logs");
-            Directory.CreateDirectory(logsRoot);
-            var path = Path.Combine(logsRoot, "development-report.log");
-            var text =
-                $"[{DateTimeOffset.Now:u}] ERROR [{area}] {ex.Message}{Environment.NewLine}{ex}{Environment.NewLine}---{Environment.NewLine}";
-            File.AppendAllText(path, text);
-        }
-        catch
-        {
-            // Best-effort only.
-        }
     }
 
     private void ShowFirstRunSetupWindow()

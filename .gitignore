@@ -38,6 +38,7 @@ Desktop.ini
 # Node / pnpm (legacy tooling; should not land in this repo)
 node_modules/
 .pnpm/
+.debug/
 .pnpm-store/
 package-lock.json
 pnpm-lock.yaml

@@ -369,14 +369,21 @@ public static class DevSslCertificateManager
             return;
         }
 
-        var pem = string.Concat(
-            File.ReadAllText(devPath, Encoding.ASCII).TrimEnd(),
-            '\n',
-            File.ReadAllText(caPath, Encoding.ASCII).TrimEnd(),
-            '\n');
-        var tmpFullChain = fullChainPath + ".tmp";
-        File.WriteAllText(tmpFullChain, pem, Encoding.ASCII);
-        File.Move(tmpFullChain, fullChainPath, overwrite: true);
+        try
+        {
+            var pem = string.Concat(
+                File.ReadAllText(devPath, Encoding.ASCII).TrimEnd(),
+                '\n',
+                File.ReadAllText(caPath, Encoding.ASCII).TrimEnd(),
+                '\n');
+            var tmpFullChain = fullChainPath + ".tmp";
+            File.WriteAllText(tmpFullChain, pem, Encoding.ASCII);
+            File.Move(tmpFullChain, fullChainPath, overwrite: true);
+        }
+        catch
+        {
+            // Best-effort: nginx may be holding the file open. The existing file remains valid.
+        }
     }
 
     private static string SanFingerprint(IReadOnlyList<string> domains, IReadOnlyList<string> ipAddresses)

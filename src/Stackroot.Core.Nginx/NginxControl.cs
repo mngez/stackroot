@@ -8,7 +8,7 @@ namespace Stackroot.Core.Nginx;
 
 public static class NginxControl
 {
-    public sealed record NginxReloadResult(bool Ok, bool Restarted, string? Message = null, int? Pid = null);
+    public sealed record NginxReloadResult(bool Ok, bool Restarted, string? Message = null, int? Pid = null, bool NginxNotRunning = false);
 
     public sealed record NginxConfigTestResult(bool Ok, string? Message);
 
@@ -185,7 +185,7 @@ public static class NginxControl
 
         if (!masterAlive || !portOpen)
         {
-            return new NginxReloadResult(false, false, "Nginx is not running — start it manually first.");
+            return new NginxReloadResult(false, false, "Nginx is not running — start it manually first.", NginxNotRunning: true);
         }
 
         var reload = RunManagedUtility(binPath, ["-p", prefix, "-s", "reload"], prefix, jobManager);
