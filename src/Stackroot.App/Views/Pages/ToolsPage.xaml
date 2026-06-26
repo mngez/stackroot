@@ -16,21 +16,21 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Tools"
+                <TextBlock Text="{DynamicResource Loc.Tools.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="CLI utilities, admin UIs — install and update from Stackroot." />
+                           Text="{DynamicResource Loc.Tools.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
-                        Content="Check updates"
+                        Content="{DynamicResource Loc.Tools.CheckUpdates}"
                         Command="{Binding CheckUpdatesCommand}" />
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -52,7 +52,7 @@
                 <Button DockPanel.Dock="Right"
                         Width="24" Height="24"
                         Padding="0"
-                        ToolTip="Dismiss"
+                        ToolTip="{DynamicResource Loc.Tools.DismissTooltip}"
                         Style="{StaticResource StackrootIconButtonStyle}"
                         Command="{Binding DismissUpdatesCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -129,13 +129,13 @@
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                         <Button Width="36" Height="36" Margin="0,0,8,0"
                                                                 Style="{StaticResource StackrootPrimaryIconButtonStyle}"
-                                                                ToolTip="Install package" Command="{Binding InstallCommand}"
+                                                                ToolTip="{DynamicResource Loc.Tools.InstallTooltip}" Command="{Binding InstallCommand}"
                                                                 Visibility="{Binding ShowInstallButton, Converter={StaticResource BoolToVis}}">
                                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE896;" />
                                                         </Button>
                                                         <Button Width="36" Height="36"
                                                                 Style="{StaticResource StackrootIconButtonStyle}"
-                                                                ToolTip="Package versions" Command="{Binding VersionsCommand}"
+                                                                ToolTip="{DynamicResource Loc.Tools.VersionsTooltip}" Command="{Binding VersionsCommand}"
                                                                 Visibility="{Binding ShowVersionsButton, Converter={StaticResource BoolToVis}}">
                                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8FD;" />
                                                         </Button>
@@ -194,33 +194,33 @@
                                                                     Background="#1A4CAE8C" CornerRadius="4"
                                                                     Visibility="{Binding ShowLiveBadge, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock FontSize="11" FontWeight="Bold"
-                                                                           Foreground="{StaticResource StackrootAccentTextBrush}" Text="LIVE" />
+                                                                           Foreground="{StaticResource StackrootAccentTextBrush}" Text="{DynamicResource Loc.Status.LiveBadge}" />
                                                             </Border>
                                                             <TextBlock MinWidth="88" MaxWidth="140" Margin="0,0,16,0"
                                                                        VerticalAlignment="Center" HorizontalAlignment="Right"
                                                                        FontWeight="SemiBold" Foreground="{Binding StatusColor}"
-                                                                       Text="{Binding StatusText}" TextAlignment="Right"
-                                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText}" />
+                                                                       Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" TextAlignment="Right"
+                                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" />
                                                             <Button Width="36" Height="36" Margin="0,0,8,0"
                                                                     Style="{StaticResource StackrootIconButtonStyle}"
-                                                                    ToolTip="Settings" Command="{Binding SettingsCommand}">
+                                                                    ToolTip="{DynamicResource Loc.Tools.SettingsTooltip}" Command="{Binding SettingsCommand}">
                                                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE713;" />
                                                             </Button>
                                                             <Button Width="36" Height="36" Margin="0,0,8,0"
                                                                     Style="{StaticResource StackrootPrimaryIconButtonStyle}"
-                                                                    ToolTip="Install package" Command="{Binding InstallCommand}"
+                                                                    ToolTip="{DynamicResource Loc.Tools.InstallTooltip}" Command="{Binding InstallCommand}"
                                                                     Visibility="{Binding ShowInstallButton, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE896;" />
                                                             </Button>
                                                             <Button Width="36" Height="36" Margin="0,0,8,0"
                                                                     Style="{StaticResource StackrootIconButtonStyle}"
-                                                                    ToolTip="Package versions" Command="{Binding VersionsCommand}"
+                                                                    ToolTip="{DynamicResource Loc.Tools.VersionsTooltip}" Command="{Binding VersionsCommand}"
                                                                     Visibility="{Binding ShowVersionsButton, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8FD;" />
                                                             </Button>
                                                             <Button Width="36" Height="36"
                                                                     Style="{StaticResource StackrootIconButtonStyle}"
-                                                                    ToolTip="Open in browser" Command="{Binding OpenCommand}"
+                                                                    ToolTip="{DynamicResource Loc.Tools.OpenTooltip}" Command="{Binding OpenCommand}"
                                                                     Visibility="{Binding ShowOpenButton, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}" FontSize="14" Text="&#xE8A7;" />
                                                             </Button>

@@ -1,0 +1,567 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ── Layout direction ── -->
+    <FlowDirection x:Key="Loc.FlowDirection">LeftToRight</FlowDirection>
+
+    <!-- ── Common actions ── -->
+    <sys:String x:Key="Loc.Common.Save">保存</sys:String>
+    <sys:String x:Key="Loc.Common.Cancel">取消</sys:String>
+    <sys:String x:Key="Loc.Common.Close">关闭</sys:String>
+    <sys:String x:Key="Loc.Common.Refresh">刷新</sys:String>
+    <sys:String x:Key="Loc.Common.Add">+ 添加</sys:String>
+    <sys:String x:Key="Loc.Common.Edit">编辑</sys:String>
+    <sys:String x:Key="Loc.Common.Delete">删除</sys:String>
+    <sys:String x:Key="Loc.Common.Install">安装</sys:String>
+    <sys:String x:Key="Loc.Common.Uninstall">卸载</sys:String>
+    <sys:String x:Key="Loc.Common.Remove">移除</sys:String>
+    <sys:String x:Key="Loc.Common.MoreActions">更多操作</sys:String>
+    <sys:String x:Key="Loc.Common.Browse">浏览…</sys:String>
+    <sys:String x:Key="Loc.Common.OpenFolder">打开文件夹</sys:String>
+    <sys:String x:Key="Loc.Common.DataFolder">数据文件夹</sys:String>
+    <sys:String x:Key="Loc.Common.Manage">管理</sys:String>
+    <sys:String x:Key="Loc.Common.ManageArrow">管理 →</sys:String>
+    <sys:String x:Key="Loc.Common.Settings">设置</sys:String>
+    <sys:String x:Key="Loc.Common.Log">日志</sys:String>
+    <sys:String x:Key="Loc.Common.Start">启动</sys:String>
+    <sys:String x:Key="Loc.Common.Stop">停止</sys:String>
+    <sys:String x:Key="Loc.Common.Restart">重启</sys:String>
+    <sys:String x:Key="Loc.Common.Copy">复制</sys:String>
+    <sys:String x:Key="Loc.Common.Open">打开</sys:String>
+    <sys:String x:Key="Loc.Common.Capture">捕获</sys:String>
+    <sys:String x:Key="Loc.Common.Later">稍后</sys:String>
+    <sys:String x:Key="Loc.Common.Export">导出</sys:String>
+    <sys:String x:Key="Loc.Common.Import">导入</sys:String>
+    <sys:String x:Key="Loc.Common.Clear">清空</sys:String>
+    <sys:String x:Key="Loc.Common.Restore">恢复</sys:String>
+    <sys:String x:Key="Loc.Common.Rebuild">重建 nginx</sys:String>
+    <sys:String x:Key="Loc.Common.Create">创建</sys:String>
+    <sys:String x:Key="Loc.Common.Backups">备份</sys:String>
+    <sys:String x:Key="Loc.Common.Enabled">已启用</sys:String>
+    <sys:String x:Key="Loc.Common.UseDefault">使用默认值</sys:String>
+    <sys:String x:Key="Loc.Common.Choose">选择…</sys:String>
+    <sys:String x:Key="Loc.Common.Upload">上传…</sys:String>
+    <sys:String x:Key="Loc.Common.Back">← 站点</sys:String>
+    <sys:String x:Key="Loc.Common.StopAll">停止全部</sys:String>
+    <sys:String x:Key="Loc.Common.StartAll">启动全部</sys:String>
+    <sys:String x:Key="Loc.Common.RestartAll">重启全部</sys:String>
+    <sys:String x:Key="Loc.Common.Activate">激活</sys:String>
+    <sys:String x:Key="Loc.Common.RunAgain">再次运行</sys:String>
+    <sys:String x:Key="Loc.Common.ViewLog">查看日志</sys:String>
+    <sys:String x:Key="Loc.Common.Dismiss">忽略</sys:String>
+    <sys:String x:Key="Loc.Common.ManageCustomCommands">管理自定义命令</sys:String>
+    <sys:String x:Key="Loc.Common.OpenSite">打开站点</sys:String>
+    <sys:String x:Key="Loc.Common.OpenAdmin">打开管理面板</sys:String>
+    <sys:String x:Key="Loc.Common.Disable">禁用</sys:String>
+    <sys:String x:Key="Loc.Common.Enable">启用</sys:String>
+    <sys:String x:Key="Loc.Common.Disabling">正在禁用…</sys:String>
+    <sys:String x:Key="Loc.Common.Enabling">正在启用…</sys:String>
+    <sys:String x:Key="Loc.Common.PinToFeatured">固定到精选</sys:String>
+    <sys:String x:Key="Loc.Common.RemoveFromFeatured">取消精选固定</sys:String>
+    <sys:String x:Key="Loc.Common.KeepAliveActive">Keep-alive 已激活</sys:String>
+
+    <!-- ── Status ── -->
+    <sys:String x:Key="Loc.Status.Running">正在运行</sys:String>
+    <sys:String x:Key="Loc.Status.Stopped">已停止</sys:String>
+    <sys:String x:Key="Loc.Status.Errors">错误</sys:String>
+    <sys:String x:Key="Loc.Status.Live">实时</sys:String>
+    <sys:String x:Key="Loc.Status.LiveBadge">实时</sys:String>
+    <sys:String x:Key="Loc.Status.Active">活跃</sys:String>
+    <sys:String x:Key="Loc.Status.Installed">已安装</sys:String>
+    <sys:String x:Key="Loc.Status.InstalledReady">已安装并就绪</sys:String>
+    <sys:String x:Key="Loc.Status.Ready">就绪</sys:String>
+    <sys:String x:Key="Loc.Status.Off">关闭</sys:String>
+    <sys:String x:Key="Loc.Status.Capturing">正在捕获…</sys:String>
+    <sys:String x:Key="Loc.Status.LiveUpdates">实时更新</sys:String>
+    <sys:String x:Key="Loc.Status.NoActivity">暂无活动记录</sys:String>
+    <sys:String x:Key="Loc.Status.ClearSessionLog">清除会话日志</sys:String>
+    <sys:String x:Key="Loc.Status.ThisSession">本次会话</sys:String>
+    <sys:String x:Key="Loc.Status.Activity">活动</sys:String>
+
+    <!-- ── Dashboard ── -->
+    <sys:String x:Key="Loc.Dashboard.Title">仪表盘</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Subtitle">服务、PHP FastCGI 以及启用的进程</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Loading">正在加载仪表盘…</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServices">暂无启用的服务</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServicesHint">请前往“服务”页面安装扩展包并启用服务。</sys:String>
+    <sys:String x:Key="Loc.Dashboard.GoToServices">前往服务页面</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpFastCgi">PHP FastCGI 监听器</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpListeners">PHP 监听器</sys:String>
+    <sys:String x:Key="Loc.Dashboard.EnabledProcesses">已启用的进程</sys:String>
+    <sys:String x:Key="Loc.Dashboard.StartAll">启动全部</sys:String>
+    <sys:String x:Key="Loc.Dashboard.QuickActions">快捷操作</sys:String>
+
+    <!-- ── Services ── -->
+    <sys:String x:Key="Loc.Services.Title">服务</sys:String>
+    <sys:String x:Key="Loc.Services.Subtitle">安装扩展包、选择版本并配置端口 — 通过仪表盘启动/停止服务</sys:String>
+    <sys:String x:Key="Loc.Services.RebuildTooltip">重新生成站点 vhosts、应用域名、管理工具并重载 nginx</sys:String>
+
+    <!-- ── Sites ── -->
+    <sys:String x:Key="Loc.Sites.Title">Web 域名</sys:String>
+    <sys:String x:Key="Loc.Sites.Subtitle">按状态分组的本地开发域名</sys:String>
+    <sys:String x:Key="Loc.Sites.AddDomain">添加域名</sys:String>
+    <sys:String x:Key="Loc.Sites.WwwRoot">WWW 根目录</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomains">暂无域名</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomainsHint">选择一个模板并添加您的第一个本地开发域名。</sys:String>
+    <sys:String x:Key="Loc.Sites.ColName">名称</sys:String>
+    <sys:String x:Key="Loc.Sites.ColFolder">文件夹</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttps">https</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttpsTooltip">在浏览器中打开站点 (HTTPS)</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenFolderTooltip">在资源管理器中打开站点文件夹</sys:String>
+    <sys:String x:Key="Loc.Sites.PinTooltip">固定到精选</sys:String>
+    <sys:String x:Key="Loc.Sites.DB">数据库</sys:String>
+    <sys:String x:Key="Loc.Sites.RebuildTooltip">重新生成站点 vhosts、应用域名、管理工具并重载 nginx</sys:String>
+    <sys:String x:Key="Loc.Sites.HostsTooltip">打开 hosts 文件</sys:String>
+    <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">站点设置</sys:String>
+    <sys:String x:Key="Loc.Sites.NoMatch">没有满足当前筛选条件的域名。</sys:String>
+
+        <!-- ── Site Manage ── -->
+        <sys:String x:Key="Loc.SiteManage.Title">站点仪表盘</sys:String>
+        <sys:String x:Key="Loc.SiteManage.SslPaths">SSL 路径</sys:String>
+        <sys:String x:Key="Loc.SiteManage.SslTooltip">本地 dev.crt 和 dev.key 路径</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Terminal">终端</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Template">模板</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Path">路径</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Https">HTTPS</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Username">用户名</sys:String>
+        <sys:String x:Key="Loc.SiteManage.Password">密码</sys:String>
+        <sys:String x:Key="Loc.SiteManage.ShowHidePassword">显示/隐藏密码</sys:String>
+        <sys:String x:Key="Loc.SiteManage.ChangePassword">修改密码</sys:String>
+        <sys:String x:Key="Loc.SiteManage.RefreshScreenshot">刷新 WordPress 截图</sys:String>
+        <sys:String x:Key="Loc.SiteManage.OpenBrowserTooltip">在浏览器中打开站点</sys:String>
+        <sys:String x:Key="Loc.SiteManage.NoProcesses">此站点尚无关联的进程。</sys:String>
+        <sys:String x:Key="Loc.SiteManage.NoDatabases">此站点尚无关联的数据库。</sys:String>
+        <sys:String x:Key="Loc.SiteManage.NoScheduled">此站点尚无定时任务。</sys:String>
+        <sys:String x:Key="Loc.SiteManage.ScheduledTasksHint">此站点的 Cron 风格命令 — 只要 Stackroot 保持打开状态就会运行。</sys:String>
+        <sys:String x:Key="Loc.SiteManage.AllTasks">所有任务</sys:String>
+        <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">打开完整的定时任务 advocacy 页面</sys:String>
+        <sys:String x:Key="Loc.SiteManage.CopyPassword">复制密码</sys:String>
+    
+            <!-- ── PHP ── -->
+    <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
+    <sys:String x:Key="Loc.Php.Subtitle">管理已安装的 PHP 版本和 FastCGI 运行环境</sys:String>
+    <sys:String x:Key="Loc.Php.ImportProfiles">导入配置文件</sys:String>
+    <sys:String x:Key="Loc.Php.ImportTooltip">导入一个或多个 PHP 配置文件。缺失的 PHP 版本将自动安装。</sys:String>
+    <sys:String x:Key="Loc.Php.ExportProfiles">导出配置文件</sys:String>
+    <sys:String x:Key="Loc.Php.ExportTooltip">导出所有已安装的 PHP 版本及其设置和扩展。</sys:String>
+    <sys:String x:Key="Loc.Php.RuntimeTooltip">PHP 运行环境设置</sys:String>
+    <sys:String x:Key="Loc.Php.Loading">正在 opaque PHP 数据…</sys:String>
+    <sys:String x:Key="Loc.Php.EnsureFastCgi">确保 FastCGI 正常</sys:String>
+    <sys:String x:Key="Loc.Php.Extensions">扩展</sys:String>
+    <sys:String x:Key="Loc.Php.ExportProfile">导出配置文件</sys:String>
+    <sys:String x:Key="Loc.Php.ImportProfile">导入配置文件</sys:String>
+    <sys:String x:Key="Loc.Php.InstallingVersions">正在安装 PHP 版本</sys:String>
+    <sys:String x:Key="Loc.Php.InstallingHint">安装在后台进行。您可以从上方列表中将其他版本加入队列。</sys:String>
+
+    <!-- ── Node ── -->
+    <sys:String x:Key="Loc.Node.Title">Node</sys:String>
+    <sys:String x:Key="Loc.Node.Subtitle">安装 nvm-windows，添加 Node 版本，并切换当前的运行环境</sys:String>
+    <sys:String x:Key="Loc.Node.NvmNotInstalled">请先安装 nvm-windows</sys:String>
+    <sys:String x:Key="Loc.Node.NvmHint">Stackroot 使用 nvm-windows 来下载和切换 Node 版本。在安装 nvm 之前，此页面上的其他功能均无法使用。</sys:String>
+    <sys:String x:Key="Loc.Node.InstallNvm">安装 nvm-windows</sys:String>
+    <sys:String x:Key="Loc.Node.InstallVersion">安装 Node 版本</sys:String>
+    <sys:String x:Key="Loc.Node.InstallHint">从列表中选择一个版本，或者输入自定义版本（开始输入时下拉菜单会被清空）。</sys:String>
+    <sys:String x:Key="Loc.Node.CustomSemver">可选的自定义语义化版本 (semver)</sys:String>
+    <sys:String x:Key="Loc.Node.QuickInstall">快速安装（立即下载并激活）</sys:String>
+    <sys:String x:Key="Loc.Node.ActivateTooltip">下载、安装并激活此 Node 版本</sys:String>
+    <sys:String x:Key="Loc.Node.InstalledVersions">已安装版本</sys:String>
+    <sys:String x:Key="Loc.Node.NoVersions">尚未安装任何 Node 版本。请使用上方的“安装”功能或快速安装卡片。</sys:String>
+    <sys:String x:Key="Loc.Node.NvmSettingsTooltip">Node 设置</sys:String>
+    <sys:String x:Key="Loc.Node.RemoveNvm">卸载 nvm</sys:String>
+
+
+        <!-- ── Databases ── -->
+        <sys:String x:Key="Loc.Databases.Title">数据库</sys:String>
+        <sys:String x:Key="Loc.Databases.SettingsTooltip">数据库设置</sys:String>
+        <sys:String x:Key="Loc.Databases.CreateButton">+ 创建</sys:String>
+        <sys:String x:Key="Loc.Databases.Search">搜索</sys:String>
+        <sys:String x:Key="Loc.Databases.Engine">引擎</sys:String>
+        <sys:String x:Key="Loc.Databases.NoMatch">没有符合当前筛选条件的数据库。</sys:String>
+        <sys:String x:Key="Loc.Databases.ColName">名称</sys:String>
+        <sys:String x:Key="Loc.Databases.ColEngine">引擎</sys:String>
+        <sys:String x:Key="Loc.Databases.ColCreated">创建时间</sys:String>
+        <sys:String x:Key="Loc.Databases.ColLastBackup">上次备份</sys:String>
+        <sys:String x:Key="Loc.Databases.ColActions">操作</sys:String>
+        <sys:String x:Key="Loc.Databases.DotEnv">.env</sys:String>
+        <sys:String x:Key="Loc.Databases.Backup">备份</sys:String>
+    
+        <!-- ── Downloads ── -->
+        <sys:String x:Key="Loc.Downloads.Title">下载列表</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColPackage">安装包</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColFile">文件</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColSize">大小</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColDownloaded">已下载</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColUrl">URL</sys:String>
+        <sys:String x:Key="Loc.Downloads.ColAction">操作</sys:String>
+    
+        <!-- ── Logs ── -->
+        <sys:String x:Key="Loc.Logs.Title">日志</sys:String>
+        <sys:String x:Key="Loc.Logs.CleanupOld">清理旧日志</sys:String>
+        <sys:String x:Key="Loc.Logs.CleanupAll">清理全部日志</sys:String>
+        <sys:String x:Key="Loc.Logs.Loading">正在加载日志…</sys:String>
+        <sys:String x:Key="Loc.Logs.NoFiles">未找到日志文件。</sys:String>
+        <sys:String x:Key="Loc.Logs.ColCategory">类别</sys:String>
+        <sys:String x:Key="Loc.Logs.ColPath">路径</sys:String>
+        <sys:String x:Key="Loc.Logs.ColSize">大小</sys:String>
+        <sys:String x:Key="Loc.Logs.ColModified">修改时间</sys:String>
+        <sys:String x:Key="Loc.Logs.ColAction">操作</sys:String>
+    
+            <!-- ── Performance ── -->
+    <sys:String x:Key="Loc.Performance.Title">性能性能</sys:String>
+    <sys:String x:Key="Loc.Performance.Sampled">采样时间：</sys:String>
+    <sys:String x:Key="Loc.Performance.AppAndServices">应用与服务</sys:String>
+    <sys:String x:Key="Loc.Performance.TotalMemory">总内存：</sys:String>
+    <sys:String x:Key="Loc.Performance.PhpListeners">PHP 监听器</sys:String>
+    <sys:String x:Key="Loc.Performance.CustomProcesses">自定义进程</sys:String>
+    <sys:String x:Key="Loc.Performance.ColLabel">标签</sys:String>
+    <sys:String x:Key="Loc.Performance.ColType">类型</sys:String>
+    <sys:String x:Key="Loc.Performance.ColStatus">状态</sys:String>
+    <sys:String x:Key="Loc.Performance.ColPid">PID</sys:String>
+    <sys:String x:Key="Loc.Performance.ColCpu">CPU</sys:String>
+    <sys:String x:Key="Loc.Performance.ColMemory">内存</sys:String>
+    <sys:String x:Key="Loc.Performance.ColVersion">版本</sys:String>
+    <sys:String x:Key="Loc.Performance.ColEndpoint">端点</sys:String>
+    <sys:String x:Key="Loc.Performance.TooltipOpen">打开性能监控页面</sys:String>
+    <sys:String x:Key="Loc.Performance.TooltipRefresh">刷新指标数据</sys:String>
+
+    <!-- ── Processes ── -->
+    <sys:String x:Key="Loc.Processes.Title">进程管理</sys:String>
+    <sys:String x:Key="Loc.Processes.Subtitle">应用全局及站点关联后台命令的统一进程守护器</sys:String>
+    <sys:String x:Key="Loc.Processes.SiteFilter">站点筛选：</sys:String>
+    <sys:String x:Key="Loc.Processes.StartAllEnabled">启动所有已启用的进程</sys:String>
+    <sys:String x:Key="Loc.Processes.NoMatch">没有符合当前筛选条件的进程。</sys:String>
+    <sys:String x:Key="Loc.Processes.AddProcess">+ 添加进程</sys:String>
+    <sys:String x:Key="Loc.Processes.PinTooltip">固定至精选区</sys:String>
+
+        <!-- ── Scheduled Tasks ── -->
+        <sys:String x:Key="Loc.ScheduledTasks.Title">定时任务</sys:String>
+        <sys:String x:Key="Loc.ScheduledTasks.Subtitle">Cron 风格的定时运行命令 — 只要 Stackroot 保持打开状态就会运行。</sys:String>
+        <sys:String x:Key="Loc.ScheduledTasks.SiteFilter">站点筛选：</sys:String>
+        <sys:String x:Key="Loc.ScheduledTasks.RunNowTooltip">立即运行</sys:String>
+        <sys:String x:Key="Loc.ScheduledTasks.EditTooltip">编辑</sys:String>
+    
+        <!-- ── Tools ── -->
+        <sys:String x:Key="Loc.Tools.Title">工具箱</sys:String>
+        <sys:String x:Key="Loc.Tools.Subtitle">CLI 实用工具、管理后台 — 均可在 Stackroot 中完成安装与更新。</sys:String>
+        <sys:String x:Key="Loc.Tools.CheckUpdates">检查更新</sys:String>
+        <sys:String x:Key="Loc.Tools.InstallTooltip">安装程序包</sys:String>
+        <sys:String x:Key="Loc.Tools.VersionsTooltip">程序包版本</sys:String>
+        <sys:String x:Key="Loc.Tools.SettingsTooltip">设置</sys:String>
+        <sys:String x:Key="Loc.Tools.OpenTooltip">在浏览器中打开</sys:String>
+        <sys:String x:Key="Loc.Tools.DismissTooltip">忽略通知</sys:String>
+        <!-- ── General Settings ── -->
+        <sys:String x:Key="Loc.GeneralSettings.Title">常规设置</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Subtitle">配置基础路径、应用行为以及环境默认值</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AutoSave">所有更改将自动保存。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">从备份中恢复</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AppDomain">应用域名</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW 路径</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">首选编辑器</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">自定义编辑器路径</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">关闭行为</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetention">日志保留天数</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetentionHint">设置为 0 将禁用自动清理功能。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPath">在 PATH 中使用 Stackroot 管理的 php/composer/node 垫片 (opt-in)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPathHint">禁用时，Stackroot 不会覆盖您系统自带的 php、composer 或 node 命令。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LaunchAtStartup">Windows 启动时自动运行 Stackroot</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ShowMetrics">在 Shell 顶部状态栏显示内存和 CPU 占用率</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CpuEvery">CPU 更新频率</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Sec">秒</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.MetricsHint">包含指向性能页链接的轻量级摘要。关闭此项可获得更整洁的状态栏。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Thumbnails">启用站点缩略图（首次使用将下载约 300 MB 的 Chromium 浏览器）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ThumbnailsHint">启用后，无头浏览器将抓取站点的屏幕截图用于仪表盘显示。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslCa">让所有 Windows 用户信任本地 HTTPS CA 证书（需要管理员身份批准）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslHint">关闭时，信任 SSL 功能仅为当前用户账号安装证书 — 无需触发管理员提示。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSsl">信任 SSL</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RemoveOldCas">清除旧 CA 证书</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.SslWarning">如果 Windows 显示了多个 Stackroot 本地 CA 条目，请使用“清除旧 CA 证书”以仅保留当前的开发证书。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DiagnosticsLog">启用诊断日志（开发环境报告）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Language">语言</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DownloadCache">下载缓存路径</sys:String>
+    
+            <!-- ── Dialogs ── -->
+    <sys:String x:Key="Loc.AddProcess.Title">配置托管的后台进程。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Name">名称</sys:String>
+    <sys:String x:Key="Loc.AddProcess.LinkedSite">关联站点（可选）</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolder">项目文件夹</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolderHint">未关联站点时的绝对项目根路径。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDir">工作目录</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDirHint">相对于项目文件夹的路径，或填入覆盖它的绝对路径。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Runtime">运行环境</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersion">PHP 版本</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersionHint">用于 PHP 和 Composer 运行环境。默认采用关联站点的 PHP 版本。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Command">命令</sys:String>
+    <sys:String x:Key="Loc.AddProcess.CommandHint">Shell：完整命令。其他运行环境：可执行文件后的附加参数。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelay">重启延迟（秒）</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelayHint">退出后到重新启动前的等待时间。留空表示采用默认值（2秒，随后逐步增加退避时间）。</sys:String>
+    <sys:String x:Key="Loc.AddProcess.AutoStart">随 Stackroot 自动启动</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Featured">推荐（置顶显示）</sys:String>
+
+    <sys:String x:Key="Loc.AddSite.Title">添加 Web 域名</sys:String>
+    <sys:String x:Key="Loc.AddSite.Subtitle">使用项目模板创建一个本地开发环境域名。</sys:String>
+    <sys:String x:Key="Loc.AddSite.Template">模板</sys:String>
+    <sys:String x:Key="Loc.AddSite.SiteName">站点名称</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainName">域名</sys:String>
+    <sys:String x:Key="Loc.AddSite.SubdomainTooltip">子域名（例如：myapp）</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainAliases">域名别名（可选）</sys:String>
+    <sys:String x:Key="Loc.AddSite.AliasesHint">每行一个别名（例如：sameapp.test 或 *.app.test）。通配符别名可在 nginx 中生效；原意字符名称会被添加至 hosts 文件及 HTTPS 证书中。</sys:String>
+    <sys:String x:Key="Loc.AddSite.PhpBackend">后端 (PHP)</sys:String>
+    <sys:String x:Key="Loc.AddSite.NodeJs">Node.js</sys:String>
+    <sys:String x:Key="Loc.AddSite.DocumentRoot">Web 根目录 (Document root)</sys:String>
+    <sys:String x:Key="Loc.AddSite.SetByTemplate">由模板自动设定</sys:String>
+    <sys:String x:Key="Loc.AddSite.Folder">文件夹</sys:String>
+    <sys:String x:Key="Loc.AddSite.CreateUnderWww">在 WWW 目录下创建（常规设置）</sys:String>
+    <sys:String x:Key="Loc.AddSite.ExistingFolder">现有文件夹</sys:String>
+    <sys:String x:Key="Loc.AddSite.GoToDashboard">创建成功后跳转到站点仪表盘</sys:String>
+
+    <sys:String x:Key="Loc.ChangePassword.Title">修改管理员密码</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Subtitle">输入 WordPress 管理员用户的新密码。</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Change">修改</sys:String>
+
+    <sys:String x:Key="Loc.CreateDatabase.Title">创建数据库</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Subtitle">注册一个本地 SQL 数据库用于开发环境。</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.DatabaseName">数据库名称</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Engine">引擎</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.LinkToSite">关联站点（可选）</sys:String>
+
+    <sys:String x:Key="Loc.CronTask.Title">新建定时任务</sys:String>
+    <sys:String x:Key="Loc.CronTask.Label">任务标签</sys:String>
+    <sys:String x:Key="Loc.CronTask.LinkedSite">关联站点（可选）</sys:String>
+    <sys:String x:Key="Loc.CronTask.Command">执行命令</sys:String>
+    <sys:String x:Key="Loc.CronTask.WorkingDir">工作目录</sys:String>
+    <sys:String x:Key="Loc.CronTask.Schedule">定时机制</sys:String>
+    <sys:String x:Key="Loc.CronTask.Minute">分钟</sys:String>
+    <sys:String x:Key="Loc.CronTask.Hour">小时</sys:String>
+    <sys:String x:Key="Loc.CronTask.Day">天</sys:String>
+    <sys:String x:Key="Loc.CronTask.Month">月</sys:String>
+    <sys:String x:Key="Loc.CronTask.Weekday">周几</sys:String>
+    <sys:String x:Key="Loc.CronTask.CaptureLog">将输出结果捕获并写入日志文件</sys:String>
+
+    <sys:String x:Key="Loc.CustomCommands.Title">自定义快捷命令</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ImportTooltip">从其他站点导出的配置文件中导入快捷命令</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ExportTooltip">将命令保存到配置文件中，以便于在其他站点导入</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Label">快捷标签</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Command">执行命令</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ButtonColors">按钮颜色（可选）</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorText">文字颜色</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorBackground">背景色</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ResetColors">颜色重置为默认</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Icon">按钮图标（可选）</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RemoveIcon">移除图标</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Preview">效果预览</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Select">请选择一个快捷命令或点击添加新命令。</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RunningWarning">正在运行中的快捷命令无法被删除。请先点击中止该命令。</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseBackups.Subtitle">选择一个备份结构文件并将其恢复到对应的数据库中。</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColFile">备份文件</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColDatabase">目标数据库</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColEngine">引擎</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColCreated">备份时间</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColSize">文件大小</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseEnv.Subtitle">将以下配置行复制到站点的 .env 配置文件中。</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseSettings.Title">数据库全局设置</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Subtitle">此处的认证凭据将自动同步应用于 MySQL/MariaDB。由于是本地开发环境，密码将直接以明文显示。</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MysqlCredentials">MySQL 凭据明细</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MariaDbCredentials">MariaDB 凭据明细</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Username">用户名</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Password">密码</sys:String>
+
+    <sys:String x:Key="Loc.DevSslPaths.Title">本地 SSL 证书路径</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Subtitle">Stackroot 本地开发证书文件 (PEM 格式)。可在 Node 异步服务器或您的 .env 环境配置中使用这些路径。</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Certificate">公钥证书 (dev.crt)</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.PrivateKey">私钥文件 (dev.key)</sys:String>
+
+    <sys:String x:Key="Loc.Downloads.NoActive">当前无处于活跃状态的下载</sys:String>
+    <sys:String x:Key="Loc.Downloads.RunInBackground">转入后台运行</sys:String>
+    <sys:String x:Key="Loc.Downloads.CloseTooltip">关闭</sys:String>
+
+    <sys:String x:Key="Loc.EditSite.Title">修改 Web 域名设置</sys:String>
+    <sys:String x:Key="Loc.EditSite.Subtitle">更新项目模板、PHP 后端、HTTPS 行为以及开发代理。</sys:String>
+    <sys:String x:Key="Loc.EditSite.Domain">主域名</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainFixed">域名创建后无法直接修改 — 如需重命名，请先删除该站点后再重新添加。</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainAliases">域名别名（可选）</sys:String>
+    <sys:String x:Key="Loc.EditSite.AliasesHint">每行一个别名（例如：sameapp.test 或 *.app.test）。通配符别名可在 nginx 中生效；原意字符名称会被同步添加至 hosts 文件及 HTTPS 体系中。</sys:String>
+    <sys:String x:Key="Loc.EditSite.Folder">所属目录</sys:String>
+    <sys:String x:Key="Loc.EditSite.FolderHint">nginx 的 Web 根目录将基于此文件夹与模板的根目录规则自动生成。</sys:String>
+    <sys:String x:Key="Loc.EditSite.Template">项目模板</sys:String>
+    <sys:String x:Key="Loc.EditSite.SiteName">站点显示名称</sys:String>
+    <sys:String x:Key="Loc.EditSite.PhpBackend">后端 (PHP 版本)</sys:String>
+    <sys:String x:Key="Loc.EditSite.DocumentRoot">Web 运行根目录</sys:String>
+    <sys:String x:Key="Loc.EditSite.VhostEnabled">已启用（包含 nginx 虚拟主机主机配置及 hosts 条目）</sys:String>
+    <sys:String x:Key="Loc.EditSite.ForceHttps">强制 HTTPS 访问（自动将 HTTP 重定向至 HTTPS）</sys:String>
+    <sys:String x:Key="Loc.EditSite.HttpsHint">关闭时，站点将仅通过 HTTP 协议提供服务 — 可有效避免浏览器强制将非加密连接自动提升为 HTTPS 访问。</sys:String>
+    <sys:String x:Key="Loc.EditSite.DevProxies">反向代理控制</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddRegexProxy">添加正则过滤代理</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddProxy">添加常规路由代理</sys:String>
+    <sys:String x:Key="Loc.EditSite.NoProxies">暂未配置任何反向代理 — 您可以添加代理规则以便将特定的路由（如 /vite/）转发到本地前端开发服务器。</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyEnabled">状态已激活</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyName">代理规则名称</sys:String>
+    <sys:String x:Key="Loc.EditSite.MatchType">规则匹配类型</sys:String>
+    <sys:String x:Key="Loc.EditSite.LocationPattern">位置 (Location) 匹配表达式</sys:String>
+    <sys:String x:Key="Loc.EditSite.PatternHint">仅需粘贴表达式本身（例如：^/path$），无需包含 nginx 完整的 location 声明行。</sys:String>
+    <sys:String x:Key="Loc.EditSite.WebSocket">WebSocket 握手支持</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyDirectives">Proxy 高级指令</sys:String>
+    <sys:String x:Key="Loc.EditSite.ResetDefaults">恢复为默认指令</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddDirective">新增附加指令</sys:String>
+
+    <sys:String x:Key="Loc.FirstRun.OpenStackroot">打开 Stackroot</sys:String>
+
+    <sys:String x:Key="Loc.Laravel.Title">安装 Laravel 工程</sys:String>
+    <sys:String x:Key="Loc.Laravel.Subtitle">配置您的 Laravel 项目。所有必填字段均已预先自动填写。</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseName">目标数据库名称</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseEngine">数据库引擎类别</sys:String>
+    <sys:String x:Key="Loc.Laravel.StarterKit">官方脚手架 (Starter kit)</sys:String>
+    <sys:String x:Key="Loc.Laravel.Stack">技术栈选择 (Stack)</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunNpmBuild">在 Composer 依赖安装完成后执行 „npm install &amp;&amp; npm run build“ 编译前端</sys:String>
+    <sys:String x:Key="Loc.Laravel.NpmHint">此项功能需要环境预装 Node.js。若您希望之后手动执行，请取消勾选。</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunMigrations">自动运行数据库迁移脚本 (php artisan migrate)</sys:String>
+
+    <sys:String x:Key="Loc.Mailpit.Title">Mailpit 虚拟邮局设置</sys:String>
+    <sys:String x:Key="Loc.Mailpit.Subtitle">用于拦截捕获 PHP 发出的外发邮件的 Web 控制台。</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoRestart">意外停止时自动重启守护（保持进程存活）</sys:String>
+    <sys:String x:Key="Loc.Mailpit.SmtpPort">SMTP 投递端口</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPort">Web UI 管理端口（内部）</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPortHint">将通过反向代理隐式挂载在您站点的 /mail 路由下 — 仅在当前端口被占用时才需要修改。</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoStart">随 Stackroot 应用启动时自动运行</sys:String>
+
+    <sys:String x:Key="Loc.NginxHttp.Title">Nginx 核心参数调节</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Subtitle">调整主配置文件 nginx.conf 的全局默认值。位于 sites-enabled 目录下的站点虚拟主机仍将由 Stackroot 独立更新管辖。</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManualControl">纯手工托管</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManageManually">改由完全手动编辑维护主 nginx.conf 文件</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.OpenConfig">直接打开 nginx.conf 配置文件</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WorkersAndEvents">工作进程与事件驱动 (Workers &amp; Events)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.LimitsAndHashing">连接数限制与哈希表优化</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Transport">传输层网络控制</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Gzip">Gzip 静态压缩</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.EnableGzip">开启 nginx gzip 压缩机制</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Logging">访问与错误日志</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WriteAccessLog">落盘记录访问日志 (access log)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.PhpTimeouts">PHP / FastCGI 连接超时周期</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.DevProxyTimeouts">前端开发服务器代理超时时间（针对 Vite 等）</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.MultiAccept">启用多路接受监听 (multi_accept on)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Sendfile">启用零拷贝高效传输 (sendfile on)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.TcpNoPush">开启延迟发送机制 (tcp_nopush on)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ResetDefaults">将高级调优指标重置恢复为推荐的官方默认值</sys:String>
+
+    <sys:String x:Key="Loc.NodeSettings.Title">Node 全局设置</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.Subtitle">配置站点进程依赖的 npm 源仓库及 nvm 切换机制行为。</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.NpmRegistry">npm 私 feed 源仓库</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.AutoNvmrc">当检测到目录中存在 .nvmrc 时自动应用切换配置 (autoUseNvmrc)</sys:String>
+
+    <sys:String x:Key="Loc.PackageInstall.Title">基于 PHP 环境安装</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.NoPhp">在当前套件目录中未检索到任何符合兼容要求的 PHP 版本。</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.PhpVersion">关联 PHP 版本（必填）</sys:String>
+
+    <sys:String x:Key="Loc.PackageVersions.NoVersions">套件资产目录中暂无可用版本。</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Installed">状态已安装</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Active">当前已激活</sys:String>
+
+    <sys:String x:Key="Loc.PhpExtensions.Subtitle">启用或禁用 ext/ 目录内置的扩展或通过 PECL 镜像编译安装的衍生组件。任何强依赖特定 Stackroot 本地基础服务的核心扩展，在对应基础服务正式安装就绪前都将保持锁定制退状态。</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.FilterTooltip">按扩展扩展名称或相关职能描述进行检索过滤</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.EnableAllReady">一键激活全部就绪的扩展</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.ResetToDefaults">恢复至预设出厂默认配置</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.InstallPecl">安装 PECL 包管理器</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.PeclHint">第三方动态扩展仅在 Windows 官方构建库中针对当前特定 PHP 主版本放出了二进制归档时，才会在此处上架呈现。</sys:String>
+
+    <sys:String x:Key="Loc.PhpMyAdmin.Title">phpMyAdmin 面板设置</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.Subtitle">用于一键维护 MySQL / MariaDB 的轻量级 Web 图形端。</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.UrlPath">Web 访问二级路由路径</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.PhpVersion">依赖解析 PHP 版本</sys:String>
+
+    <sys:String x:Key="Loc.PhpRedisAdmin.Title">phpRedisAdmin 面板设置</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">使用“服务” → “Redis”中配置的主机与端口自动建立 Redis 连接。</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">Web 访问二级路径</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">依赖解析 PHP 版本</sys:String>
+
+    <sys:String x:Key="Loc.PhpRuntime.Title">高级选项 — PHP 运行环境参数</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.Subtitle">每个已安装的环境版本均会在指定端口组（基础端口 + 偏移量）上分配并运行独立的 php-cgi 工作进程池。通常情况下您无需修改此项。</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI 主机</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiPort">FastCGI 基础绑定端口</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersPerVersion">单版本多进程并发数 (1–8)</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersHint">启用 2 个以上 php-cgi 工作进程，可确保某一进程在执行回收或重载重启时，nginx 仍能无缝分流并持续响应，从而避免连接请求被意外丢弃。</sys:String>
+
+    <sys:String x:Key="Loc.PhpVersionSettings.Subtitle">调整当前 PHP 版本的 php.ini 全局默认行为。扩展组件仍需在 PHP 主管理页进行调配。</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManualControl">纯手工接管</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManageManually">改由完全手动编辑维护 php.ini 文件</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OpenIni">直接打开 php.ini 配置文件</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.RuntimeLimits">运行期资源限制</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.InputAndSockets">输入流与 Sockets 套接字优化</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.PathCache">执行路径检索缓存</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OPcache">OPcache 字节码加速</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.EnableOPcache">开启核心 OPcache 缓存加速</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ErrorsAndWarnings">错误分级与全局告警</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.DisplayErrors">在浏览器前端渲染显示错误详情 (display_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.LogErrors">将异常错误落盘记录到文件 (log_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideWarnings">隐藏 PHP 运行时警告 (warnings)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideDeprecations">隐藏废弃特性调用通知 (deprecation notices)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ResetDefaults">恢复为默认初始状态</sys:String>
+
+    <sys:String x:Key="Loc.PickDatabase.Title">选择目标数据库</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Subtitle">选择要将此备份结构恢复到哪一个数据库中：</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Replace">覆盖原有数据库（恢复前先删除并重建结构）</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">关闭：直接导入到现有的数据库中。开启：恢复前先清空并擦除目标数据库。</sys:String>
+
+    <sys:String x:Key="Loc.ServiceSettings.Subtitle">启用此基础服务、选择是否随系统自启，并配置底层的网络端点参数。</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoStart">随 Stackroot 应用启动时自动运行</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoRestart">意外停止时自动重启守护（保持进程存活）</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.ActivePackage">当前已激活的程序包版本</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.PackageHint">可在“服务”主页面点击对应的程序包版本控制按钮来变更当前激活的版本。</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Host">绑定网络主机</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Port">通信端口</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.SslPort">SSL 加密端口</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.EnableHttps">开启本地 HTTPS (SSL) 握手</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.HttpPerformance">HTTP 性能高级调优参数…</sys:String>
+
+    <sys:String x:Key="Loc.SiteProcessLog.LiveUpdates">实时滚动更新日志</sys:String>
+
+    <sys:String x:Key="Loc.SiteSettings.Title">站点全局解析设置</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.Subtitle">控制 Stackroot 如何管辖本地域名的解析机制。</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHosts">为已启用的域名自动更新维护 Windows 系统的 hosts 文件</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHostsHint">启用后，Stackroot 将自动为您的本地虚拟域名写入 127.0.0.1 映射条目。若遭遇系统阻击拒绝访问，则需要管理员最高权限介入。</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Title">Stackroot DNS 设置</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Subtitle">将配置好的域名后后缀路由劫持转发到运行于 127.0.0.1:53 的 Stackroot 本地 DNS。本地虚拟域名将被解析映射为您在下方指定的 IP 地址（默认值为 127.0.0.1）。</sys:String>
+    <sys:String x:Key="Loc.TestDns.EnabledHint">关闭并保存此项可彻底关停底层辅助代理服务并移除 NRPT 策略规则。期间 Windows 可能会弹出一次并请求管理员身份授权确认。</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIp">劫持解析至目标 IP</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIpHint">本地开发站点返回的指定 IPv4 或 IPv6 地址（默认 127.0.0.1）。本地 DNS 服务仍保持在 127.0.0.1:53 进行监听，且系统的 hosts 文件也会同步跟进引用此 IP。</sys:String>
+    <sys:String x:Key="Loc.TestDns.AutoStart">随 Stackroot 应用启动时自动运行</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueries">将解析过程中的 DNS 请求查询记录落盘到文件</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueriesHint">将每一条抓取到的请求实时写入 Logs\test-dns-queries.jsonl 日志中。默认保持关闭。</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHeader">拦截后缀与安全应急恢复</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesLabel">域名匹配后缀（每行输入一个，必须包含前导的圆点）:</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHint">配置示例：.test, .dev, .com — 注意：劫持公网顶级域名后缀会干扰真实网站的正常访问，请仅在有明确特定开发测试需求时才进行填调。</sys:String>
+    <sys:String x:Key="Loc.TestDns.IfInternetStops">如果本地互联网外部网络连接意外瘫痪死锁</sys:String>
+    <sys:String x:Key="Loc.TestDns.RecoveryHint">此安全机制将一键强行卸载 StackrootDnsHelper 并安全擦除所有的 Stackroot NRPT 策略链规则：</sys:String>
+    <sys:String x:Key="Loc.TestDns.CopyCleanup">复制应急恢复与清理指令</sys:String>
+
+    <sys:String x:Key="Loc.WordPress.Title">部署 WordPress 站点</sys:String>
+    <sys:String x:Key="Loc.WordPress.Subtitle">配置您的 WordPress 站点参数。所有项目均已实现自动预填。</sys:String>
+    <sys:String x:Key="Loc.WordPress.SiteTitle">网站标题 (Site Title)</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminUsername">管理员登录账号</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminPassword">管理员登录密码</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminEmail">管理员安全邮箱</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseName">专属数据库名称</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseEngine">数据库驱动引擎</sys:String>
+
+    <!-- ── Service and process status labels ── -->
+    <sys:String x:Key="Loc.Status.Error">发生故障异常</sys:String>
+    <sys:String x:Key="Loc.Status.Starting">正在初始化启动…</sys:String>
+    <sys:String x:Key="Loc.Status.Restarting">正在重载重启…</sys:String>
+    <sys:String x:Key="Loc.Status.Recovering">正在安全恢复…</sys:String>
+    <sys:String x:Key="Loc.Status.Installing">正在安装中...</sys:String>
+    <sys:String x:Key="Loc.Status.DisabledInSettings">已在配置中全局禁用</sys:String>
+    <sys:String x:Key="Loc.Status.NotInstalled">环境未安装</sys:String>
+    <sys:String x:Key="Loc.Status.Disabled">已关闭禁用</sys:String>
+    <sys:String x:Key="Loc.Status.Unavailable">服务当前不可用</sys:String>
+
+
+    <!-- ── Main Window (missing keys) ── -->
+    <sys:String x:Key="Loc.MainWindow.TrustCertificate">信任证书</sys:String>
+    <sys:String x:Key="Loc.MainWindow.UpdateNow">立即更新</sys:String>
+    <sys:String x:Key="Loc.MainWindow.OpenPerformanceTooltip">打开性能页面</sys:String>
+    <sys:String x:Key="Loc.MainWindow.RefreshMetricsTooltip">刷新指标</sys:String>
+</ResourceDictionary>

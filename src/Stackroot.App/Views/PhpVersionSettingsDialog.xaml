@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
         Title="{Binding VersionLabel, StringFormat=Settings — {0}}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="540"
         MinWidth="500"
         MaxHeight="760"
@@ -36,7 +37,7 @@
                        Text="{Binding VersionLabel, StringFormat=Settings — {0}}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Tune php.ini defaults for this PHP version. Extensions are still managed from the PHP page."
+                       Text="{DynamicResource Loc.PhpVersionSettings.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -44,11 +45,12 @@
                       Margin="0,16,0,0"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock Style="{StaticResource SectionTitle}" Margin="0" Text="Manual control" />
+                <TextBlock Style="{StaticResource SectionTitle}" Margin="0"
+                           Text="{DynamicResource Loc.PhpVersionSettings.ManualControl}" />
                 <CheckBox Margin="0,8,0,0"
                           IsChecked="{Binding ManageIniManually}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Manage php.ini manually" />
+                        <TextBlock Text="{DynamicResource Loc.PhpVersionSettings.ManageManually}" />
                         <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.ManageIniManually}" />
                     </StackPanel>
                 </CheckBox>
@@ -60,11 +62,12 @@
                 <Button Margin="0,8,0,0"
                         HorizontalAlignment="Left"
                         Padding="12,6"
-                        Content="Open php.ini"
+                        Content="{DynamicResource Loc.PhpVersionSettings.OpenIni}"
                         Command="{Binding OpenIniCommand}" />
 
                 <StackPanel IsEnabled="{Binding IsAutoTuningEnabled}">
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Runtime limits" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.PhpVersionSettings.RuntimeLimits}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -105,7 +108,8 @@
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Input and sockets" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.PhpVersionSettings.InputAndSockets}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -135,7 +139,8 @@
                         <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding DefaultSocketTimeout, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Path cache" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.PhpVersionSettings.PathCache}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -158,10 +163,11 @@
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="OPcache" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.PhpVersionSettings.OPcache}" />
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding OpcacheEnabled}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Enable OPcache" />
+                            <TextBlock Text="{DynamicResource Loc.PhpVersionSettings.EnableOPcache}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:PhpSettingHints.OpcacheEnabled}" />
                         </StackPanel>
                     </CheckBox>
@@ -206,18 +212,19 @@
                         <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding OpcacheMaxAcceleratedFiles, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Errors and warnings" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.PhpVersionSettings.ErrorsAndWarnings}" />
                     <CheckBox Margin="0,10,0,0"
-                              Content="Show errors in the browser (display_errors)"
+                              Content="{DynamicResource Loc.PhpVersionSettings.DisplayErrors}"
                               IsChecked="{Binding DisplayErrors}" />
                     <CheckBox Margin="0,8,0,0"
-                              Content="Log errors to file (log_errors)"
+                              Content="{DynamicResource Loc.PhpVersionSettings.LogErrors}"
                               IsChecked="{Binding LogErrors}" />
                     <CheckBox Margin="0,8,0,0"
-                              Content="Hide PHP warnings"
+                              Content="{DynamicResource Loc.PhpVersionSettings.HideWarnings}"
                               IsChecked="{Binding HideWarnings}" />
                     <CheckBox Margin="0,8,0,0"
-                              Content="Hide deprecation notices"
+                              Content="{DynamicResource Loc.PhpVersionSettings.HideDeprecations}"
                               IsChecked="{Binding HideDeprecated}" />
                 </StackPanel>
             </StackPanel>
@@ -232,15 +239,15 @@
             <DockPanel Margin="0,12,0,0" LastChildFill="False">
                 <Button DockPanel.Dock="Left"
                         Padding="12,6"
-                        Content="Reset defaults"
+                        Content="{DynamicResource Loc.PhpVersionSettings.ResetDefaults}"
                         Command="{Binding ResetDefaultsCommand}" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Width="88"
                             Margin="0,0,8,0"
-                            Content="Close"
+                            Content="{DynamicResource Loc.Common.Close}"
                             Command="{Binding CloseCommand}" />
                     <Button Width="88"
-                            Content="Save"
+                            Content="{DynamicResource Loc.Common.Save}"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"
                             Command="{Binding SaveCommand}" />
                 </StackPanel>

@@ -67,18 +67,18 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Web domains"
+                <TextBlock Text="{DynamicResource Loc.Sites.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Local development domains grouped by status" />
+                           Text="{DynamicResource Loc.Sites.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
-                        ToolTip="Sites settings"
+                        ToolTip="{DynamicResource Loc.Sites.SiteSettingsTooltip}"
                         Command="{Binding OpenSettingsCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                FontSize="14"
@@ -86,7 +86,7 @@
                 </Button>
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
-                        ToolTip="Open hosts file"
+                        ToolTip="{DynamicResource Loc.Sites.HostsTooltip}"
                         Command="{Binding OpenHostsCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                FontSize="14"
@@ -96,11 +96,11 @@
                         MinHeight="36"
                         Margin="0,0,10,0"
                         Padding="14,8"
-                        ToolTip="Regenerate site vhosts, app domain, admin tools, and reload nginx"
-                        Content="Rebuild nginx"
+                        ToolTip="{DynamicResource Loc.Sites.RebuildTooltip}"
+                        Content="{DynamicResource Loc.Common.Rebuild}"
                         Command="{Binding RebuildNginxCommand}" />
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -110,7 +110,7 @@
                    LastChildFill="False">
             <Button Style="{StaticResource StackrootPrimaryButtonStyle}"
                     Padding="16,8"
-                    Content="Add domain"
+                    Content="{DynamicResource Loc.Sites.AddDomain}"
                     Command="{Binding OpenAddSiteCommand}" />
 
             <Border DockPanel.Dock="Right"
@@ -120,7 +120,7 @@
                                FontSize="11"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="WWW root" />
+                               Text="{DynamicResource Loc.Sites.WwwRoot}" />
                     <TextBlock FontFamily="Consolas"
                                FontSize="11"
                                Foreground="{StaticResource StackrootTextBrush}"
@@ -183,11 +183,11 @@
                 <TextBlock FontSize="18"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Text="No domains yet" />
+                           Text="{DynamicResource Loc.Sites.NoDomains}" />
                 <TextBlock Margin="0,8,0,0"
                            HorizontalAlignment="Center"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Pick a template and add your first local development domain."
+                           Text="{DynamicResource Loc.Sites.NoDomainsHint}"
                            TextAlignment="Center" />
             </StackPanel>
         </Border>
@@ -271,7 +271,7 @@
                                                 <Button Grid.Column="1"
                                                         Margin="0,0,12,0"
                                                         Style="{StaticResource SitesPinButtonStyle}"
-                                                        ToolTip="Pin to featured"
+                                                        ToolTip="{DynamicResource Loc.Sites.PinTooltip}"
                                                         Command="{Binding TogglePinCommand}">
                                                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                                                FontSize="15"
@@ -305,7 +305,7 @@
                                                             <TextBlock FontSize="11"
                                                                        FontWeight="Bold"
                                                                        Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                                       Text="Live" />
+                                                                       Text="{DynamicResource Loc.Status.Live}" />
                                                         </Border>
 
                                                         <Border Margin="8,0,0,0">
@@ -322,20 +322,20 @@
                                                             <TextBlock FontSize="11"
                                                                        FontWeight="Bold"
                                                                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                                                                       Text="Off" />
+                                                                       Text="{DynamicResource Loc.Status.Off}" />
                                                         </Border>
 
                                                         <Button Margin="6,0,0,0"
                                                                 Style="{StaticResource StackrootInlineButtonStyle}"
                                                                 Padding="7,3"
-                                                                ToolTip="Open site in browser (HTTPS)"
-                                                                Content="https"
+                                                                ToolTip="{DynamicResource Loc.Sites.OpenHttpsTooltip}"
+                                                                Content="{DynamicResource Loc.Sites.OpenHttps}"
                                                                 Command="{Binding OpenHttpsCommand}" />
 
                                                         <Button Margin="6,0,0,0"
                                                                 Style="{StaticResource StackrootInlineButtonStyle}"
                                                                 Padding="7,3"
-                                                                ToolTip="Open site folder in Explorer"
+                                                                ToolTip="{DynamicResource Loc.Sites.OpenFolderTooltip}"
                                                                 Command="{Binding OpenFolderCommand}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Image Width="16"
@@ -346,7 +346,7 @@
                                                                        RenderOptions.BitmapScalingMode="HighQuality" />
                                                                 <TextBlock FontSize="11"
                                                                            VerticalAlignment="Center"
-                                                                           Text="Folder" />
+                                                                           Text="{DynamicResource Loc.Sites.ColFolder}" />
                                                             </StackPanel>
                                                         </Button>
 
@@ -375,7 +375,7 @@
                                                                            FontSize="11"
                                                                            FontWeight="SemiBold"
                                                                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                                                                           Text="Name" />
+                                                                           Text="{DynamicResource Loc.Sites.ColName}" />
                                                                 <TextBlock FontSize="11"
                                                                            Foreground="{StaticResource StackrootTextBrush}"
                                                                            Text="{Binding Name, Mode=OneWay}" />
@@ -406,18 +406,18 @@
 
                                                     <Button Margin="0,0,6,0"
                                                             Style="{StaticResource StackrootInlineButtonStyle}"
-                                                            Content="DB"
+                                                            Content="{DynamicResource Loc.Sites.DB}"
                                                             Command="{Binding CreateDatabaseCommand}"
                                                             Visibility="{Binding ShowDatabaseButton, Converter={StaticResource BoolToVis}}" />
 
                                                     <Button Margin="0,0,6,0"
                                                             Style="{StaticResource StackrootInlineButtonStyle}"
-                                                            Content="Edit"
+                                                            Content="{DynamicResource Loc.Common.Edit}"
                                                             Command="{Binding EditCommand}" />
 
                                                     <Button Margin="0,0,6,0"
                                                             Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                                            Content="Manage"
+                                                            Content="{DynamicResource Loc.Common.Manage}"
                                                             Command="{Binding ManageCommand}" />
 
                                                     <Button Style="{StaticResource StackrootInlineStopButtonStyle}"
@@ -443,7 +443,7 @@
                                                         </Button.Style>
                                                     </Button>
 
-                                                    <controls:OverflowMenuButton DangerLabel="Delete"
+                                                    <controls:OverflowMenuButton DangerLabel="{DynamicResource Loc.Common.Delete}"
                                                                                  DangerCommand="{Binding DeleteCommand}"
                                                                                  ButtonWidth="30"
                                                                                  ButtonHeight="26"

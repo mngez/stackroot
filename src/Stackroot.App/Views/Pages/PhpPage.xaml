@@ -18,35 +18,35 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="PHP"
+                <TextBlock Text="{DynamicResource Loc.Php.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Manage installed PHP versions and FastCGI runtime" />
+                           Text="{DynamicResource Loc.Php.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button MinWidth="118"
                         Margin="0,0,10,0"
-                        Content="Import profiles"
-                        ToolTip="Import one or more PHP profiles. Missing PHP versions are installed automatically."
+                        Content="{DynamicResource Loc.Php.ImportProfiles}"
+                        ToolTip="{DynamicResource Loc.Php.ImportTooltip}"
                         Command="{Binding ImportProfilesCommand}" />
                 <Button MinWidth="118"
                         Margin="0,0,10,0"
-                        Content="Export profiles"
-                        ToolTip="Export all installed PHP versions with settings and extensions."
+                        Content="{DynamicResource Loc.Php.ExportProfiles}"
+                        ToolTip="{DynamicResource Loc.Php.ExportTooltip}"
                         Command="{Binding ExportAllProfilesCommand}" />
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
-                        ToolTip="PHP runtime settings"
+                        ToolTip="{DynamicResource Loc.Php.RuntimeTooltip}"
                         Command="{Binding OpenRuntimeSettingsCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                FontSize="14"
                                Text="&#xE713;" />
                 </Button>
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -69,7 +69,7 @@
                 <TextBlock FontSize="16"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Text="Loading PHP data…" />
+                           Text="{DynamicResource Loc.Php.Loading}" />
                 <ProgressBar Margin="0,14,0,0"
                              Width="220"
                              Height="4"
@@ -105,13 +105,13 @@
                 <Button Grid.Column="1"
                         Width="100"
                         Margin="0,0,10,0"
-                        Content="Install"
+                        Content="{DynamicResource Loc.Common.Install}"
                         Command="{Binding InstallCommand}" />
 
                 <Button Grid.Column="2"
                         Width="140"
                         Margin="0,0,10,0"
-                        Content="Ensure FastCGI"
+                        Content="{DynamicResource Loc.Php.EnsureFastCgi}"
                         Command="{Binding EnsureFastCgiCommand}" />
             </Grid>
         </Border>
@@ -147,7 +147,7 @@
                                             <TextBlock FontSize="11"
                                                        FontWeight="Bold"
                                                        Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                       Text="Active" />
+                                                       Text="{DynamicResource Loc.Status.Active}" />
                                         </Border>
                                     </StackPanel>
                                     <TextBlock Margin="0,4,0,0"
@@ -180,13 +180,13 @@
                                             Orientation="Horizontal">
                                     <Button Width="88"
                                             Margin="0,0,6,0"
-                                            Content="Settings"
+                                            Content="{DynamicResource Loc.Common.Settings}"
                                             IsEnabled="{Binding CanInteract}"
                                             Command="{Binding DataContext.OpenVersionSettingsCommand, ElementName=PhpPageRoot}"
                                             CommandParameter="{Binding Id}" />
                                     <Button Width="96"
                                             Margin="0,0,6,0"
-                                            Content="Extensions"
+                                            Content="{DynamicResource Loc.Php.Extensions}"
                                             IsEnabled="{Binding CanInteract}"
                                             Command="{Binding DataContext.OpenExtensionsCommand, ElementName=PhpPageRoot}"
                                             CommandParameter="{Binding Id}" />
@@ -200,22 +200,22 @@
                                             Height="36"
                                             Margin="0,0,0,0"
                                             Style="{StaticResource StackrootIconButtonStyle}"
-                                            ToolTip="More actions"
+                                            ToolTip="{DynamicResource Loc.Common.MoreActions}"
                                             Tag="{Binding}"
                                             Click="OpenRowMenu_Click">
                                         <Button.ContextMenu>
                                             <ContextMenu>
-                                                <Button Content="Export profile"
+                                                <Button Content="{DynamicResource Loc.Php.ExportProfile}"
                                                         Style="{StaticResource StackrootContextMenuButtonStyle}"
                                                         Click="ExportProfileMenuItem_Click" />
-                                                <Button Content="Import profile"
+                                                <Button Content="{DynamicResource Loc.Php.ImportProfile}"
                                                         Style="{StaticResource StackrootContextMenuButtonStyle}"
                                                         Click="ImportProfileMenuItem_Click" />
                                                 <Border Height="1"
                                                         Margin="8,2"
                                                         Background="{StaticResource StackrootBorderBrush}" />
                                                 <Button Tag="uninstall"
-                                                        Content="Uninstall"
+                                                        Content="{DynamicResource Loc.Common.Uninstall}"
                                                         Style="{StaticResource StackrootContextMenuButtonStyle}"
                                                         Click="UninstallMenuItem_Click" />
                                             </ContextMenu>
@@ -242,7 +242,7 @@
             <StackPanel>
                 <DockPanel LastChildFill="False">
                     <TextBlock FontWeight="SemiBold"
-                               Text="Installing PHP versions" />
+                               Text="{DynamicResource Loc.Php.InstallingVersions}" />
                     <TextBlock DockPanel.Dock="Right"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
@@ -251,7 +251,7 @@
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Installs run in the background. You can queue another version from the list above." />
+                           Text="{DynamicResource Loc.Php.InstallingHint}" />
 
                 <ItemsControl Margin="0,10,0,0"
                               ItemsSource="{Binding PhpInstallQueue}">
@@ -278,7 +278,7 @@
                                                     Height="24"
                                                     Padding="4,0"
                                                     FontSize="11"
-                                                    Content="Cancel"
+                                                    Content="{DynamicResource Loc.Common.Cancel}"
                                                     Command="{Binding CancelCommand}"
                                                     Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}" />
                                         </StackPanel>

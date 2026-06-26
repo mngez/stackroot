@@ -1,0 +1,568 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ── Layout direction ── -->
+    <FlowDirection x:Key="Loc.FlowDirection">LeftToRight</FlowDirection>
+
+    <!-- ── Common actions ── -->
+    <sys:String x:Key="Loc.Common.Save">Speichern</sys:String>
+    <sys:String x:Key="Loc.Common.Cancel">Abbrechen</sys:String>
+    <sys:String x:Key="Loc.Common.Close">Schließen</sys:String>
+    <sys:String x:Key="Loc.Common.Refresh">Aktualisieren</sys:String>
+    <sys:String x:Key="Loc.Common.Add">+ Hinzufügen</sys:String>
+    <sys:String x:Key="Loc.Common.Edit">Bearbeiten</sys:String>
+    <sys:String x:Key="Loc.Common.Delete">Löschen</sys:String>
+    <sys:String x:Key="Loc.Common.Install">Installieren</sys:String>
+    <sys:String x:Key="Loc.Common.Uninstall">Deinstallieren</sys:String>
+    <sys:String x:Key="Loc.Common.Remove">Entfernen</sys:String>
+    <sys:String x:Key="Loc.Common.MoreActions">Weitere Aktionen</sys:String>
+    <sys:String x:Key="Loc.Common.Browse">Durchsuchen…</sys:String>
+    <sys:String x:Key="Loc.Common.OpenFolder">Ordner öffnen</sys:String>
+    <sys:String x:Key="Loc.Common.DataFolder">Datenordner</sys:String>
+    <sys:String x:Key="Loc.Common.Manage">Verwalten</sys:String>
+    <sys:String x:Key="Loc.Common.ManageArrow">Verwalten →</sys:String>
+    <sys:String x:Key="Loc.Common.Settings">Einstellungen</sys:String>
+    <sys:String x:Key="Loc.Common.Log">Protokoll</sys:String>
+    <sys:String x:Key="Loc.Common.Start">Starten</sys:String>
+    <sys:String x:Key="Loc.Common.Stop">Stoppen</sys:String>
+    <sys:String x:Key="Loc.Common.Restart">Neustarten</sys:String>
+    <sys:String x:Key="Loc.Common.Copy">Kopieren</sys:String>
+    <sys:String x:Key="Loc.Common.Open">Öffnen</sys:String>
+    <sys:String x:Key="Loc.Common.Capture">Erfassen</sys:String>
+    <sys:String x:Key="Loc.Common.Later">Später</sys:String>
+    <sys:String x:Key="Loc.Common.Export">Exportieren</sys:String>
+    <sys:String x:Key="Loc.Common.Import">Importieren</sys:String>
+    <sys:String x:Key="Loc.Common.Clear">Leeren</sys:String>
+    <sys:String x:Key="Loc.Common.Restore">Wiederherstellen</sys:String>
+    <sys:String x:Key="Loc.Common.Rebuild">nginx neu bauen</sys:String>
+    <sys:String x:Key="Loc.Common.Create">Erstellen</sys:String>
+    <sys:String x:Key="Loc.Common.Backups">Backups</sys:String>
+    <sys:String x:Key="Loc.Common.Enabled">Aktiviert</sys:String>
+    <sys:String x:Key="Loc.Common.UseDefault">Standard verwenden</sys:String>
+    <sys:String x:Key="Loc.Common.Choose">Auswählen…</sys:String>
+    <sys:String x:Key="Loc.Common.Upload">Hochladen…</sys:String>
+    <sys:String x:Key="Loc.Common.Back">← Webseiten</sys:String>
+    <sys:String x:Key="Loc.Common.StopAll">Alle stoppen</sys:String>
+    <sys:String x:Key="Loc.Common.StartAll">Alle starten</sys:String>
+    <sys:String x:Key="Loc.Common.RestartAll">Alle neustarten</sys:String>
+    <sys:String x:Key="Loc.Common.Activate">Aktivieren</sys:String>
+    <sys:String x:Key="Loc.Common.RunAgain">Erneut ausführen</sys:String>
+    <sys:String x:Key="Loc.Common.ViewLog">Protokoll anzeigen</sys:String>
+    <sys:String x:Key="Loc.Common.Dismiss">Verwerfen</sys:String>
+    <sys:String x:Key="Loc.Common.ManageCustomCommands">Eigene Befehle verwalten</sys:String>
+    <sys:String x:Key="Loc.Common.OpenSite">Webseite öffnen</sys:String>
+    <sys:String x:Key="Loc.Common.OpenAdmin">Admin-Bereich öffnen</sys:String>
+    <sys:String x:Key="Loc.Common.Disable">Deaktivieren</sys:String>
+    <sys:String x:Key="Loc.Common.Enable">Aktivieren</sys:String>
+    <sys:String x:Key="Loc.Common.Disabling">Deaktivierung läuft…</sys:String>
+    <sys:String x:Key="Loc.Common.Enabling">Aktivierung läuft…</sys:String>
+    <sys:String x:Key="Loc.Common.PinToFeatured">Anheften (Favoriten)</sys:String>
+    <sys:String x:Key="Loc.Common.RemoveFromFeatured">Von Favoriten entfernen</sys:String>
+    <sys:String x:Key="Loc.Common.KeepAliveActive">Keep-Alive aktiv</sys:String>
+
+    <!-- ── Status ── -->
+    <sys:String x:Key="Loc.Status.Running">Aktiv</sys:String>
+    <sys:String x:Key="Loc.Status.Stopped">Gestoppt</sys:String>
+    <sys:String x:Key="Loc.Status.Errors">Fehler</sys:String>
+    <sys:String x:Key="Loc.Status.Live">Live</sys:String>
+    <sys:String x:Key="Loc.Status.LiveBadge">LIVE</sys:String>
+    <sys:String x:Key="Loc.Status.Active">Aktiv</sys:String>
+    <sys:String x:Key="Loc.Status.Installed">Installiert</sys:String>
+    <sys:String x:Key="Loc.Status.InstalledReady">Installiert und bereit</sys:String>
+    <sys:String x:Key="Loc.Status.Ready">Bereit</sys:String>
+    <sys:String x:Key="Loc.Status.Off">Aus</sys:String>
+    <sys:String x:Key="Loc.Status.Capturing">Erfassen…</sys:String>
+    <sys:String x:Key="Loc.Status.LiveUpdates">Echtzeit-Updates</sys:String>
+    <sys:String x:Key="Loc.Status.NoActivity">Noch keine Aktivität</sys:String>
+    <sys:String x:Key="Loc.Status.ClearSessionLog">Sitzungsprotokoll leeren</sys:String>
+    <sys:String x:Key="Loc.Status.ThisSession">Diese Sitzung</sys:String>
+    <sys:String x:Key="Loc.Status.Activity">Aktivität</sys:String>
+
+    <!-- ── Dashboard ── -->
+    <sys:String x:Key="Loc.Dashboard.Title">Dashboard</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Subtitle">Dienste, PHP FastCGI und aktivierte Prozesse</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Loading">Dashboard wird geladen…</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServices">Noch keine aktivierten Dienste</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServicesHint">Installieren Sie Pakete und aktivieren Sie Dienste auf der Seite „Dienste“.</sys:String>
+    <sys:String x:Key="Loc.Dashboard.GoToServices">Gehe zu Diensten</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpFastCgi">PHP-FastCGI-Listener</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpListeners">PHP-Listener</sys:String>
+    <sys:String x:Key="Loc.Dashboard.EnabledProcesses">Aktivierte Prozesse</sys:String>
+    <sys:String x:Key="Loc.Dashboard.StartAll">Alle starten</sys:String>
+    <sys:String x:Key="Loc.Dashboard.QuickActions">Schnellaktionen</sys:String>
+
+    <!-- ── Services ── -->
+    <sys:String x:Key="Loc.Services.Title">Dienste</sys:String>
+    <sys:String x:Key="Loc.Services.Subtitle">Pakete installieren, Versionen wählen und Ports konfigurieren — Dienste über das Dashboard starten und stoppen</sys:String>
+    <sys:String x:Key="Loc.Services.RebuildTooltip">Website-vhosts, App-Domain und Admin-Tools neu generieren und nginx neu laden</sys:String>
+
+    <!-- ── Sites ── -->
+    <sys:String x:Key="Loc.Sites.Title">Web-Domains</sys:String>
+    <sys:String x:Key="Loc.Sites.Subtitle">Lokale Entwicklungsdomänen nach Status gruppiert</sys:String>
+    <sys:String x:Key="Loc.Sites.AddDomain">Domain hinzufügen</sys:String>
+    <sys:String x:Key="Loc.Sites.WwwRoot">WWW-Root</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomains">Noch keine Domains</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomainsHint">Wählen Sie eine Vorlage und fügen Sie Ihre erste lokale Entwicklungsdomain hinzu.</sys:String>
+    <sys:String x:Key="Loc.Sites.ColName">Name</sys:String>
+    <sys:String x:Key="Loc.Sites.ColFolder">Ordner</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttps">https</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttpsTooltip">Website im Browser öffnen (HTTPS)</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenFolderTooltip">Website-Ordner im Explorer öffnen</sys:String>
+    <sys:String x:Key="Loc.Sites.PinTooltip">Anheften (Favoriten)</sys:String>
+    <sys:String x:Key="Loc.Sites.DB">DB</sys:String>
+    <sys:String x:Key="Loc.Sites.RebuildTooltip">Website-vhosts, App-Domain und Admin-Tools neu generieren und nginx neu laden</sys:String>
+    <sys:String x:Key="Loc.Sites.HostsTooltip">hosts-Datei öffnen</sys:String>
+    <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Website-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.Sites.NoMatch">Keine Domains entsprechen den aktuellen Filtern.</sys:String>
+
+    <!-- ── Site Manage ── -->
+    <sys:String x:Key="Loc.SiteManage.Title">Site-Dashboard</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslPaths">SSL-Pfade</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslTooltip">Lokale Pfade für dev.crt und dev.key</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Terminal">Terminal</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Template">TEMPLATE</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Path">PFAD</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Https">HTTPS</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Username">Benutzername</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Password">Passwort</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ShowHidePassword">Passwort anzeigen/ausblenden</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ChangePassword">Passwort ändern</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RefreshScreenshot">Screenshot aktualisieren</sys:String>
+    <sys:String x:Key="Loc.SiteManage.OpenBrowserTooltip">Website im Browser öffnen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoProcesses">Noch keine Prozesse mit dieser Website verknüpft.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoDatabases">Noch keine Datenbanken mit dieser Website verknüpft.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoScheduled">Noch keine geplanten Aufgaben für diese Website.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ScheduledTasksHint">Cron-Befehle für diese Website — werden ausgeführt, solange Stackroot geöffnet ist.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasks">Alle Aufgaben</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Die vollständige Seite für geplante Aufgaben öffnen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CopyPassword">Passwort kopieren</sys:String>
+
+        <!-- ── PHP ── -->
+        <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
+        <sys:String x:Key="Loc.Php.Subtitle">Installierte PHP-Versionen und FastCGI-Runtime verwalten</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfiles">Profile importieren</sys:String>
+        <sys:String x:Key="Loc.Php.ImportTooltip">Ein oder mehrere PHP-Profile importieren. Fehlende PHP-Versionen werden automatisch installiert.</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfiles">Profile exportieren</sys:String>
+        <sys:String x:Key="Loc.Php.ExportTooltip">Alle installierten PHP-Versionen mit Einstellungen und Erweiterungen exportieren.</sys:String>
+        <sys:String x:Key="Loc.Php.RuntimeTooltip">PHP-Laufzeiteinstellungen</sys:String>
+        <sys:String x:Key="Loc.Php.Loading">PHP-Daten werden geladen…</sys:String>
+        <sys:String x:Key="Loc.Php.EnsureFastCgi">FastCGI sicherstellen</sys:String>
+        <sys:String x:Key="Loc.Php.Extensions">Erweiterungen</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfile">Profil exportieren</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfile">Profil importieren</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingVersions">PHP-Versionen werden installiert</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingHint">Installationen laufen im Hintergrund. Sie können eine weitere Version aus der Liste oben in die Warteschlange stellen.</sys:String>
+    
+        <!-- ── Node ── -->
+        <sys:String x:Key="Loc.Node.Title">Node</sys:String>
+        <sys:String x:Key="Loc.Node.Subtitle">nvm-windows installieren, Node-Versionen hinzufügen und die aktive Runtime wechseln</sys:String>
+        <sys:String x:Key="Loc.Node.NvmNotInstalled">Installieren Sie zuerst nvm-windows</sys:String>
+        <sys:String x:Key="Loc.Node.NvmHint">Stackroot verwendet nvm-windows zum Herunterladen und Wechseln von Node-Versionen. Nichts anderes auf dieser Seite funktioniert, bis nvm installiert ist.</sys:String>
+        <sys:String x:Key="Loc.Node.InstallNvm">nvm-windows installieren</sys:String>
+        <sys:String x:Key="Loc.Node.InstallVersion">Node-Version installieren</sys:String>
+        <sys:String x:Key="Loc.Node.InstallHint">Wählen Sie eine Version aus der Liste oder geben Sie eine benutzerdefinierte Version ein (das Dropdown-Menü wird geleert, wenn Sie mit der Eingabe beginnen).</sys:String>
+        <sys:String x:Key="Loc.Node.CustomSemver">Optionale benutzerdefinierte SemVer</sys:String>
+        <sys:String x:Key="Loc.Node.QuickInstall">Schnellinstallation (lädt herunter und aktiviert sofort)</sys:String>
+        <sys:String x:Key="Loc.Node.ActivateTooltip">Diese Node-Version herunterladen, installieren und aktivieren</sys:String>
+        <sys:String x:Key="Loc.Node.InstalledVersions">Installierte Versionen</sys:String>
+        <sys:String x:Key="Loc.Node.NoVersions">Noch keine Node-Versionen installiert. Verwenden Sie oben „Installieren“ oder einen Schnellinstallations-Chip.</sys:String>
+        <sys:String x:Key="Loc.Node.NvmSettingsTooltip">Node-Einstellungen</sys:String>
+        <sys:String x:Key="Loc.Node.RemoveNvm">nvm entfernen</sys:String>
+    
+            <!-- ── Databases ── -->
+    <sys:String x:Key="Loc.Databases.Title">Datenbanken</sys:String>
+    <sys:String x:Key="Loc.Databases.SettingsTooltip">Datenbank-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.Databases.CreateButton">+ Erstellen</sys:String>
+    <sys:String x:Key="Loc.Databases.Search">Suchen</sys:String>
+    <sys:String x:Key="Loc.Databases.Engine">Engine</sys:String>
+    <sys:String x:Key="Loc.Databases.NoMatch">Keine Datenbanken entsprechen den aktuellen Filtern.</sys:String>
+    <sys:String x:Key="Loc.Databases.ColName">Name</sys:String>
+    <sys:String x:Key="Loc.Databases.ColEngine">Engine</sys:String>
+    <sys:String x:Key="Loc.Databases.ColCreated">Erstellt</sys:String>
+    <sys:String x:Key="Loc.Databases.ColLastBackup">Letztes Backup</sys:String>
+    <sys:String x:Key="Loc.Databases.ColActions">Aktionen</sys:String>
+    <sys:String x:Key="Loc.Databases.DotEnv">.env</sys:String>
+    <sys:String x:Key="Loc.Databases.Backup">Backup</sys:String>
+
+    <!-- ── Downloads ── -->
+    <sys:String x:Key="Loc.Downloads.Title">Downloads</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColPackage">Paket</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColFile">Datei</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColSize">Größe</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColDownloaded">Heruntergeladen</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColUrl">URL</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColAction">Aktion</sys:String>
+
+    <!-- ── Logs ── -->
+    <sys:String x:Key="Loc.Logs.Title">Logs</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupOld">Alte bereinigen</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupAll">Alle bereinigen</sys:String>
+    <sys:String x:Key="Loc.Logs.Loading">Logs werden geladen…</sys:String>
+    <sys:String x:Key="Loc.Logs.NoFiles">Keine Logdateien gefunden.</sys:String>
+    <sys:String x:Key="Loc.Logs.ColCategory">Kategorie</sys:String>
+    <sys:String x:Key="Loc.Logs.ColPath">Pfad</sys:String>
+    <sys:String x:Key="Loc.Logs.ColSize">Größe</sys:String>
+    <sys:String x:Key="Loc.Logs.ColModified">Geändert</sys:String>
+    <sys:String x:Key="Loc.Logs.ColAction">Aktion</sys:String>
+
+        <!-- ── Performance ── -->
+        <sys:String x:Key="Loc.Performance.Title">Leistung</sys:String>
+        <sys:String x:Key="Loc.Performance.Sampled">Erfasst: </sys:String>
+        <sys:String x:Key="Loc.Performance.AppAndServices">App &amp; Dienste</sys:String>
+        <sys:String x:Key="Loc.Performance.TotalMemory">Gesamtspeicher: </sys:String>
+        <sys:String x:Key="Loc.Performance.PhpListeners">PHP-Listener</sys:String>
+        <sys:String x:Key="Loc.Performance.CustomProcesses">Benutzerdefinierte Prozesse</sys:String>
+        <sys:String x:Key="Loc.Performance.ColLabel">Bezeichnung</sys:String>
+        <sys:String x:Key="Loc.Performance.ColType">Typ</sys:String>
+        <sys:String x:Key="Loc.Performance.ColStatus">Status</sys:String>
+        <sys:String x:Key="Loc.Performance.ColPid">PID</sys:String>
+        <sys:String x:Key="Loc.Performance.ColCpu">CPU</sys:String>
+        <sys:String x:Key="Loc.Performance.ColMemory">Speicher</sys:String>
+        <sys:String x:Key="Loc.Performance.ColVersion">Version</sys:String>
+        <sys:String x:Key="Loc.Performance.ColEndpoint">Endpunkt</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipOpen">Leistungsseite öffnen</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipRefresh">Metriken aktualisieren</sys:String>
+    
+        <!-- ── Processes ── -->
+        <sys:String x:Key="Loc.Processes.Title">Prozesse</sys:String>
+        <sys:String x:Key="Loc.Processes.Subtitle">Zentraler Supervisor für anwendungsweite und websitegebundene Hintergrundbefehle</sys:String>
+        <sys:String x:Key="Loc.Processes.SiteFilter">Website-Filter:</sys:String>
+        <sys:String x:Key="Loc.Processes.StartAllEnabled">Alle aktivierten starten</sys:String>
+        <sys:String x:Key="Loc.Processes.NoMatch">Keine Prozesse entsprechen den aktuellen Filtern.</sys:String>
+        <sys:String x:Key="Loc.Processes.AddProcess">+ Prozess hinzufügen</sys:String>
+        <sys:String x:Key="Loc.Processes.PinTooltip">An Favoriten anheften</sys:String>
+    
+
+            <!-- ── Scheduled Tasks ── -->
+    <sys:String x:Key="Loc.ScheduledTasks.Title">Geplante Aufgaben</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.Subtitle">Cron-basierte geplante Befehle — werden ausgeführt, solange Stackroot geöffnet ist.</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.SiteFilter">Website-Filter:</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.RunNowTooltip">Jetzt ausführen</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.EditTooltip">Bearbeiten</sys:String>
+
+    <!-- ── Tools ── -->
+    <sys:String x:Key="Loc.Tools.Title">Werkzeuge</sys:String>
+    <sys:String x:Key="Loc.Tools.Subtitle">CLI-Dienstprogramme, Admin-UIs — über Stackroot installieren und aktualisieren.</sys:String>
+    <sys:String x:Key="Loc.Tools.CheckUpdates">Nach Updates suchen</sys:String>
+    <sys:String x:Key="Loc.Tools.InstallTooltip">Paket installieren</sys:String>
+    <sys:String x:Key="Loc.Tools.VersionsTooltip">Paketversionen</sys:String>
+    <sys:String x:Key="Loc.Tools.SettingsTooltip">Einstellungen</sys:String>
+    <sys:String x:Key="Loc.Tools.OpenTooltip">Im Browser öffnen</sys:String>
+    <sys:String x:Key="Loc.Tools.DismissTooltip">Verwerfen</sys:String>
+
+        <!-- ── General Settings ── -->
+        <sys:String x:Key="Loc.GeneralSettings.Title">Allgemeine Einstellungen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Subtitle">Basis-Pfade, App-Verhalten und Standard-Umgebungen konfigurieren</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AutoSave">Änderungen werden automatisch gespeichert.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Aus Backup wiederherstellen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AppDomain">App-Domain</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW-Pfad</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Bevorzugter Editor</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Benutzerdefinierter Editor-Pfad</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Schließverhalten</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetention">Log-Aufbewahrung (Tage)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetentionHint">Auf 0 setzen, um die automatische Bereinigung zu deaktivieren.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPath">Von Stackroot verwaltete php/composer/node-Shims in PATH verwenden (Opt-in)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPathHint">Wenn deaktiviert, überschreibt Stackroot Ihre Systembefehle für php, composer oder node nicht.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LaunchAtStartup">Stackroot beim Windows-Start ausführen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ShowMetrics">RAM und CPU in der Shell-Kopfzeile anzeigen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CpuEvery">CPU alle</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Sec">Sek.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.MetricsHint">Leichte Zusammenfassung mit einem Link zur Leistungsseite. Deaktivieren für eine sauberere Kopfzeile.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Thumbnails">Website-Vorschaubilder aktivieren (lädt bei der ersten Verwendung den ~300 MB Chromium-Browser herunter)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ThumbnailsHint">Wenn aktiviert, nimmt ein Headless-Browser Screenshots von Ihren Websites für das Dashboard auf.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslCa">Lokaler HTTPS-CA für alle Windows-Benutzer vertrauen (erfordert Administrator-Zulassung)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslHint">Wenn deaktiviert, installiert „SSL vertrauen“ das Zertifikat nur für Ihr Benutzerkonto — keine Administrator-Eingabeaufforderung.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSsl">SSL vertrauen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RemoveOldCas">Alte CAs entfernen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.SslWarning">Wenn Windows mehrere Einträge für Stackroot Local CA anzeigt, verwenden Sie „Alte CAs entfernen“, um nur das aktuelle Entwicklungszertifikat zu behalten.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DiagnosticsLog">Diagnoseprotokoll aktivieren (Entwicklungsbericht)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Language">Sprache</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DownloadCache">Download-Cache-Pfad</sys:String>
+    
+            <!-- ── Dialogs ── -->
+    <sys:String x:Key="Loc.AddProcess.Title">Einen überwachten Hintergrundprozess konfigurieren.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Name">Name</sys:String>
+    <sys:String x:Key="Loc.AddProcess.LinkedSite">Verknüpfte Website (optional)</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolder">Projektordner</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolderHint">Absolutes Projektverzeichnis, wenn keine Website verknüpft ist.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDir">Arbeitsverzeichnis</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDirHint">Relativ zum Projektordner oder ein absoluter Pfad, der diesen überschreibt.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Runtime">Runtime</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersion">PHP-Version</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersionHint">Wird für PHP- und Composer-Runtimes verwendet. Standardmäßig die PHP-Version der verknüpften Website.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Command">Befehl</sys:String>
+    <sys:String x:Key="Loc.AddProcess.CommandHint">Shell: vollständiger Befehl. Andere Runtimes: Argumente nach der ausführbaren Datei.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelay">Neustartverzögerung (Sekunden)</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelayHint">Wartezeit nach dem Beenden vor dem Neustart. Leer lassen für Standard (2s, dann zunehmender Backoff).</sys:String>
+    <sys:String x:Key="Loc.AddProcess.AutoStart">Automatisch mit Stackroot starten</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Featured">Hervorgehoben (oben anheften)</sys:String>
+
+    <sys:String x:Key="Loc.AddSite.Title">Web-Domain hinzufügen</sys:String>
+    <sys:String x:Key="Loc.AddSite.Subtitle">Eine lokale Entwicklungs-Domain mit einer Projektvorlage erstellen.</sys:String>
+    <sys:String x:Key="Loc.AddSite.Template">Vorlage</sys:String>
+    <sys:String x:Key="Loc.AddSite.SiteName">Website-Name</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainName">Domain-Name</sys:String>
+    <sys:String x:Key="Loc.AddSite.SubdomainTooltip">Subdomain (z. B. meineapp)</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainAliases">Domain-Aliase (optional)</sys:String>
+    <sys:String x:Key="Loc.AddSite.AliasesHint">Ein Alias pro Zeile (z. B. dieselbeapp.test oder *.app.test). Wildcard-Aliase funktionieren in nginx; wörtliche Namen werden zu Hosts und HTTPS hinzugefügt.</sys:String>
+    <sys:String x:Key="Loc.AddSite.PhpBackend">Backend (PHP)</sys:String>
+    <sys:String x:Key="Loc.AddSite.NodeJs">Node.js</sys:String>
+    <sys:String x:Key="Loc.AddSite.DocumentRoot">Dokumentenverzeichnis</sys:String>
+    <sys:String x:Key="Loc.AddSite.SetByTemplate">Durch Vorlage festgelegt</sys:String>
+    <sys:String x:Key="Loc.AddSite.Folder">Ordner</sys:String>
+    <sys:String x:Key="Loc.AddSite.CreateUnderWww">Unter WWW erstellen (Einstellungen)</sys:String>
+    <sys:String x:Key="Loc.AddSite.ExistingFolder">Existierender Ordner</sys:String>
+    <sys:String x:Key="Loc.AddSite.GoToDashboard">Nach der Erstellung zum Website-Dashboard wechseln</sys:String>
+
+    <sys:String x:Key="Loc.ChangePassword.Title">Admin-Passwort ändern</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Subtitle">Geben Sie ein neues Passwort für den WordPress-Admin-Benutzer ein.</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Change">Ändern</sys:String>
+
+    <sys:String x:Key="Loc.CreateDatabase.Title">Datenbank erstellen</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Subtitle">Registrieren Sie eine lokale SQL-Datenbank für die Entwicklung.</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.DatabaseName">Datenbankname</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Engine">Engine</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.LinkToSite">Mit Website verknüpfen (optional)</sys:String>
+
+    <sys:String x:Key="Loc.CronTask.Title">Neue geplante Aufgabe</sys:String>
+    <sys:String x:Key="Loc.CronTask.Label">Bezeichnung</sys:String>
+    <sys:String x:Key="Loc.CronTask.LinkedSite">Verknüpfte Website (optional)</sys:String>
+    <sys:String x:Key="Loc.CronTask.Command">Befehl</sys:String>
+    <sys:String x:Key="Loc.CronTask.WorkingDir">Arbeitsverzeichnis</sys:String>
+    <sys:String x:Key="Loc.CronTask.Schedule">Zeitplan</sys:String>
+    <sys:String x:Key="Loc.CronTask.Minute">Minute</sys:String>
+    <sys:String x:Key="Loc.CronTask.Hour">Stunde</sys:String>
+    <sys:String x:Key="Loc.CronTask.Day">Tag</sys:String>
+    <sys:String x:Key="Loc.CronTask.Month">Monat</sys:String>
+    <sys:String x:Key="Loc.CronTask.Weekday">Wochentag</sys:String>
+    <sys:String x:Key="Loc.CronTask.CaptureLog">Ausgabe in Logdatei erfassen</sys:String>
+
+    <sys:String x:Key="Loc.CustomCommands.Title">Benutzerdefinierte Befehle</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ImportTooltip">Befehle aus einer von einer anderen Website exportierten Datei hinzufügen</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ExportTooltip">Befehle in einer Datei speichern, die auf einer anderen Website importiert werden kann</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Label">Bezeichnung</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Command">Befehl</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ButtonColors">Schaltflächenfarben (optional)</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorText">Text</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorBackground">Hintergrund</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ResetColors">Farben auf Standard zurücksetzen</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Icon">Symbol (optional)</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RemoveIcon">Symbol entfernen</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Preview">Vorschau</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Select">Wählen Sie einen Befehl aus oder fügen Sie einen neuen hinzu.</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RunningWarning">Laufende Befehle können nicht gelöscht werden. Stoppen Sie zuerst den Befehl.</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseBackups.Subtitle">Wählen Sie eine Backup-Datei aus und stellen Sie diese in der entsprechenden Datenbank wieder her.</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColFile">Datei</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColDatabase">Datenbank</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColEngine">Engine</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColCreated">Erstellt</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColSize">Größe</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseEnv.Subtitle">Kopieren Sie diese Zeilen in Ihre .env-Datei der Website.</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseSettings.Title">Datenbank-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Subtitle">Anmeldedaten aus den Einstellungen werden automatisch auf MySQL/MariaDB angewendet. Passwörter werden für die lokale Entwicklung im Klartext angezeigt.</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MysqlCredentials">MySQL-Anmeldedaten</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MariaDbCredentials">MariaDB-Anmeldedaten</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Username">Benutzername</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Password">Passwort</sys:String>
+
+    <sys:String x:Key="Loc.DevSslPaths.Title">Lokale SSL-Pfade</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Subtitle">Stackroot Entwicklungs-Zertifikatsdateien (PEM). Verwenden Sie diese Pfade in Node-Servern oder Ihrer .env.</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Certificate">Zertifikat (dev.crt)</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.PrivateKey">Privater Schlüssel (dev.key)</sys:String>
+
+    <sys:String x:Key="Loc.Downloads.NoActive">Keine aktiven Downloads</sys:String>
+    <sys:String x:Key="Loc.Downloads.RunInBackground">Im Hintergrund ausführen</sys:String>
+    <sys:String x:Key="Loc.Downloads.CloseTooltip">Schließen</sys:String>
+
+    <sys:String x:Key="Loc.EditSite.Title">Web-Domain bearbeiten</sys:String>
+    <sys:String x:Key="Loc.EditSite.Subtitle">Vorlage, PHP-Backend, HTTPS-Verhalten und Entwicklungs-Proxies aktualisieren.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Domain">Domain</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainFixed">Domain kann nicht geändert werden — zum Umbenennen löschen und neu hinzufügen.</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainAliases">Domain-Aliase (optional)</sys:String>
+    <sys:String x:Key="Loc.EditSite.AliasesHint">Ein Alias pro Zeile (z. B. dieselbeapp.test oder *.app.test). Wildcard-Aliase funktionieren in nginx; wörtliche Namen werden zu Hosts und HTTPS hinzugefügt.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Folder">Ordner</sys:String>
+    <sys:String x:Key="Loc.EditSite.FolderHint">Das nginx-Dokumentenverzeichnis folgt diesem Ordner und dem Vorlagen-Dokumentenverzeichnis.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Template">Vorlage</sys:String>
+    <sys:String x:Key="Loc.EditSite.SiteName">Website-Name</sys:String>
+    <sys:String x:Key="Loc.EditSite.PhpBackend">Backend (PHP)</sys:String>
+    <sys:String x:Key="Loc.EditSite.DocumentRoot">Dokumentenverzeichnis</sys:String>
+    <sys:String x:Key="Loc.EditSite.VhostEnabled">Aktiviert (nginx vhost + Hosts-Eintrag)</sys:String>
+    <sys:String x:Key="Loc.EditSite.ForceHttps">HTTPS erzwingen (HTTP → HTTPS umleiten)</sys:String>
+    <sys:String x:Key="Loc.EditSite.HttpsHint">Wenn deaktiviert, wird die Website nur über HTTP bereitgestellt — verhindert das automatische Browser-Upgrade auf HTTPS.</sys:String>
+    <sys:String x:Key="Loc.EditSite.DevProxies">Entwicklungs-Proxies</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddRegexProxy">Regex-Proxy hinzufügen</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddProxy">Proxy hinzufügen</sys:String>
+    <sys:String x:Key="Loc.EditSite.NoProxies">Noch keine Proxies — fügen Sie einen hinzu, um z. B. /vite/ an einen lokalen Entwicklungs-Server weiterzuleiten.</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyEnabled">Aktiviert</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyName">Name</sys:String>
+    <sys:String x:Key="Loc.EditSite.MatchType">Übereinstimmungstyp</sys:String>
+    <sys:String x:Key="Loc.EditSite.LocationPattern">Location-Muster</sys:String>
+    <sys:String x:Key="Loc.EditSite.PatternHint">Fügen Sie nur das Muster ein (z. B. ^/pfad$), nicht die vollständige nginx-location-Zeile.</sys:String>
+    <sys:String x:Key="Loc.EditSite.WebSocket">WebSocket-Unterstützung</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyDirectives">Proxy-Direktiven</sys:String>
+    <sys:String x:Key="Loc.EditSite.ResetDefaults">Standardwerte zurücksetzen</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddDirective">Direktive hinzufügen</sys:String>
+
+    <sys:String x:Key="Loc.FirstRun.OpenStackroot">Stackroot öffnen</sys:String>
+
+    <sys:String x:Key="Loc.Laravel.Title">Laravel installieren</sys:String>
+    <sys:String x:Key="Loc.Laravel.Subtitle">Konfigurieren Sie Ihr Laravel-Projekt. Alle Felder sind vorausgefüllt.</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseName">Datenbankname</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseEngine">Datenbank-Engine</sys:String>
+    <sys:String x:Key="Loc.Laravel.StarterKit">Starter-Kit</sys:String>
+    <sys:String x:Key="Loc.Laravel.Stack">Stack</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunNpmBuild">Führen Sie nach Composer „npm install &amp;&amp; npm run build“ aus</sys:String>
+    <sys:String x:Key="Loc.Laravel.NpmHint">Erfordert Node.js. Deaktivieren Sie dies, wenn Sie es lieber manuell ausführen möchten.</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunMigrations">Datenbankmigrationen ausführen (php artisan migrate)</sys:String>
+
+    <sys:String x:Key="Loc.Mailpit.Title">Mailpit-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.Mailpit.Subtitle">Web-UI zum Abfangen ausgehender E-Mails von PHP.</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoRestart">Automatisch neu starten, wenn es stoppt (Keep alive)</sys:String>
+    <sys:String x:Key="Loc.Mailpit.SmtpPort">SMTP-Port</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPort">Web-UI-Port (intern)</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPortHint">Über Proxy unter /mail auf Ihrer App-Domain bereitgestellt — nur ändern, wenn der Port belegt ist.</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoStart">Automatisch mit Stackroot starten</sys:String>
+
+    <sys:String x:Key="Loc.NginxHttp.Title">Nginx HTTP-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Subtitle">Optimieren Sie die Standardeinstellungen der Haupt-nginx.conf. Website-vhosts in sites-enabled werden weiterhin von Stackroot aktualisiert.</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManualControl">Manuelle Steuerung</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManageManually">Haupt-nginx.conf manuell verwalten</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.OpenConfig">nginx.conf öffnen</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WorkersAndEvents">Worker und Events</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.LimitsAndHashing">Limits und Hashing</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Transport">Transport</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Gzip">Gzip</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.EnableGzip">Gzip-Komprimierung aktivieren</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Logging">Protokollierung</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WriteAccessLog">Zugriffsprotokoll schreiben</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.PhpTimeouts">PHP / FastCGI-Timeouts</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.DevProxyTimeouts">Entwicklungs-Proxy-Timeouts (Vite, etc.)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.MultiAccept">multi_accept on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Sendfile">sendfile on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.TcpNoPush">tcp_nopush on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ResetDefaults">Optimierung auf empfohlene Standardwerte zurücksetzen</sys:String>
+
+    <sys:String x:Key="Loc.NodeSettings.Title">Node-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.Subtitle">Konfigurieren Sie die npm-Registry und das nvm-Verhalten für Website-Prozesse.</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.NpmRegistry">npm-Registry</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.AutoNvmrc">Automatisch .nvmrc verwenden, wenn vorhanden (autoUseNvmrc)</sys:String>
+
+    <sys:String x:Key="Loc.PackageInstall.Title">Mit PHP installieren</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.NoPhp">Keine kompatiblen PHP-Versionen im Katalog gefunden.</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.PhpVersion">PHP-Version (erforderlich)</sys:String>
+
+    <sys:String x:Key="Loc.PackageVersions.NoVersions">Keine Versionen im Katalog.</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Installed">Installiert</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Active">Aktiv</sys:String>
+
+    <sys:String x:Key="Loc.PhpExtensions.Subtitle">Schalten Sie Erweiterungen um, die in ext/ enthalten oder über PECL installiert sind. Erweiterungen, die einen Stackroot-Dienst benötigen, bleiben deaktiviert, bis dieser Dienst installiert ist.</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.FilterTooltip">Nach Erweiterungsname oder -beschreibung filtern</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.EnableAllReady">Alle bereitstehenden aktivieren</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.ResetToDefaults">Auf Standardwerte zurücksetzen</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.InstallPecl">PECL installieren</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.PeclHint">Erweiterungen werden hier nur angezeigt, wenn ein Windows-Build für diese PHP-Version existiert.</sys:String>
+
+    <sys:String x:Key="Loc.PhpMyAdmin.Title">phpMyAdmin-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.Subtitle">Web-UI für MySQL / MariaDB.</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.UrlPath">URL-Pfad</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.PhpVersion">PHP-Version</sys:String>
+
+    <sys:String x:Key="Loc.PhpRedisAdmin.Title">phpRedisAdmin-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">Verbindet sich mit Redis unter Verwendung von Host/Port aus Dienste → Redis.</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL-Pfad</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP-Version</sys:String>
+
+    <sys:String x:Key="Loc.PhpRuntime.Title">Erweitert — PHP-Runtime</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.Subtitle">Jede installierte Version führt einen Pool von php-cgi-Workern auf einem Block von Ports aus (Basisport + Offset). Dies müssen Sie selten ändern.</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI-Host</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiPort">FastCGI-Basisport</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersPerVersion">Worker pro Version (1–8)</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersHint">Das Ausführen von 2+ php-cgi-Workern ermöglicht es nginx, die Bereitstellung fortzusetzen, während ein Worker recycelt oder neu startet — keine abgebrochenen Anfragen.</sys:String>
+
+    <sys:String x:Key="Loc.PhpVersionSettings.Subtitle">Optimieren Sie die php.ini-Standardwerte für diese PHP-Version. Erweiterungen werden weiterhin über die PHP-Seite verwaltet.</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManualControl">Manuelle Steuerung</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManageManually">php.ini manuell verwalten</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OpenIni">php.ini öffnen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.RuntimeLimits">Laufzeitbeschränkungen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.InputAndSockets">Eingabe und Sockets</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.PathCache">Pfad-Cache</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OPcache">OPcache</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.EnableOPcache">OPcache aktivieren</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ErrorsAndWarnings">Fehler und Warnungen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.DisplayErrors">Fehler im Browser anzeigen (display_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.LogErrors">Fehler in Datei protokollieren (log_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideWarnings">PHP-Warnungen ausblenden</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideDeprecations">Veraltungshinweise ausblenden</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ResetDefaults">Standardwerte zurücksetzen</sys:String>
+
+    <sys:String x:Key="Loc.PickDatabase.Title">Zieldatenbank auswählen</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Subtitle">Wählen Sie aus, in welche Datenbank dieses Backup wiederhergestellt werden soll:</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Replace">Datenbank ersetzen (vor dem Wiederherstellen löschen und neu erstellen)</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Aus: in die bestehende Datenbank importieren. Ein: Zieldatenbank zuerst bereinigen, dann wiederherstellen.</sys:String>
+
+    <sys:String x:Key="Loc.ServiceSettings.Subtitle">Dienst aktivieren, Autostart wählen und Netzwerkeinstellungen konfigurieren.</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoStart">Automatisch mit Stackroot starten</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoRestart">Automatisch neu starten, wenn es stoppt (Keep alive)</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.ActivePackage">Aktive Paketversion</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.PackageHint">Ändern Sie die aktive Version über die Schaltfläche für Paketversionen auf der Seite „Dienste“.</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Host">Host</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Port">Port</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.SslPort">SSL-Port</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.EnableHttps">HTTPS aktivieren (SSL)</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.HttpPerformance">HTTP-Leistungseinstellungen…</sys:String>
+
+    <sys:String x:Key="Loc.SiteProcessLog.LiveUpdates">Live-Updates</sys:String>
+
+    <sys:String x:Key="Loc.SiteSettings.Title">Website-Einstellungen</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.Subtitle">Steuern Sie, wie Stackroot die lokale Domainauflösung verwaltet.</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHosts">Windows-hosts-Datei automatisch für aktivierte Domains aktualisieren</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHostsHint">Wenn aktiviert, schreibt Stackroot 127.0.0.1-Einträge für Ihre lokalen Domains. Erfordert Administratorrechte, falls der Zugriff verweigert wird.</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Title">Stackroot DNS-Einstellungen</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Subtitle">Routet konfigurierte Suffixe zum Stackroot-DNS auf 127.0.0.1:53. Lokale Namen werden auf die unten angegebene IP aufgelöst (Standard 127.0.0.1).</sys:String>
+    <sys:String x:Key="Loc.TestDns.EnabledHint">Deaktivieren und Speichern, um den Hilfsdienst zu stoppen und NRPT-Regeln zu entfernen. Windows fordert möglicherweise einmalig eine Administrator-Zulassung an.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIp">Auf IP auflösen</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIpHint">Für lokale Websites zurückgegebene IPv4 oder IPv6 (Standard 127.0.0.1). DNS lauscht weiterhin auf 127.0.0.1:53; die hosts-Datei verwendet ebenfalls diese IP.</sys:String>
+    <sys:String x:Key="Loc.TestDns.AutoStart">Automatisch mit Stackroot starten</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueries">DNS-Abfragen in Datei protokollieren</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueriesHint">Schreibt jede Abfrage in Logs\test-dns-queries.jsonl. Standardmäßig deaktiviert.</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHeader">Suffixe und Wiederherstellung</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesLabel">Suffixe (eines pro Zeile, beginnend mit einem Punkt):</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHint">Beispiele: .test, .dev, .com — öffentliche Suffixe betreffen echte Domains; nur verwenden, wenn erforderlich.</sys:String>
+    <sys:String x:Key="Loc.TestDns.IfInternetStops">Wenn das Internet nicht mehr funktioniert</sys:String>
+    <sys:String x:Key="Loc.TestDns.RecoveryHint">Entfernt StackrootDnsHelper und alle Stackroot-NRPT-Regeln:</sys:String>
+    <sys:String x:Key="Loc.TestDns.CopyCleanup">Bereinigungsbefehl kopieren</sys:String>
+
+    <sys:String x:Key="Loc.WordPress.Title">WordPress installieren</sys:String>
+    <sys:String x:Key="Loc.WordPress.Subtitle">Konfigurieren Sie Ihre WordPress-Website. Alle Felder sind vorausgefüllt.</sys:String>
+    <sys:String x:Key="Loc.WordPress.SiteTitle">Website-Titel</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminUsername">Admin-Benutzername</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminPassword">Admin-Passwort</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminEmail">Admin-E-Mail</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseName">Datenbankname</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseEngine">Datenbank-Engine</sys:String>
+
+    <!-- ── Service and process status labels ── -->
+    <sys:String x:Key="Loc.Status.Error">Fehler</sys:String>
+    <sys:String x:Key="Loc.Status.Starting">Startet…</sys:String>
+    <sys:String x:Key="Loc.Status.Restarting">Neu starten…</sys:String>
+    <sys:String x:Key="Loc.Status.Recovering">Wiederherstellung…</sys:String>
+    <sys:String x:Key="Loc.Status.Installing">Installiert wird…</sys:String>
+    <sys:String x:Key="Loc.Status.DisabledInSettings">In Einstellungen deaktiviert</sys:String>
+    <sys:String x:Key="Loc.Status.NotInstalled">Nicht installiert</sys:String>
+    <sys:String x:Key="Loc.Status.Disabled">Deaktiviert</sys:String>
+    <sys:String x:Key="Loc.Status.Unavailable">Nicht verfügbar</sys:String>
+
+
+    <!-- ── Main Window (missing keys) ── -->
+    <sys:String x:Key="Loc.MainWindow.TrustCertificate">Zertifikat vertrauen</sys:String>
+    <sys:String x:Key="Loc.MainWindow.UpdateNow">Jetzt aktualisieren</sys:String>
+    <sys:String x:Key="Loc.MainWindow.OpenPerformanceTooltip">Leistungsseite öffnen</sys:String>
+    <sys:String x:Key="Loc.MainWindow.RefreshMetricsTooltip">Metriken aktualisieren</sys:String>
+</ResourceDictionary>

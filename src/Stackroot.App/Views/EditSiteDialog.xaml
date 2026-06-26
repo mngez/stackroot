@@ -4,7 +4,8 @@
         xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
         xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
         xmlns:vm="clr-namespace:Stackroot.App.ViewModels"
-        Title="Edit web domain"
+        Title="{DynamicResource Loc.EditSite.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="580"
         MinWidth="540"
         SizeToContent="Height"
@@ -107,10 +108,10 @@
         <StackPanel Grid.Row="0">
             <TextBlock FontSize="20"
                        FontWeight="SemiBold"
-                       Text="Edit web domain" />
+                       Text="{DynamicResource Loc.EditSite.Title}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Update template, PHP backend, HTTPS behavior, and dev proxies."
+                       Text="{DynamicResource Loc.EditSite.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -132,31 +133,32 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Domain" />
+                           Text="{DynamicResource Loc.EditSite.Domain}" />
                 <TextBlock FontFamily="Consolas" Text="{Binding Domain}" />
                 <TextBlock Margin="0,2,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Domain cannot be changed — delete and re-add to rename." />
+                           Text="{DynamicResource Loc.EditSite.DomainFixed}" />
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Domain aliases (optional)" />
+                           Text="{DynamicResource Loc.EditSite.DomainAliases}" />
                 <TextBox MinHeight="72"
                          Padding="10,6"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Consolas"
+                         FlowDirection="LeftToRight"
                          Text="{Binding DomainAliasesText, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="One alias per line (e.g. sameapp.test or *.app.test). Wildcard aliases work in nginx; literal names are added to hosts and HTTPS."
+                           Text="{DynamicResource Loc.EditSite.AliasesHint}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Folder" />
+                           Text="{DynamicResource Loc.EditSite.Folder}" />
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -165,6 +167,7 @@
                     <TextBox Grid.Column="0"
                              Padding="10,6"
                              FontFamily="Consolas"
+                             FlowDirection="LeftToRight"
                              Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
@@ -178,19 +181,19 @@
                                    Source="{x:Static helpers:StackrootImages.FolderIcon}"
                                    RenderOptions.BitmapScalingMode="HighQuality" />
                             <TextBlock VerticalAlignment="Center"
-                                       Text="Browse…" />
+                                       Text="{DynamicResource Loc.Common.Browse}" />
                         </StackPanel>
                     </Button>
                 </Grid>
                 <TextBlock Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="nginx document root follows this folder and the template doc root."
+                           Text="{DynamicResource Loc.EditSite.FolderHint}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,16,0,8"
                            FontWeight="SemiBold"
-                           Text="Template" />
+                           Text="{DynamicResource Loc.EditSite.Template}" />
                 <ItemsControl ItemsSource="{Binding TemplateCards}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -227,13 +230,13 @@
 
                 <TextBlock Margin="0,8,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Site name" />
+                           Text="{DynamicResource Loc.EditSite.SiteName}" />
                 <TextBox Padding="10,6"
                          Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Backend (PHP)" />
+                           Text="{DynamicResource Loc.EditSite.PhpBackend}" />
                 <ComboBox Padding="8,4"
                           ItemsSource="{Binding PhpVersions}"
                           DisplayMemberPath="Label"
@@ -243,25 +246,26 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Document root" />
+                           Text="{DynamicResource Loc.EditSite.DocumentRoot}" />
                 <TextBlock FontFamily="Consolas"
                            Text="{Binding DocumentRootLabel}" />
 
                 <CheckBox Margin="0,14,0,0"
-                          Content="Enabled (nginx vhost + hosts entry)"
+                          Content="{DynamicResource Loc.EditSite.VhostEnabled}"
                           IsChecked="{Binding Enabled}" />
                 <CheckBox Margin="0,10,0,0"
-                          Content="Force HTTPS (redirect HTTP → HTTPS)"
+                          Content="{DynamicResource Loc.EditSite.ForceHttps}"
                           IsChecked="{Binding ForceHttps}" />
                 <TextBlock Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="When off, the site is served over HTTP only — avoids browser auto-upgrade to HTTPS."
+                           Text="{DynamicResource Loc.EditSite.HttpsHint}"
                            TextWrapping="Wrap" />
 
                 <DockPanel Margin="0,18,0,8" LastChildFill="False">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Dev proxies" />
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{DynamicResource Loc.EditSite.DevProxies}" />
                         <TextBlock Margin="0,4,0,0"
                                    FontSize="12"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -271,10 +275,10 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button Margin="0,0,8,0"
                                 Padding="10,4"
-                                Content="Add regex proxy"
+                                Content="{DynamicResource Loc.EditSite.AddRegexProxy}"
                                 Command="{Binding AddRegexProxyCommand}" />
                         <Button Padding="10,4"
-                                Content="Add proxy"
+                                Content="{DynamicResource Loc.EditSite.AddProxy}"
                                 Command="{Binding AddProxyCommand}" />
                     </StackPanel>
                 </DockPanel>
@@ -282,7 +286,7 @@
                 <TextBlock Margin="0,0,0,8"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="No proxies yet — add one to route e.g. /vite/ to a local dev server."
+                           Text="{DynamicResource Loc.EditSite.NoProxies}"
                            Visibility="{Binding ShowEmptyProxies, Converter={StaticResource BoolToVis}}" />
 
                 <ItemsControl ItemsSource="{Binding DevProxies}">
@@ -308,21 +312,22 @@
                                 <StackPanel Margin="12,0,12,12">
                                     <DockPanel Margin="0,0,0,8" LastChildFill="False">
                                         <CheckBox DockPanel.Dock="Left"
-                                                  Content="Enabled"
+                                                  Content="{DynamicResource Loc.EditSite.ProxyEnabled}"
                                                   IsChecked="{Binding Enabled}" />
                                         <controls:OverflowMenuButton DockPanel.Dock="Right"
-                                                                     DangerLabel="Remove"
+                                                                     DangerLabel="{DynamicResource Loc.Common.Remove}"
                                                                      DangerCommand="{Binding RemoveCommand}"
                                                                      ButtonWidth="30"
                                                                      ButtonHeight="28" />
                                     </DockPanel>
-                                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="Name" />
+                                    <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{DynamicResource Loc.EditSite.ProxyName}" />
                                     <TextBox Margin="0,4,0,0"
                                              Padding="8,4"
                                              Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
                                     <TextBlock Margin="0,8,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Match type" />
+                                               Text="{DynamicResource Loc.EditSite.MatchType}" />
                                     <ComboBox Margin="0,4,0,0"
                                               Padding="8,4"
                                               ItemsSource="{x:Static vm:DevProxyRowViewModel.LocationKindOptions}"
@@ -330,10 +335,11 @@
                                               SelectedItem="{Binding SelectedLocationKindOption}" />
                                     <TextBlock Margin="0,8,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Location pattern" />
+                                               Text="{DynamicResource Loc.EditSite.LocationPattern}" />
                                     <TextBox Margin="0,4,0,0"
                                              Padding="8,4"
                                              AcceptsReturn="False"
+                                             FlowDirection="LeftToRight"
                                              Text="{Binding LocationPath, UpdateSourceTrigger=PropertyChanged}" />
                                     <TextBlock Margin="0,4,0,0"
                                                FontSize="11"
@@ -343,7 +349,7 @@
                                     <TextBlock Margin="0,2,0,0"
                                                FontSize="11"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Paste only the pattern (e.g. ^/path$), not the full nginx location line."
+                                               Text="{DynamicResource Loc.EditSite.PatternHint}"
                                                TextWrapping="Wrap" />
                                     <TextBlock Margin="0,6,0,0"
                                                FontSize="11"
@@ -352,17 +358,18 @@
                                                Text="{Binding NginxLocationPreview}"
                                                TextWrapping="Wrap" />
                                     <CheckBox Margin="0,8,0,0"
-                                              Content="WebSocket support"
+                                              Content="{DynamicResource Loc.EditSite.WebSocket}"
                                               IsChecked="{Binding Websocket}" />
                                     <DockPanel Margin="0,12,0,0" LastChildFill="False">
-                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="Proxy directives" />
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{DynamicResource Loc.EditSite.ProxyDirectives}" />
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                             <Button Margin="0,0,8,0"
                                                     Padding="8,2"
-                                                    Content="Reset defaults"
+                                                    Content="{DynamicResource Loc.EditSite.ResetDefaults}"
                                                     Command="{Binding ResetDirectivesCommand}" />
                                             <Button Padding="8,2"
-                                                    Content="Add directive"
+                                                    Content="{DynamicResource Loc.EditSite.AddDirective}"
                                                     Command="{Binding AddDirectiveCommand}" />
                                         </StackPanel>
                                     </DockPanel>
@@ -378,16 +385,18 @@
                                                     <Button DockPanel.Dock="Right"
                                                             Margin="8,0,0,0"
                                                             Padding="8,2"
-                                                            Content="Remove"
+                                                            Content="{DynamicResource Loc.Common.Delete}"
                                                             Command="{Binding RemoveCommand}" />
                                                     <TextBox Margin="0,0,6,0"
                                                              DockPanel.Dock="Left"
                                                              Width="180"
                                                              Padding="6,3"
                                                              FontFamily="Consolas"
+                                                             FlowDirection="LeftToRight"
                                                              Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}" />
                                                     <TextBox Padding="6,3"
                                                              FontFamily="Consolas"
+                                                             FlowDirection="LeftToRight"
                                                              Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
                                                 </DockPanel>
                                             </DataTemplate>
@@ -405,10 +414,10 @@
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Button Width="88"
                         Margin="0,0,8,0"
-                        Content="Cancel"
+                        Content="{DynamicResource Loc.Common.Cancel}"
                         Command="{Binding CloseCommand}" />
                 <Button Width="88"
-                        Content="Save"
+                        Content="{DynamicResource Loc.Common.Save}"
                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                         Command="{Binding SaveCommand}" />
             </StackPanel>

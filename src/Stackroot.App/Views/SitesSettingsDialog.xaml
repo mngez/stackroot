@@ -1,7 +1,8 @@
 <Window x:Class="Stackroot.App.Views.SitesSettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Sites settings"
+        Title="{DynamicResource Loc.SiteSettings.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="460"
         MinWidth="420"
         SizeToContent="Height"
@@ -20,20 +21,20 @@
         <StackPanel Grid.Row="0">
             <TextBlock FontSize="20"
                        FontWeight="SemiBold"
-                       Text="Sites settings" />
+                       Text="{DynamicResource Loc.SiteSettings.Title}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Control how Stackroot manages local domain resolution."
+                       Text="{DynamicResource Loc.SiteSettings.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
-            <CheckBox Content="Automatically update Windows hosts file for enabled domains"
+            <CheckBox Content="{DynamicResource Loc.SiteSettings.AutoHosts}"
                       IsChecked="{Binding AutoHosts}" />
             <TextBlock Margin="24,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
                        FontSize="12"
-                       Text="When enabled, Stackroot writes 127.0.0.1 entries for your local domains. Requires administrator privileges if access is denied."
+                       Text="{DynamicResource Loc.SiteSettings.AutoHostsHint}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -47,10 +48,10 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Width="88"
                             Margin="0,0,8,0"
-                            Content="Close"
+                            Content="{DynamicResource Loc.Common.Close}"
                             Command="{Binding CloseCommand}" />
                     <Button Width="88"
-                            Content="Save"
+                            Content="{DynamicResource Loc.Common.Save}"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"
                             Command="{Binding SaveCommand}" />
                 </StackPanel>

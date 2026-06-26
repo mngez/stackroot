@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding Title, FallbackValue=Process}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="560"
         MinWidth="480"
         SizeToContent="Height"
@@ -28,19 +29,20 @@
                            Text="{Binding Title}" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Configure a supervised background process."
+                           Text="{DynamicResource Loc.AddProcess.Title}"
                            TextWrapping="Wrap" />
             </StackPanel>
 
             <StackPanel Grid.Row="1" Margin="0,16,0,0">
-                <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="Name" />
+                <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                           Text="{DynamicResource Loc.AddProcess.Name}" />
                 <TextBox Margin="0,6,0,0"
                          Padding="10,6"
                          Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBlock Margin="0,12,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Linked site (optional)" />
+                           Text="{DynamicResource Loc.AddProcess.LinkedSite}" />
                 <ComboBox Margin="0,6,0,0"
                           DisplayMemberPath="Label"
                           SelectedValuePath="Id"
@@ -50,32 +52,32 @@
                 <StackPanel Margin="0,12,0,0"
                             Visibility="{Binding ShowProjectFolder, Converter={StaticResource BoolToVis}}">
                     <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="Project folder" />
+                               Text="{DynamicResource Loc.AddProcess.ProjectFolder}" />
                     <TextBox Margin="0,6,0,0"
                              Padding="10,6"
                              Text="{Binding WorkDir, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
-                               Text="Absolute project root when no site is linked."
+                               Text="{DynamicResource Loc.AddProcess.ProjectFolderHint}"
                                TextWrapping="Wrap" />
                 </StackPanel>
 
                 <TextBlock Margin="0,12,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Working directory" />
+                           Text="{DynamicResource Loc.AddProcess.WorkingDir}" />
                 <TextBox Margin="0,6,0,0"
                          Padding="10,6"
                          Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Relative to the project folder , or an absolute path that overrides it."
+                           Text="{DynamicResource Loc.AddProcess.WorkingDirHint}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,12,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Runtime" />
+                           Text="{DynamicResource Loc.AddProcess.Runtime}" />
                 <ComboBox Margin="0,6,0,0"
                           DisplayMemberPath="Label"
                           SelectedValuePath="Runtime"
@@ -85,7 +87,7 @@
                 <StackPanel Margin="0,12,0,0"
                             Visibility="{Binding ShowPhpVersionPicker, Converter={StaticResource BoolToVis}}">
                     <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="PHP version" />
+                               Text="{DynamicResource Loc.AddProcess.PhpVersion}" />
                     <ComboBox Margin="0,6,0,0"
                               DisplayMemberPath="Label"
                               SelectedValuePath="Id"
@@ -94,42 +96,42 @@
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
-                               Text="Used for PHP and Composer runtimes. Defaults to the linked site's PHP version."
+                               Text="{DynamicResource Loc.AddProcess.PhpVersionHint}"
                                TextWrapping="Wrap" />
                 </StackPanel>
 
                 <TextBlock Margin="0,12,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Command" />
+                           Text="{DynamicResource Loc.AddProcess.Command}" />
                 <TextBox Margin="0,6,0,0"
                          Padding="10,6"
                          Text="{Binding Command, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Shell: full command. Other runtimes: arguments after the executable."
+                           Text="{DynamicResource Loc.AddProcess.CommandHint}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,12,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Restart delay (seconds)" />
+                           Text="{DynamicResource Loc.AddProcess.RestartDelay}" />
                 <TextBox Margin="0,6,0,0"
                          Padding="10,6"
                          Text="{Binding RestartDelaySeconds, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Margin="0,4,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Wait time after exit before restarting. Leave empty for default (2s, then increasing backoff)."
+                           Text="{DynamicResource Loc.AddProcess.RestartDelayHint}"
                            TextWrapping="Wrap" />
 
                 <CheckBox Margin="0,14,0,0"
-                          Content="Enabled"
+                          Content="{DynamicResource Loc.Common.Enabled}"
                           IsChecked="{Binding Enabled}" />
                 <CheckBox Margin="0,8,0,0"
-                          Content="Auto-start with Stackroot"
+                          Content="{DynamicResource Loc.AddProcess.AutoStart}"
                           IsChecked="{Binding AutoStart}" />
                 <CheckBox Margin="0,8,0,0"
-                          Content="Featured (pin to top)"
+                          Content="{DynamicResource Loc.AddProcess.Featured}"
                           IsChecked="{Binding Featured}" />
             </StackPanel>
 
@@ -142,10 +144,10 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Width="88"
                             Margin="0,0,8,0"
-                            Content="Cancel"
+                            Content="{DynamicResource Loc.Common.Cancel}"
                             Command="{Binding CloseCommand}" />
                     <Button Width="100"
-                            Content="Save"
+                            Content="{DynamicResource Loc.Common.Save}"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"
                             Command="{Binding SaveCommand}" />
                 </StackPanel>

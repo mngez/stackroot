@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Commands;
+using Stackroot.App.Localization;
 using Stackroot.App.Helpers;
 using Stackroot.App.Scheduling;
 using Stackroot.App.Services;
@@ -252,8 +253,12 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     public bool SiteEnabled => Site?.Enabled == true;
     public bool SiteDisabled => Site is not null && !Site.Enabled;
     public bool IsFeatured => Site?.Featured == true;
-    public string FeaturedPinToolTip => IsFeatured ? "Remove from featured" : "Pin to featured";
-    public string EnableDisableLabel => SiteEnabled ? "Disable" : "Enable";
+    public string FeaturedPinToolTip => IsFeatured
+        ? LocalizationManager.Get("Loc.Common.RemoveFromFeatured", "Remove from featured")
+        : LocalizationManager.Get("Loc.Common.PinToFeatured", "Pin to featured");
+    public string EnableDisableLabel => SiteEnabled
+        ? LocalizationManager.Get("Loc.Common.Disable", "Disable")
+        : LocalizationManager.Get("Loc.Common.Enable", "Enable");
     public bool IsTogglingEnabled
     {
         get => _isTogglingEnabled;
@@ -270,7 +275,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
 
     public bool IsNotTogglingEnabled => !IsTogglingEnabled;
     public string ToggleEnabledButtonLabel => IsTogglingEnabled
-        ? (SiteEnabled ? "Disabling…" : "Enabling…")
+        ? (SiteEnabled ? LocalizationManager.Get("Loc.Common.Disabling", "Disabling…") : LocalizationManager.Get("Loc.Common.Enabling", "Enabling…"))
         : EnableDisableLabel;
 
     public bool ShowHttpsBadge => Site?.ForceHttps == true;

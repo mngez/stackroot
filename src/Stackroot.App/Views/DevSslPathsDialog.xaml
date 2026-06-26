@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
-        Title="Local SSL paths"
+        Title="{DynamicResource Loc.DevSslPaths.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="620"
         MinWidth="520"
         SizeToContent="Height"
@@ -26,17 +27,17 @@
         <StackPanel Grid.Row="0">
             <TextBlock FontSize="18"
                        FontWeight="SemiBold"
-                       Text="Local SSL paths" />
+                       Text="{DynamicResource Loc.DevSslPaths.Title}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Stackroot dev certificate files (PEM). Use these paths in Node servers or your .env."
+                       Text="{DynamicResource Loc.DevSslPaths.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
         <TextBlock Grid.Row="1"
                    Margin="0,16,0,6"
                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                   Text="Certificate (dev.crt)" />
+                   Text="{DynamicResource Loc.DevSslPaths.Certificate}" />
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -52,14 +53,14 @@
                     MinWidth="72"
                     Margin="8,0,0,0"
                     Padding="10,6"
-                    Content="Copy"
+                    Content="{DynamicResource Loc.Common.Copy}"
                     Command="{Binding CopyCertificateCommand}" />
         </Grid>
 
         <TextBlock Grid.Row="3"
                    Margin="0,14,0,6"
                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                   Text="Private key (dev.key)" />
+                   Text="{DynamicResource Loc.DevSslPaths.PrivateKey}" />
         <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -75,7 +76,7 @@
                     MinWidth="72"
                     Margin="8,0,0,0"
                     Padding="10,6"
-                    Content="Copy"
+                    Content="{DynamicResource Loc.Common.Copy}"
                     Command="{Binding CopyPrivateKeyCommand}" />
         </Grid>
 
@@ -84,7 +85,7 @@
                     HorizontalAlignment="Right"
                     Orientation="Horizontal">
             <Button MinWidth="100"
-                    Content="Close"
+                    Content="{DynamicResource Loc.Common.Close}"
                     Command="{Binding CloseCommand}" />
         </StackPanel>
     </Grid>

@@ -1,0 +1,567 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ── Layout direction ── -->
+    <FlowDirection x:Key="Loc.FlowDirection">LeftToRight</FlowDirection>
+
+    <!-- ── Common actions ── -->
+    <sys:String x:Key="Loc.Common.Save">Opslaan</sys:String>
+    <sys:String x:Key="Loc.Common.Cancel">Annuleren</sys:String>
+    <sys:String x:Key="Loc.Common.Close">Sluiten</sys:String>
+    <sys:String x:Key="Loc.Common.Refresh">Vernieuwen</sys:String>
+    <sys:String x:Key="Loc.Common.Add">+ Toevoegen</sys:String>
+    <sys:String x:Key="Loc.Common.Edit">Bewerken</sys:String>
+    <sys:String x:Key="Loc.Common.Delete">Verwijderen</sys:String>
+    <sys:String x:Key="Loc.Common.Install">Installeren</sys:String>
+    <sys:String x:Key="Loc.Common.Uninstall">Deinstalleren</sys:String>
+    <sys:String x:Key="Loc.Common.Remove">Verwijderen</sys:String>
+    <sys:String x:Key="Loc.Common.MoreActions">Meer acties</sys:String>
+    <sys:String x:Key="Loc.Common.Browse">Bladeren…</sys:String>
+    <sys:String x:Key="Loc.Common.OpenFolder">Map openen</sys:String>
+    <sys:String x:Key="Loc.Common.DataFolder">Datamap</sys:String>
+    <sys:String x:Key="Loc.Common.Manage">Beheren</sys:String>
+    <sys:String x:Key="Loc.Common.ManageArrow">Beheren →</sys:String>
+    <sys:String x:Key="Loc.Common.Settings">Instellingen</sys:String>
+    <sys:String x:Key="Loc.Common.Log">Logboek</sys:String>
+    <sys:String x:Key="Loc.Common.Start">Starten</sys:String>
+    <sys:String x:Key="Loc.Common.Stop">Stoppen</sys:String>
+    <sys:String x:Key="Loc.Common.Restart">Herstarten</sys:String>
+    <sys:String x:Key="Loc.Common.Copy">Kopiëren</sys:String>
+    <sys:String x:Key="Loc.Common.Open">Openen</sys:String>
+    <sys:String x:Key="Loc.Common.Capture">Vastleggen</sys:String>
+    <sys:String x:Key="Loc.Common.Later">Later</sys:String>
+    <sys:String x:Key="Loc.Common.Export">Exporteren</sys:String>
+    <sys:String x:Key="Loc.Common.Import">Importeren</sys:String>
+    <sys:String x:Key="Loc.Common.Clear">Wissen</sys:String>
+    <sys:String x:Key="Loc.Common.Restore">Herstellen</sys:String>
+    <sys:String x:Key="Loc.Common.Rebuild">nginx opnieuw bouwen</sys:String>
+    <sys:String x:Key="Loc.Common.Create">Aanmaken</sys:String>
+    <sys:String x:Key="Loc.Common.Backups">Back-ups</sys:String>
+    <sys:String x:Key="Loc.Common.Enabled">Ingeschakeld</sys:String>
+    <sys:String x:Key="Loc.Common.UseDefault">Standaard gebruiken</sys:String>
+    <sys:String x:Key="Loc.Common.Choose">Kiezen…</sys:String>
+    <sys:String x:Key="Loc.Common.Upload">Uploaden…</sys:String>
+    <sys:String x:Key="Loc.Common.Back">← Sites</sys:String>
+    <sys:String x:Key="Loc.Common.StopAll">Alles stoppen</sys:String>
+    <sys:String x:Key="Loc.Common.StartAll">Alles starten</sys:String>
+    <sys:String x:Key="Loc.Common.RestartAll">Alles herstarten</sys:String>
+    <sys:String x:Key="Loc.Common.Activate">Activeren</sys:String>
+    <sys:String x:Key="Loc.Common.RunAgain">Opnieuw uitvoeren</sys:String>
+    <sys:String x:Key="Loc.Common.ViewLog">Logboek bekijken</sys:String>
+    <sys:String x:Key="Loc.Common.Dismiss">Sluiten</sys:String>
+    <sys:String x:Key="Loc.Common.ManageCustomCommands">Aangepaste commando's beheren</sys:String>
+    <sys:String x:Key="Loc.Common.OpenSite">Site openen</sys:String>
+    <sys:String x:Key="Loc.Common.OpenAdmin">Admin openen</sys:String>
+    <sys:String x:Key="Loc.Common.Disable">Uitschakelen</sys:String>
+    <sys:String x:Key="Loc.Common.Enable">Inschakelen</sys:String>
+    <sys:String x:Key="Loc.Common.Disabling">Uitschakelen…</sys:String>
+    <sys:String x:Key="Loc.Common.Enabling">Inschakelen…</sys:String>
+    <sys:String x:Key="Loc.Common.PinToFeatured">Vastpinnen op uitgelicht</sys:String>
+    <sys:String x:Key="Loc.Common.RemoveFromFeatured">Verwijderen uit uitgelicht</sys:String>
+    <sys:String x:Key="Loc.Common.KeepAliveActive">Keep-alive actief</sys:String>
+
+        <!-- ── Status ── -->
+        <sys:String x:Key="Loc.Status.Running">Actief</sys:String>
+        <sys:String x:Key="Loc.Status.Stopped">Gestopt</sys:String>
+        <sys:String x:Key="Loc.Status.Errors">Fouten</sys:String>
+        <sys:String x:Key="Loc.Status.Live">Live</sys:String>
+        <sys:String x:Key="Loc.Status.LiveBadge">LIVE</sys:String>
+        <sys:String x:Key="Loc.Status.Active">Actief</sys:String>
+        <sys:String x:Key="Loc.Status.Installed">Geïnstalleerd</sys:String>
+        <sys:String x:Key="Loc.Status.InstalledReady">Geïnstalleerd en gereed</sys:String>
+        <sys:String x:Key="Loc.Status.Ready">Gereed</sys:String>
+        <sys:String x:Key="Loc.Status.Off">Uit</sys:String>
+        <sys:String x:Key="Loc.Status.Capturing">Vastleggen…</sys:String>
+        <sys:String x:Key="Loc.Status.LiveUpdates">Live updates</sys:String>
+        <sys:String x:Key="Loc.Status.NoActivity">Nog geen activiteit</sys:String>
+        <sys:String x:Key="Loc.Status.ClearSessionLog">Sessielogboek wissen</sys:String>
+        <sys:String x:Key="Loc.Status.ThisSession">Deze sessie</sys:String>
+        <sys:String x:Key="Loc.Status.Activity">Activiteit</sys:String>
+    
+        <!-- ── Dashboard ── -->
+        <sys:String x:Key="Loc.Dashboard.Title">Dashboard</sys:String>
+        <sys:String x:Key="Loc.Dashboard.Subtitle">Diensten, PHP FastCGI en ingeschakelde processen</sys:String>
+        <sys:String x:Key="Loc.Dashboard.Loading">Dashboard laden…</sys:String>
+        <sys:String x:Key="Loc.Dashboard.NoServices">Nog geen ingeschakelde diensten</sys:String>
+        <sys:String x:Key="Loc.Dashboard.NoServicesHint">Installeer pakketten en schakel diensten in via de Diensten-pagina.</sys:String>
+        <sys:String x:Key="Loc.Dashboard.GoToServices">Ga naar Diensten</sys:String>
+        <sys:String x:Key="Loc.Dashboard.PhpFastCgi">PHP FastCGI-listeners</sys:String>
+        <sys:String x:Key="Loc.Dashboard.PhpListeners">PHP-listeners</sys:String>
+        <sys:String x:Key="Loc.Dashboard.EnabledProcesses">Ingeschakelde processen</sys:String>
+        <sys:String x:Key="Loc.Dashboard.StartAll">Alles starten</sys:String>
+        <sys:String x:Key="Loc.Dashboard.QuickActions">Snelle acties</sys:String>
+    
+        <!-- ── Services ── -->
+        <sys:String x:Key="Loc.Services.Title">Diensten</sys:String>
+        <sys:String x:Key="Loc.Services.Subtitle">Pakketten installeren, versies kiezen en poorten configureren — start en stop diensten via het Dashboard</sys:String>
+        <sys:String x:Key="Loc.Services.RebuildTooltip">Site-vhosts, app-domein en admin-tools opnieuw genereren en nginx herladen</sys:String>
+    
+        <!-- ── Sites ── -->
+        <sys:String x:Key="Loc.Sites.Title">Webdomeinen</sys:String>
+        <sys:String x:Key="Loc.Sites.Subtitle">Lokale ontwikkelingsdomeinen gegroepeerd per status</sys:String>
+        <sys:String x:Key="Loc.Sites.AddDomain">Domein toevoegen</sys:String>
+        <sys:String x:Key="Loc.Sites.WwwRoot">WWW-root</sys:String>
+        <sys:String x:Key="Loc.Sites.NoDomains">Nog geen domeinen</sys:String>
+        <sys:String x:Key="Loc.Sites.NoDomainsHint">Kies een sjabloon en voeg uw eerste lokale ontwikkelingsdomein toe.</sys:String>
+        <sys:String x:Key="Loc.Sites.ColName">Naam</sys:String>
+        <sys:String x:Key="Loc.Sites.ColFolder">Map</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenHttps">https</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenHttpsTooltip">Site openen in browser (HTTPS)</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenFolderTooltip">Sitemap openen in Verkenner</sys:String>
+        <sys:String x:Key="Loc.Sites.PinTooltip">Vastpinnen op uitgelicht</sys:String>
+        <sys:String x:Key="Loc.Sites.DB">DB</sys:String>
+        <sys:String x:Key="Loc.Sites.RebuildTooltip">Site-vhosts, app-domein en admin-tools opnieuw genereren en nginx herladen</sys:String>
+        <sys:String x:Key="Loc.Sites.HostsTooltip">hosts-bestand openen</sys:String>
+        <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Site-instellingen</sys:String>
+        <sys:String x:Key="Loc.Sites.NoMatch">Geen domeinen komen overeen met de huidige filters.</sys:String>
+    
+            <!-- ── Site Manage ── -->
+    <sys:String x:Key="Loc.SiteManage.Title">Site dashboard</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslPaths">SSL-paden</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslTooltip">Lokale dev.crt- en dev.key-paden</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Terminal">Terminal</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Template">SJABLOON</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Path">PAD</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Https">HTTPS</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Username">Gebruikersnaam</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Password">Wachtwoord</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ShowHidePassword">Wachtwoord tonen/verbergen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ChangePassword">Wachtwoord wijzigen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RefreshScreenshot">Screenshot vernieuwen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.OpenBrowserTooltip">Site openen in browser</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoProcesses">Nog geen processen gekoppeld aan deze site.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoDatabases">Nog geen databases gekoppeld aan deze site.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoScheduled">Nog geen geplande taken voor deze site.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ScheduledTasksHint">Cron-achtige opdrachten voor deze site — worden uitgevoerd terwijl Stackroot open is.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasks">Alle taken</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Open de volledige pagina met geplande taken</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CopyPassword">Wachtwoord kopiëren</sys:String>
+
+        <!-- ── PHP ── -->
+        <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
+        <sys:String x:Key="Loc.Php.Subtitle">Beheer geïnstalleerde PHP-versies en FastCGI runtime</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfiles">Profielen importeren</sys:String>
+        <sys:String x:Key="Loc.Php.ImportTooltip">Importeer een of meer PHP-profielen. Ontbrekende PHP-versies worden automatisch geïnstalleerd.</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfiles">Profielen exporteren</sys:String>
+        <sys:String x:Key="Loc.Php.ExportTooltip">Exporteer alle geïnstalleerde PHP-versies inclusief instellingen en extensies.</sys:String>
+        <sys:String x:Key="Loc.Php.RuntimeTooltip">PHP runtime instellingen</sys:String>
+        <sys:String x:Key="Loc.Php.Loading">PHP-gegevens laden…</sys:String>
+        <sys:String x:Key="Loc.Php.EnsureFastCgi">FastCGI controleren</sys:String>
+        <sys:String x:Key="Loc.Php.Extensions">Extensies</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfile">Profiel exporteren</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfile">Profiel importeren</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingVersions">PHP-versies installeren</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingHint">Installaties worden op de achtergrond uitgevoerd. U kunt een andere versie toevoegen aan de wachtrij via de bovenstaande lijst.</sys:String>
+    
+        <!-- ── Node ── -->
+        <sys:String x:Key="Loc.Node.Title">Node</sys:String>
+        <sys:String x:Key="Loc.Node.Subtitle">Installeer nvm-windows, voeg Node-versies toe en wissel de actieve runtime</sys:String>
+        <sys:String x:Key="Loc.Node.NvmNotInstalled">Installeer eerst nvm-windows</sys:String>
+        <sys:String x:Key="Loc.Node.NvmHint">Stackroot gebruikt nvm-windows om Node-versies te downloaden en te wisselen. Niets anders op deze pagina werkt totdat nvm is geïnstalleerd.</sys:String>
+        <sys:String x:Key="Loc.Node.InstallNvm">nvm-windows installeren</sys:String>
+        <sys:String x:Key="Loc.Node.InstallVersion">Node-versie installeren</sys:String>
+        <sys:String x:Key="Loc.Node.InstallHint">Kies een versie uit de lijst of typ een aangepaste versie (de keuzelijst wordt leeggemaakt zodra u begint te typen).</sys:String>
+        <sys:String x:Key="Loc.Node.CustomSemver">Optionele aangepaste semver</sys:String>
+        <sys:String x:Key="Loc.Node.QuickInstall">Snelle installatie (downloadt en activeert onmiddellijk)</sys:String>
+        <sys:String x:Key="Loc.Node.ActivateTooltip">Download, installeer en activeer deze Node-versie</sys:String>
+        <sys:String x:Key="Loc.Node.InstalledVersions">Geïnstalleerde versies</sys:String>
+        <sys:String x:Key="Loc.Node.NoVersions">Nog geen Node-versies geïnstalleerd. Gebruik Installeren hierboven of een snelle installatie-chip.</sys:String>
+        <sys:String x:Key="Loc.Node.NvmSettingsTooltip">Node instellingen</sys:String>
+        <sys:String x:Key="Loc.Node.RemoveNvm">nvm verwijderen</sys:String>
+    
+            <!-- ── Databases ── -->
+    <sys:String x:Key="Loc.Databases.Title">Databases</sys:String>
+    <sys:String x:Key="Loc.Databases.SettingsTooltip">Database instellingen</sys:String>
+    <sys:String x:Key="Loc.Databases.CreateButton">+ Aanmaken</sys:String>
+    <sys:String x:Key="Loc.Databases.Search">Zoeken</sys:String>
+    <sys:String x:Key="Loc.Databases.Engine">Engine</sys:String>
+    <sys:String x:Key="Loc.Databases.NoMatch">Geen databases komen overeen mit de huidige filters.</sys:String>
+    <sys:String x:Key="Loc.Databases.ColName">Naam</sys:String>
+    <sys:String x:Key="Loc.Databases.ColEngine">Engine</sys:String>
+    <sys:String x:Key="Loc.Databases.ColCreated">Aangemaakt</sys:String>
+    <sys:String x:Key="Loc.Databases.ColLastBackup">Laatste backup</sys:String>
+    <sys:String x:Key="Loc.Databases.ColActions">Acties</sys:String>
+    <sys:String x:Key="Loc.Databases.DotEnv">.env</sys:String>
+    <sys:String x:Key="Loc.Databases.Backup">Backup</sys:String>
+
+    <!-- ── Downloads ── -->
+    <sys:String x:Key="Loc.Downloads.Title">Downloads</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColPackage">Pakket</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColFile">Bestand</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColSize">Grootte</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColDownloaded">Gedownload</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColUrl">URL</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColAction">Actie</sys:String>
+
+    <!-- ── Logs ── -->
+    <sys:String x:Key="Loc.Logs.Title">Logs</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupOld">Oude opschonen</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupAll">Alles opschonen</sys:String>
+    <sys:String x:Key="Loc.Logs.Loading">Logs laden…</sys:String>
+    <sys:String x:Key="Loc.Logs.NoFiles">Geen logbestanden gevonden.</sys:String>
+    <sys:String x:Key="Loc.Logs.ColCategory">Categorie</sys:String>
+    <sys:String x:Key="Loc.Logs.ColPath">Pad</sys:String>
+    <sys:String x:Key="Loc.Logs.ColSize">Grootte</sys:String>
+    <sys:String x:Key="Loc.Logs.ColModified">Gewijzigd</sys:String>
+    <sys:String x:Key="Loc.Logs.ColAction">Actie</sys:String>
+
+        <!-- ── Performance ── -->
+        <sys:String x:Key="Loc.Performance.Title">Prestaties</sys:String>
+        <sys:String x:Key="Loc.Performance.Sampled">Gecovered: </sys:String>
+        <sys:String x:Key="Loc.Performance.AppAndServices">App &amp; diensten</sys:String>
+        <sys:String x:Key="Loc.Performance.TotalMemory">Totaal geheugen: </sys:String>
+        <sys:String x:Key="Loc.Performance.PhpListeners">PHP listeners</sys:String>
+        <sys:String x:Key="Loc.Performance.CustomProcesses">Aangepaste processen</sys:String>
+        <sys:String x:Key="Loc.Performance.ColLabel">Label</sys:String>
+        <sys:String x:Key="Loc.Performance.ColType">Type</sys:String>
+        <sys:String x:Key="Loc.Performance.ColStatus">Status</sys:String>
+        <sys:String x:Key="Loc.Performance.ColPid">PID</sys:String>
+        <sys:String x:Key="Loc.Performance.ColCpu">CPU</sys:String>
+        <sys:String x:Key="Loc.Performance.ColMemory">Geheugen</sys:String>
+        <sys:String x:Key="Loc.Performance.ColVersion">Versie</sys:String>
+        <sys:String x:Key="Loc.Performance.ColEndpoint">Endpoint</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipOpen">Prestaties pagina openen</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipRefresh">Statistieken vernieuwen</sys:String>
+    
+        <!-- ── Processes ── -->
+        <sys:String x:Key="Loc.Processes.Title">Processen</sys:String>
+        <sys:String x:Key="Loc.Processes.Subtitle">Geünificeerde supervisor voor app-brede en site-gekoppelde achtergrondopdrachten</sys:String>
+        <sys:String x:Key="Loc.Processes.SiteFilter">Site filter:</sys:String>
+        <sys:String x:Key="Loc.Processes.StartAllEnabled">Start alle ingeschakelde</sys:String>
+        <sys:String x:Key="Loc.Processes.NoMatch">Geen processen komen overeen met de huidige filters.</sys:String>
+        <sys:String x:Key="Loc.Processes.AddProcess">+ Proces toevoegen</sys:String>
+        <sys:String x:Key="Loc.Processes.PinTooltip">Vastpinnen aan uitgelicht</sys:String>
+    
+            <!-- ── Scheduled Tasks ── -->
+    <sys:String x:Key="Loc.ScheduledTasks.Title">Geplande taken</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.Subtitle">Cron-achtige periodieke opdrachten — worden uitgevoerd terwijl Stackroot open is.</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.SiteFilter">Site filter:</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.RunNowTooltip">Nu uitvoeren</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.EditTooltip">Bewerken</sys:String>
+
+    <!-- ── Tools ── -->
+    <sys:String x:Key="Loc.Tools.Title">Gereedschappen</sys:String>
+    <sys:String x:Key="Loc.Tools.Subtitle">CLI-hulpprogramma's, admin-UI's — installeren en bijwerken vanuit Stackroot.</sys:String>
+    <sys:String x:Key="Loc.Tools.CheckUpdates">Updates controleren</sys:String>
+    <sys:String x:Key="Loc.Tools.InstallTooltip">Pakket installeren</sys:String>
+    <sys:String x:Key="Loc.Tools.VersionsTooltip">Pakketversies</sys:String>
+    <sys:String x:Key="Loc.Tools.SettingsTooltip">Instellingen</sys:String>
+    <sys:String x:Key="Loc.Tools.OpenTooltip">Openen in browser</sys:String>
+    <sys:String x:Key="Loc.Tools.DismissTooltip">Negeren</sys:String>
+
+        <!-- ── General Settings ── -->
+        <sys:String x:Key="Loc.GeneralSettings.Title">Algemene instellingen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Subtitle">Configureer basispaden, app-gedrag en standaardomgevingen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AutoSave">Wijzigingen worden automatisch opgeslagen.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Herstellen van backup</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AppDomain">App domein</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW-pad</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Voorkeurseditor</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Aangepast editorpad</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Sluitgedrag</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetention">Logretentie (dagen)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetentionHint">Zet op 0 om automatische opschoning uit te schakelen.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPath">Gebruik door Stackroot beheerde php/composer/node shims in PATH (opt-in)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPathHint">Indien uitgeschakeld, overschrijft Stackroot uw systeem php, composer of node commando's niet.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LaunchAtStartup">Stackroot starten wanneer Windows opstart</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ShowMetrics">Toon RAM en CPU in de shell-koptekst</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CpuEvery">CPU elke</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Sec">sec</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.MetricsHint">Lichtgewicht samenvatting met een link naar de Prestaties pagina. Schakel uit voor een schonere koptekst.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Thumbnails">Site-miniaturen inschakelen (downloadt ~300 MB Chromium browser bij eerste gebruik)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ThumbnailsHint">Indien ingeschakeld, maakt een headless browser screenshots van uw sites voor het dashboard.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslCa">Vertrouw lokale HTTPS CA voor alle Windows-gebruikers (vereist goedkeuring van beheerder)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslHint">Indien uitgeschakeld, installeert Vertrouw SSL het certificaat alleen voor uw gebruikersaccount — geen beheerdersprompt.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSsl">Vertrouw SSL</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RemoveOldCas">Oude CA's verwijderen</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.SslWarning">Als Windows meerdere Stackroot Local CA vermeldingen toont, gebruik dan Oude CA's verwijderen om alleen het huidige ontwikkelingscertificaat te behouden.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DiagnosticsLog">Diagnostisch logboek inschakelen (ontwikkelingsrapport)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Language">Taal</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DownloadCache">Pad voor downloadcache</sys:String>
+    
+            <!-- ── Dialogs ── -->
+    <sys:String x:Key="Loc.AddProcess.Title">Configureer een gecontroleerd achtergrondproces.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Name">Naam</sys:String>
+    <sys:String x:Key="Loc.AddProcess.LinkedSite">Gekoppelde site (optioneel)</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolder">Projectmap</sys:String>
+    <sys:String x:Key="Loc.AddProcess.ProjectFolderHint">Absolute projectroot wanneer er geen site is gekoppeld.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDir">Werkmap</sys:String>
+    <sys:String x:Key="Loc.AddProcess.WorkingDirHint">Relatief ten opzichte van de projectmap, of een absoluut pad dat dit overschrijft.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Runtime">Runtime</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersion">PHP-versie</sys:String>
+    <sys:String x:Key="Loc.AddProcess.PhpVersionHint">Gebruikt voor PHP- en Composer-runtimes. Standaard ingesteld op de PHP-versie van de gekoppelde site.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Command">Opdracht</sys:String>
+    <sys:String x:Key="Loc.AddProcess.CommandHint">Shell: volledige opdracht. Andere runtimes: argumenten na het uitvoerbare bestand.</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelay">Herstartvertraging (seconden)</sys:String>
+    <sys:String x:Key="Loc.AddProcess.RestartDelayHint">Wachttijd na afsluiten alvorens te herstarten. Laat leeg voor standaard (2s, daarna toenemende backoff).</sys:String>
+    <sys:String x:Key="Loc.AddProcess.AutoStart">Automatisch starten met Stackroot</sys:String>
+    <sys:String x:Key="Loc.AddProcess.Featured">Uitgelicht (bovenaan vastpinnen)</sys:String>
+
+    <sys:String x:Key="Loc.AddSite.Title">Webdomein toevoegen</sys:String>
+    <sys:String x:Key="Loc.AddSite.Subtitle">Maak een lokaal ontwikkelingsdomein met een projectsjabloon.</sys:String>
+    <sys:String x:Key="Loc.AddSite.Template">Sjabloon</sys:String>
+    <sys:String x:Key="Loc.AddSite.SiteName">Sitenaam</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainName">Domeinnaam</sys:String>
+    <sys:String x:Key="Loc.AddSite.SubdomainTooltip">Subdomein (bijv. mijnapp)</sys:String>
+    <sys:String x:Key="Loc.AddSite.DomainAliases">Domeinaliassen (optioneel)</sys:String>
+    <sys:String x:Key="Loc.AddSite.AliasesHint">Eén alias per regel (bijv. dezelfdeapp.test of *.app.test). Wildcard-aliassen werken in nginx; letterlijke namen worden toegevoegd aan hosts en HTTPS.</sys:String>
+    <sys:String x:Key="Loc.AddSite.PhpBackend">Backend (PHP)</sys:String>
+    <sys:String x:Key="Loc.AddSite.NodeJs">Node.js</sys:String>
+    <sys:String x:Key="Loc.AddSite.DocumentRoot">Documentroot</sys:String>
+    <sys:String x:Key="Loc.AddSite.SetByTemplate">Ingesteld door sjabloon</sys:String>
+    <sys:String x:Key="Loc.AddSite.Folder">Map</sys:String>
+    <sys:String x:Key="Loc.AddSite.CreateUnderWww">Aanmaken onder WWW (Instellingen)</sys:String>
+    <sys:String x:Key="Loc.AddSite.ExistingFolder">Bestaande map</sys:String>
+    <sys:String x:Key="Loc.AddSite.GoToDashboard">Ga naar site-dashboard na aanmaken</sys:String>
+
+    <sys:String x:Key="Loc.ChangePassword.Title">Admin-wachtwoord wijzigen</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Subtitle">Voer een nieuw wachtwoord in voor de WordPress admin-gebruiker.</sys:String>
+    <sys:String x:Key="Loc.ChangePassword.Change">Wijzigen</sys:String>
+
+    <sys:String x:Key="Loc.CreateDatabase.Title">Database aanmaken</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Subtitle">Registreer een lokale SQL-database voor ontwikkeling.</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.DatabaseName">Databasenaam</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.Engine">Engine</sys:String>
+    <sys:String x:Key="Loc.CreateDatabase.LinkToSite">Koppelen aan site (optioneel)</sys:String>
+
+    <sys:String x:Key="Loc.CronTask.Title">Nieuwe geplande taak</sys:String>
+    <sys:String x:Key="Loc.CronTask.Label">Label</sys:String>
+    <sys:String x:Key="Loc.CronTask.LinkedSite">Gekoppelde site (optioneel)</sys:String>
+    <sys:String x:Key="Loc.CronTask.Command">Opdracht</sys:String>
+    <sys:String x:Key="Loc.CronTask.WorkingDir">Werkmap</sys:String>
+    <sys:String x:Key="Loc.CronTask.Schedule">Schema</sys:String>
+    <sys:String x:Key="Loc.CronTask.Minute">Minuut</sys:String>
+    <sys:String x:Key="Loc.CronTask.Hour">Uur</sys:String>
+    <sys:String x:Key="Loc.CronTask.Day">Dag</sys:String>
+    <sys:String x:Key="Loc.CronTask.Month">Maand</sys:String>
+    <sys:String x:Key="Loc.CronTask.Weekday">Weekdag</sys:String>
+    <sys:String x:Key="Loc.CronTask.CaptureLog">Uitvoer naar logbestand vastleggen</sys:String>
+
+    <sys:String x:Key="Loc.CustomCommands.Title">Aangepaste opdrachten</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ImportTooltip">Opdrachten toevoegen uit een bestand dat van een andere site is geëxporteerd</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ExportTooltip">Opdrachten opslaan in een bestand dat u op een andere site kunt importeren</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Label">Label</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Command">Opdracht</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ButtonColors">Knopkleuren (optioneel)</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorText">Tekst</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ColorBackground">Achtergrond</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.ResetColors">Kleuren herstellen naar standaard</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Icon">Icoon (optioneel)</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RemoveIcon">Icoon verwijderen</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Preview">Voorbeeld</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.Select">Selecteer een opdracht of voeg een nieuwe toe.</sys:String>
+    <sys:String x:Key="Loc.CustomCommands.RunningWarning">Lopende opdrachten kunnen niet worden verwijderd. Stop eerst de opdracht.</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseBackups.Subtitle">Selecteer een backupbestand en herstel dit in de bijbehorende database.</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColFile">Bestand</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColDatabase">Database</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColEngine">Engine</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColCreated">Aangemaakt</sys:String>
+    <sys:String x:Key="Loc.DatabaseBackups.ColSize">Grootte</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseEnv.Subtitle">Kopieer deze regels naar het .env-bestand van uw site.</sys:String>
+
+    <sys:String x:Key="Loc.DatabaseSettings.Title">Database instellingen</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Subtitle">Inloggegevens uit de instellingen worden automatisch toegepast op MySQL/MariaDB. Wachtwoorden worden in leesbare tekst getoond voor lokale ontwikkeling.</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MysqlCredentials">MySQL inloggegevens</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.MariaDbCredentials">MariaDB inloggegevens</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Username">Gebruikersnaam</sys:String>
+    <sys:String x:Key="Loc.DatabaseSettings.Password">Wachtwoord</sys:String>
+
+    <sys:String x:Key="Loc.DevSslPaths.Title">Lokale SSL-paden</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Subtitle">Stackroot dev-certificaatbestanden (PEM). Gebruik deze paden in Node-servers of uw .env.</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.Certificate">Certificaat (dev.crt)</sys:String>
+    <sys:String x:Key="Loc.DevSslPaths.PrivateKey">Privésleutel (dev.key)</sys:String>
+
+    <sys:String x:Key="Loc.Downloads.NoActive">Geen actieve downloads</sys:String>
+    <sys:String x:Key="Loc.Downloads.RunInBackground">In de achtergrond uitvoeren</sys:String>
+    <sys:String x:Key="Loc.Downloads.CloseTooltip">Sluiten</sys:String>
+
+    <sys:String x:Key="Loc.EditSite.Title">Webdomein bewerken</sys:String>
+    <sys:String x:Key="Loc.EditSite.Subtitle">Update sjabloon, PHP-backend, HTTPS-gedrag en dev-proxies.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Domain">Domein</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainFixed">Domein kan niet worden gewijzigd — verwijderen en opnieuw toevoegen om te hernoemen.</sys:String>
+    <sys:String x:Key="Loc.EditSite.DomainAliases">Domeinaliassen (optioneel)</sys:String>
+    <sys:String x:Key="Loc.EditSite.AliasesHint">Eén alias per regel (bijv. dezelfdeapp.test of *.app.test). Wildcard-aliassen werken in nginx; letterlijke namen worden toegevoegd aan hosts en HTTPS.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Folder">Map</sys:String>
+    <sys:String x:Key="Loc.EditSite.FolderHint">nginx documentroot volgt deze map en de documentroot van het sjabloon.</sys:String>
+    <sys:String x:Key="Loc.EditSite.Template">Sjabloon</sys:String>
+    <sys:String x:Key="Loc.EditSite.SiteName">Sitenaam</sys:String>
+    <sys:String x:Key="Loc.EditSite.PhpBackend">Backend (PHP)</sys:String>
+    <sys:String x:Key="Loc.EditSite.DocumentRoot">Documentroot</sys:String>
+    <sys:String x:Key="Loc.EditSite.VhostEnabled">Ingeschakeld (nginx vhost + hosts vermelding)</sys:String>
+    <sys:String x:Key="Loc.EditSite.ForceHttps">HTTPS afdwingen (HTTP → HTTPS doorsturen)</sys:String>
+    <sys:String x:Key="Loc.EditSite.HttpsHint">Indien uitgeschakeld, wordt de site alleen via HTTP aangeboden — voorkomt automatische upgrades van de browser naar HTTPS.</sys:String>
+    <sys:String x:Key="Loc.EditSite.DevProxies">Dev-proxies</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddRegexProxy">Regex-proxy toevoegen</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddProxy">Proxy toevoegen</sys:String>
+    <sys:String x:Key="Loc.EditSite.NoProxies">Nog geen proxies — voeg er een toe om bijv. /vite/ naar een lokale dev-server te routeren.</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyEnabled">Ingeschakeld</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyName">Naam</sys:String>
+    <sys:String x:Key="Loc.EditSite.MatchType">Matchtype</sys:String>
+    <sys:String x:Key="Loc.EditSite.LocationPattern">Locatiepatroon</sys:String>
+    <sys:String x:Key="Loc.EditSite.PatternHint">Plak alleen het patroon (bijv. ^/pad$), niet de volledige nginx location regel.</sys:String>
+    <sys:String x:Key="Loc.EditSite.WebSocket">WebSocket ondersteuning</sys:String>
+    <sys:String x:Key="Loc.EditSite.ProxyDirectives">Proxy richtlijnen</sys:String>
+    <sys:String x:Key="Loc.EditSite.ResetDefaults">Standaardwaarden herstellen</sys:String>
+    <sys:String x:Key="Loc.EditSite.AddDirective">Richtlijn toevoegen</sys:String>
+
+    <sys:String x:Key="Loc.FirstRun.OpenStackroot">Stackroot openen</sys:String>
+
+    <sys:String x:Key="Loc.Laravel.Title">Laravel installeren</sys:String>
+    <sys:String x:Key="Loc.Laravel.Subtitle">Configureer uw Laravel-project. Alle velden zijn vooraf ingevuld.</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseName">Databasenaam</sys:String>
+    <sys:String x:Key="Loc.Laravel.DatabaseEngine">Database-engine</sys:String>
+    <sys:String x:Key="Loc.Laravel.StarterKit">Starter kit</sys:String>
+    <sys:String x:Key="Loc.Laravel.Stack">Stack</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunNpmBuild">„npm install &amp;&amp; npm run build“ uitvoeren na Composer</sys:String>
+    <sys:String x:Key="Loc.Laravel.NpmHint">Vereist Node.js. Vink uit als u dit liever handmatig uitvoert.</sys:String>
+    <sys:String x:Key="Loc.Laravel.RunMigrations">Databasemigraties uitvoeren (php artisan migrate)</sys:String>
+
+    <sys:String x:Key="Loc.Mailpit.Title">Mailpit instellingen</sys:String>
+    <sys:String x:Key="Loc.Mailpit.Subtitle">Web-UI voor het opvangen van uitgaande e-mail van PHP.</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoRestart">Automatisch herstarten bij stoppen (keep alive)</sys:String>
+    <sys:String x:Key="Loc.Mailpit.SmtpPort">SMTP-poort</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPort">Web-UI-poort (intern)</sys:String>
+    <sys:String x:Key="Loc.Mailpit.WebPortHint">Geprochied op /mail op uw app-domein — pas alleen aan als de poort in gebruik is.</sys:String>
+    <sys:String x:Key="Loc.Mailpit.AutoStart">Automatisch starten met Stackroot</sys:String>
+
+    <sys:String x:Key="Loc.NginxHttp.Title">Nginx HTTP-instellingen</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Subtitle">Pas de standaardinstellingen van de hoofd-nginx.conf aan. Site-vhosts in sites-enabled worden nog steeds bijgewerkt door Stackroot.</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManualControl">Handmatige bediening</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ManageManually">Hoofd-nginx.conf handmatig beheren</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.OpenConfig">nginx.conf openen</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WorkersAndEvents">Workers en events</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.LimitsAndHashing">Limieten en hashing</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Transport">Transport</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Gzip">Gzip</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.EnableGzip">Gzip-compressie inschakelen</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Logging">Logboekregistratie</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.WriteAccessLog">Toegangslogboek schrijven</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.PhpTimeouts">PHP / FastCGI timeouts</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.DevProxyTimeouts">Dev-proxy timeouts (Vite, etc.)</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.MultiAccept">multi_accept on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.Sendfile">sendfile on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.TcpNoPush">tcp_nopush on</sys:String>
+    <sys:String x:Key="Loc.NginxHttp.ResetDefaults">Optimalisatie herstellen naar aanbevolen standaardwaarden</sys:String>
+
+    <sys:String x:Key="Loc.NodeSettings.Title">Node instellingen</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.Subtitle">Configureer npm registry en nvm gedrag voor siteprocessen.</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.NpmRegistry">npm registry</sys:String>
+    <sys:String x:Key="Loc.NodeSettings.AutoNvmrc">Automatisch .nvmrc gebruiken indien aanwezig (autoUseNvmrc)</sys:String>
+
+    <sys:String x:Key="Loc.PackageInstall.Title">Installeren met PHP</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.NoPhp">Geen compatibele PHP-versies gevonden in de catalogus.</sys:String>
+    <sys:String x:Key="Loc.PackageInstall.PhpVersion">PHP-versie (vereist)</sys:String>
+
+    <sys:String x:Key="Loc.PackageVersions.NoVersions">Geen versies in catalogus.</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Installed">Geïnstalleerd</sys:String>
+    <sys:String x:Key="Loc.PackageVersions.Active">Actief</sys:String>
+
+    <sys:String x:Key="Loc.PhpExtensions.Subtitle">Schakel extensies in/uit die in ext/ worden meegeleverd of via PECL zijn geïnstalleerd. Extensies die een Stackroot-service nodig hebben, blijven uitgeschakeld totdat die service is geïnstalleerd.</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.FilterTooltip">Filter op extensienaam of beschrijving</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.EnableAllReady">Schakel alle extensies in die gereed zijn</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.ResetToDefaults">Herstellen naar standaardwaarden</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.InstallPecl">PECL installeren</sys:String>
+    <sys:String x:Key="Loc.PhpExtensions.PeclHint">Extensies verschijnen hier alleen wanneer er een Windows-build bestaat voor deze PHP-versie.</sys:String>
+
+    <sys:String x:Key="Loc.PhpMyAdmin.Title">phpMyAdmin instellingen</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.Subtitle">Web-UI voor MySQL / MariaDB.</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.UrlPath">URL pad</sys:String>
+    <sys:String x:Key="Loc.PhpMyAdmin.PhpVersion">PHP-versie</sys:String>
+
+    <sys:String x:Key="Loc.PhpRedisAdmin.Title">phpRedisAdmin instellingen</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">Maakt verbinding met Redis via de host/poort uit Services → Redis.</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL pad</sys:String>
+    <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP-versie</sys:String>
+
+    <sys:String x:Key="Loc.PhpRuntime.Title">Geavanceerd — PHP runtime</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.Subtitle">Elke geïnstalleerde versie voert een pool van php-cgi workers uit op een blok poorten (basispoort + offset). Dit hoeft u zelden te wijzigen.</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI host</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.FastCgiPort">FastCGI basispoort</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersPerVersion">Workers per versie (1–8)</sys:String>
+    <sys:String x:Key="Loc.PhpRuntime.WorkersHint">Door 2 of meer php-cgi workers uit te voeren, kan nginx blijven leveren terwijl een worker recyclet of herstart — geen verloren verzoeken.</sys:String>
+
+    <sys:String x:Key="Loc.PhpVersionSettings.Subtitle">Pas de php.ini-standaardwaarden voor deze PHP-versie aan. Extensies worden nog steeds beheerd vanaf de PHP-pagina.</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManualControl">Handmatige bediening</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ManageManually">php.ini handmatig beheren</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OpenIni">php.ini openen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.RuntimeLimits">Runtime limieten</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.InputAndSockets">Input en sockets</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.PathCache">Padcache</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.OPcache">OPcache</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.EnableOPcache">OPcache inschakelen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ErrorsAndWarnings">Fouten en waarschuwingen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.DisplayErrors">Fouten weergeven in browser (display_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.LogErrors">Fouten loggen in bestand (log_errors)</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideWarnings">PHP-waarschuwingen verbergen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.HideDeprecations">Verouderingsmeldingen verbergen</sys:String>
+    <sys:String x:Key="Loc.PhpVersionSettings.ResetDefaults">Standaardwaarden herstellen</sys:String>
+
+    <sys:String x:Key="Loc.PickDatabase.Title">Selecteer doeldatabase</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Subtitle">Kies in welke database u deze backup wilt herstellen:</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.Replace">Database vervangen (wissen en opnieuw aanmaken voor herstel)</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Uit: importeren in de bestaande database. Aan: doeldatabase eerst leegmaken, daarna herstellen.</sys:String>
+
+    <sys:String x:Key="Loc.ServiceSettings.Subtitle">Schakel de service in, kies automatisch starten en configureer netwerkinstellingen.</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoStart">Automatisch starten met Stackroot</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.AutoRestart">Automatisch herstarten bij stoppen (keep alive)</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.ActivePackage">Actieve pakketversie</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.PackageHint">Wijzig de actieve versie via de pakketversies-knop op de Services-pagina.</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Host">Host</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.Port">Poort</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.SslPort">SSL-poort</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.EnableHttps">HTTPS inschakelen (SSL)</sys:String>
+    <sys:String x:Key="Loc.ServiceSettings.HttpPerformance">HTTP-prestatie-instellingen…</sys:String>
+
+    <sys:String x:Key="Loc.SiteProcessLog.LiveUpdates">Live updates</sys:String>
+
+    <sys:String x:Key="Loc.SiteSettings.Title">Sites instellingen</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.Subtitle">Bepaal hoe Stackroot de lokale domeinnaamresolutie beheert.</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHosts">Automatisch Windows hosts-bestand bijwerken voor ingeschakelde domeinen</sys:String>
+    <sys:String x:Key="Loc.SiteSettings.AutoHostsHint">Indien ingeschakeld, schrijft Stackroot 127.0.0.1-vermeldingen voor uw lokale domeinen. Vereist beheerdersrechten als de toegang wordt geweigerd.</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Title">Stackroot DNS-instellingen</sys:String>
+
+    <sys:String x:Key="Loc.TestDns.Subtitle">Routeert geconfigureerde achtervoegsels naar Stackroot DNS op 127.0.0.1:53. Lokale namen verwijzen naar het IP-adres dat u hieronder instelt (standaard 127.0.0.1).</sys:String>
+    <sys:String x:Key="Loc.TestDns.EnabledHint">Schakel uit en Sla op om de hulpservice te stoppen en NRPT-regels te verwijderen. Windows kan eenmalig om goedkeuring van de beheerder vragen.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIp">Verwijzen naar IP</sys:String>
+    <sys:String x:Key="Loc.TestDns.ResolveIpHint">IPv4 of IPv6 geretourneerd voor lokale sites (standaard 127.0.0.1). DNS luistert nog steeds op 127.0.0.1:53; het hosts-bestand gebruikt dit IP-adres ook.</sys:String>
+    <sys:String x:Key="Loc.TestDns.AutoStart">Automatisch starten met Stackroot</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueries">DNS-query's naar bestand loggen</sys:String>
+    <sys:String x:Key="Loc.TestDns.LogQueriesHint">Schrijft elke query naar Logs\test-dns-queries.jsonl. Standaard uitgeschakeld.</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHeader">Achtervoegsels en herstel</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesLabel">Achtervoegsels (één per regel, inclusief de punt vooraf):</sys:String>
+    <sys:String x:Key="Loc.TestDns.SuffixesHint">Voorbeelden: .test, .dev, .com — openbare achtervoegsels hebben invloed op echte domeinen; gebruik ze alleen als u ze nodig heeft.</sys:String>
+    <sys:String x:Key="Loc.TestDns.IfInternetStops">Als het internet stopt met werken</sys:String>
+    <sys:String x:Key="Loc.TestDns.RecoveryHint">Verwijdert StackrootDnsHelper en alle Stackroot NRPT-regels:</sys:String>
+    <sys:String x:Key="Loc.TestDns.CopyCleanup">Herstelopdracht kopiëren</sys:String>
+
+    <sys:String x:Key="Loc.WordPress.Title">WordPress installeren</sys:String>
+    <sys:String x:Key="Loc.WordPress.Subtitle">Configureer uw WordPress-site. Alle velden zijn vooraf ingevuld.</sys:String>
+    <sys:String x:Key="Loc.WordPress.SiteTitle">Sitetitel</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminUsername">Admin gebruikersnaam</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminPassword">Admin wachtwoord</sys:String>
+    <sys:String x:Key="Loc.WordPress.AdminEmail">Admin e-mailadresse</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseName">Databasenaam</sys:String>
+    <sys:String x:Key="Loc.WordPress.DatabaseEngine">Database-engine</sys:String>
+
+    <!-- ── Service and process status labels ── -->
+    <sys:String x:Key="Loc.Status.Error">Fout</sys:String>
+    <sys:String x:Key="Loc.Status.Starting">Starten…</sys:String>
+    <sys:String x:Key="Loc.Status.Restarting">Herstarten…</sys:String>
+    <sys:String x:Key="Loc.Status.Recovering">Herstellen…</sys:String>
+    <sys:String x:Key="Loc.Status.Installing">Installeren...</sys:String>
+    <sys:String x:Key="Loc.Status.DisabledInSettings">Uitgeschakeld in instellingen</sys:String>
+    <sys:String x:Key="Loc.Status.NotInstalled">Niet geïnstalleerd</sys:String>
+    <sys:String x:Key="Loc.Status.Disabled">Uitgeschakeld</sys:String>
+    <sys:String x:Key="Loc.Status.Unavailable">Niet beschikbaar</sys:String>
+
+
+    <!-- ── Main Window (missing keys) ── -->
+    <sys:String x:Key="Loc.MainWindow.TrustCertificate">Certificaat vertrouwen</sys:String>
+    <sys:String x:Key="Loc.MainWindow.UpdateNow">Nu bijwerken</sys:String>
+    <sys:String x:Key="Loc.MainWindow.OpenPerformanceTooltip">Prestatiepagina openen</sys:String>
+    <sys:String x:Key="Loc.MainWindow.RefreshMetricsTooltip">Statistieken vernieuwen</sys:String>
+</ResourceDictionary>

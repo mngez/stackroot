@@ -15,18 +15,18 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Scheduled Tasks"
+                <TextBlock Text="{DynamicResource Loc.ScheduledTasks.Title}"
                            FontSize="28" FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Cron-style scheduled commands — runs while Stackroot is open." />
+                           Text="{DynamicResource Loc.ScheduledTasks.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
-                <Button MinWidth="100" Content="+ Add"
+                <Button MinWidth="100" Content="{DynamicResource Loc.Common.Add}"
                         Margin="0,0,8,0"
                         Command="{Binding AddCommand}" />
-                <Button MinWidth="100" Content="Refresh"
+                <Button MinWidth="100" Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -37,7 +37,7 @@
             <TextBlock VerticalAlignment="Center"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
                        Margin="0,0,8,0"
-                       Text="Site filter:" />
+                       Text="{DynamicResource Loc.ScheduledTasks.SiteFilter}" />
             <ComboBox Width="280"
                       DisplayMemberPath="Label"
                       SelectedValuePath="Id"
@@ -101,23 +101,23 @@
                                 <StackPanel Grid.Column="2" Orientation="Horizontal"
                                             VerticalAlignment="Center" Margin="8,0,0,0">
                                     <Button Width="30" Height="30" Padding="0"
-                                            ToolTip="Run now"
+                                            ToolTip="{DynamicResource Loc.ScheduledTasks.RunNowTooltip}"
                                             Style="{StaticResource StackrootIconButtonStyle}"
                                             Command="{Binding RunNowCommand}"
                                             Content="{Binding RunButtonText}" />
-                                    <Button Content="Log" Width="36" Height="30" Padding="2"
+                                    <Button Content="{DynamicResource Loc.Common.Log}" Width="36" Height="30" Padding="2"
                                             Margin="2,0,0,0" FontSize="11"
                                             IsEnabled="{Binding HasLog}"
                                             ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
                                             PreviewMouseLeftButtonDown="OnTaskLogClick" />
                                     <Button Content="✎" Width="30" Height="30" Padding="0"
                                             Margin="2,0,0,0"
-                                            ToolTip="Edit"
+                                            ToolTip="{DynamicResource Loc.ScheduledTasks.EditTooltip}"
                                             Style="{StaticResource StackrootIconButtonStyle}"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}" />
                                     <controls:OverflowMenuButton Margin="2,0,0,0"
-                                                                 DangerLabel="Delete"
+                                                                 DangerLabel="{DynamicResource Loc.Common.Delete}"
                                                                  DangerCommand="{Binding DeleteCommand}"
                                                                  ButtonWidth="30"
                                                                  ButtonHeight="30" />

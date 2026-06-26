@@ -9,6 +9,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/Controls/SettingHintIcon.xaml" />
             </ResourceDictionary.MergedDictionaries>
+        <helpers:StatusTextConverter x:Key="StatusTextConverter" />
         <SolidColorBrush x:Key="StackrootWindowBrush" Color="#0C1118" />
         <SolidColorBrush x:Key="StackrootSidebarBrush" Color="#121A26" />
         <SolidColorBrush x:Key="StackrootCardBrush" Color="#192333" />

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title="{Binding Title, FallbackValue=Confirm}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="420"
         MinWidth="360"
         SizeToContent="Height"
@@ -46,7 +47,7 @@
                     Orientation="Horizontal">
             <Button Width="88"
                     Margin="0,0,8,0"
-                    Content="Cancel"
+                    Content="{DynamicResource Loc.Common.Cancel}"
                     Command="{Binding CancelCommand}" />
             <Button Width="100"
                     Content="{Binding ConfirmText}"

@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="General Settings"
+            <TextBlock Text="{DynamicResource Loc.GeneralSettings.Title}"
                        FontSize="28"
                        FontWeight="SemiBold" />
             <Border Margin="0,12,0,0"
@@ -32,16 +32,16 @@
                             Padding="12,6"
                             Command="{Binding RestoreFromBackupCommand}"
                             Visibility="{Binding ShowRestoreBackupButton, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="Restore from backup" />
+                        <TextBlock Text="{DynamicResource Loc.GeneralSettings.RestoreFromBackup}" />
                     </Button>
                 </StackPanel>
             </Border>
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Configure base paths, app behavior, and environment defaults" />
+                       Text="{DynamicResource Loc.GeneralSettings.Subtitle}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Changes are saved automatically." />
+                       Text="{DynamicResource Loc.GeneralSettings.AutoSave}" />
         </StackPanel>
 
         <Border Grid.Row="1"
@@ -52,12 +52,12 @@
                 BorderThickness="1"
                 CornerRadius="10">
                 <StackPanel>
-                    <TextBlock Text="App domain" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <TextBlock Text="{DynamicResource Loc.GeneralSettings.AppDomain}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <TextBox Margin="0,6,0,0"
                              Padding="10,6"
                              Text="{Binding AppDomain, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <TextBlock Margin="0,16,0,0" Text="WWW path" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.WwwPath}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -78,7 +78,7 @@
                                        Source="{x:Static helpers:StackrootImages.FolderIcon}"
                                        RenderOptions.BitmapScalingMode="HighQuality" />
                                 <TextBlock VerticalAlignment="Center"
-                                           Text="Browse…" />
+                                           Text="{DynamicResource Loc.Common.Browse}" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -92,10 +92,10 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Foreground="{StaticResource StackrootAccentTextBrush}"
-                            Content="Use default"
+                            Content="{DynamicResource Loc.Common.UseDefault}"
                             Command="{Binding UseDefaultWwwCommand}" />
 
-                    <TextBlock Margin="0,16,0,0" Text="Preferred editor" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.PreferredEditor}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <ComboBox Margin="0,6,0,0"
                               Padding="8,4"
                               ItemsSource="{Binding EditorOptions}"
@@ -105,7 +105,7 @@
 
                     <StackPanel Margin="0,12,0,0"
                                 Visibility="{Binding ShowCustomEditorPath, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="Custom editor path" />
+                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}" Text="{DynamicResource Loc.GeneralSettings.CustomEditorPath}" />
                         <Grid Margin="0,6,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -117,12 +117,12 @@
                                      Text="{Binding CustomEditorPath, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1"
                                     Width="90"
-                                    Content="Browse…"
+                                    Content="{DynamicResource Loc.Common.Browse}"
                                     Command="{Binding BrowseEditorCommand}" />
                         </Grid>
                     </StackPanel>
 
-                    <TextBlock Margin="0,16,0,0" Text="Close behavior" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.CloseBehavior}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <ComboBox Margin="0,6,0,0"
                               Padding="8,4"
                               SelectedItem="{Binding CloseBehavior}">
@@ -131,29 +131,29 @@
                         <abstractions:CloseBehavior>Background</abstractions:CloseBehavior>
                     </ComboBox>
 
-                    <TextBlock Margin="0,16,0,0" Text="Log retention (days)" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.LogRetention}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <TextBlock Margin="0,4,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
-                               Text="Set to 0 to disable automatic cleanup."
+                               Text="{DynamicResource Loc.GeneralSettings.LogRetentionHint}"
                                TextWrapping="Wrap" />
                     <TextBox Margin="0,6,0,0"
                              Padding="10,6"
                              Text="{Binding LogRetentionDays, UpdateSourceTrigger=PropertyChanged}" />
 
                     <CheckBox Margin="0,16,0,0"
-                              Content="Use Stackroot-managed php/composer/node shims in PATH (opt-in)"
+                              Content="{DynamicResource Loc.GeneralSettings.AddBinToPath}"
                               IsChecked="{Binding AddBinToPath}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="When disabled, Stackroot does not override your system php, composer, or node commands."
+                               Text="{DynamicResource Loc.GeneralSettings.AddBinToPathHint}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                Text="{Binding BinPathPreview, StringFormat=Bin path: {0}}" />
 
                     <CheckBox Margin="0,16,0,0"
-                              Content="Launch Stackroot when Windows starts"
+                              Content="{DynamicResource Loc.GeneralSettings.LaunchAtStartup}"
                               IsChecked="{Binding LaunchAtStartup}" />
                     <Grid Margin="0,16,0,0">
                         <Grid.ColumnDefinitions>
@@ -161,7 +161,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <CheckBox VerticalAlignment="Center"
-                                  Content="Show RAM and CPU in the shell header"
+                                  Content="{DynamicResource Loc.GeneralSettings.ShowMetrics}"
                                   IsChecked="{Binding ShellMetricsEnabled}" />
                         <StackPanel Grid.Column="1"
                                     Margin="12,0,0,0"
@@ -171,7 +171,7 @@
                             <TextBlock Margin="0,0,8,0"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="CPU every" />
+                                       Text="{DynamicResource Loc.GeneralSettings.CpuEvery}" />
                             <TextBox Width="52"
                                      Padding="8,4"
                                      VerticalAlignment="Center"
@@ -180,7 +180,7 @@
                             <TextBlock Margin="8,0,0,0"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="sec" />
+                                       Text="{DynamicResource Loc.GeneralSettings.Sec}" />
                         </StackPanel>
                     </Grid>
                     <TextBlock Margin="0,6,0,0"
@@ -190,32 +190,32 @@
                                Visibility="{Binding ShowShellMetricsCpuRefresh, Converter={StaticResource BoolToVis}}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="Lightweight summary with a link to the Performance page. Turn off for a cleaner header."
+                               Text="{DynamicResource Loc.GeneralSettings.MetricsHint}"
                                TextWrapping="Wrap" />
 
                     <CheckBox Margin="0,16,0,0"
-                              Content="Enable site thumbnails (downloads ~300 MB Chromium browser on first use)"
+                              Content="{DynamicResource Loc.GeneralSettings.Thumbnails}"
                               IsChecked="{Binding ThumbnailsEnabled}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="When enabled, a headless browser captures screenshots of your sites for the dashboard."
+                               Text="{DynamicResource Loc.GeneralSettings.ThumbnailsHint}"
                                TextWrapping="Wrap" />
 
                     <CheckBox Margin="0,16,0,0"
-                              Content="Trust local HTTPS CA for all Windows users (requires administrator approval)"
+                              Content="{DynamicResource Loc.GeneralSettings.TrustSslCa}"
                               IsChecked="{Binding TrustSslCaMachineWide}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="When off, Trust SSL installs the certificate for your user account only — no administrator prompt."
+                               Text="{DynamicResource Loc.GeneralSettings.TrustSslHint}"
                                TextWrapping="Wrap" />
 
                     <StackPanel Margin="0,14,0,0" Orientation="Horizontal">
                         <Button Width="160"
-                                Content="Trust SSL"
+                                Content="{DynamicResource Loc.GeneralSettings.TrustSsl}"
                                 Command="{Binding TrustSslCommand}" />
                         <Button Margin="8,0,0,0"
                                 Width="160"
-                                Content="Remove old CAs"
+                                Content="{DynamicResource Loc.GeneralSettings.RemoveOldCas}"
                                 Command="{Binding CleanupSslTrustCommand}" />
                         <TextBlock Margin="12,8,0,0"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
@@ -223,8 +223,18 @@
                     </StackPanel>
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="If Windows shows multiple Stackroot Local CA entries, use Remove old CAs to keep only the current development certificate."
+                               Text="{DynamicResource Loc.GeneralSettings.SslWarning}"
                                TextWrapping="Wrap" />
+
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.Language}" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <ComboBox Margin="0,6,0,0"
+                              Padding="8,4"
+                              MaxWidth="260"
+                              HorizontalAlignment="Left"
+                              ItemsSource="{Binding AvailableLanguages}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="Code"
+                              SelectedValue="{Binding Language}" />
                 </StackPanel>
             </Border>
     </Grid>

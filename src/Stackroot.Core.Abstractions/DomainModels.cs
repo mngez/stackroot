@@ -239,6 +239,7 @@ public record class GeneralSettings
     /// <summary>When true, trust the local HTTPS CA in LocalMachine\Root (all users). Otherwise CurrentUser only.</summary>
     public bool? TrustSslCaMachineWide { get; set; }
     public string? DownloadCachePath { get; set; }
+    public string? Language { get; set; }
 }
 
 public record class DownloadCacheEntry

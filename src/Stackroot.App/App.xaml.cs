@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Helpers;
+using Stackroot.App.Localization;
 using Stackroot.App.Services;
 using Stackroot.App.Services.AppUpdate;
 using Stackroot.App.Services.SslTrust;
@@ -179,6 +180,7 @@ public partial class App : System.Windows.Application
 
         var settingsStore = _services.GetRequiredService<SettingsStore>();
         _services.GetRequiredService<SettingsLoadState>().Initialize(settingsStore);
+        LocalizationManager.Apply(settingsStore.Load().General.Language);
 
         UiInteractionDiagnostics.Register(_diagnostics);
         MariaDbCredentialSync.ActivityLog = message => _diagnostics.LogActivity("MariaDb", message);

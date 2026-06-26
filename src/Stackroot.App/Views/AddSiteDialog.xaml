@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helpers="clr-namespace:Stackroot.App.Helpers"
-        Title="Add web domain"
+        Title="{DynamicResource Loc.AddSite.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="560"
         MinWidth="520"
         SizeToContent="Height"
@@ -25,10 +26,10 @@
         <StackPanel Grid.Row="0">
             <TextBlock FontSize="20"
                        FontWeight="SemiBold"
-                       Text="Add web domain" />
+                       Text="{DynamicResource Loc.AddSite.Title}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Create a local development domain with a project template."
+                       Text="{DynamicResource Loc.AddSite.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -50,7 +51,7 @@
 
                 <TextBlock Margin="0,12,0,8"
                            FontWeight="SemiBold"
-                           Text="Template" />
+                           Text="{DynamicResource Loc.AddSite.Template}" />
                 <ItemsControl ItemsSource="{Binding TemplateCards}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -87,13 +88,13 @@
 
                 <TextBlock Margin="0,8,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Site name" />
+                           Text="{DynamicResource Loc.AddSite.SiteName}" />
                 <TextBox Padding="10,6"
                          Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Domain name" />
+                           Text="{DynamicResource Loc.AddSite.DomainName}" />
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -102,7 +103,8 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Padding="10,6"
-                             ToolTip="Subdomain (e.g. myapp)"
+                             FlowDirection="LeftToRight"
+                             ToolTip="{DynamicResource Loc.AddSite.SubdomainTooltip}"
                              Text="{Binding Domain, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Grid.Column="1"
                                Margin="8,0"
@@ -110,6 +112,7 @@
                                Text="." />
                     <TextBox Grid.Column="2"
                              Padding="10,6"
+                             FlowDirection="LeftToRight"
                              Text="{Binding DomainSuffix, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
                 <TextBlock Margin="0,4,0,0"
@@ -119,22 +122,23 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Domain aliases (optional)" />
+                           Text="{DynamicResource Loc.AddSite.DomainAliases}" />
                 <TextBox MinHeight="72"
                          Padding="10,6"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Consolas"
+                         FlowDirection="LeftToRight"
                          Text="{Binding DomainAliasesText, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Margin="0,4,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="One alias per line (e.g. sameapp.test or *.app.test). Wildcard aliases work in nginx; literal names are added to hosts and HTTPS."
+                           Text="{DynamicResource Loc.AddSite.AliasesHint}"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Backend (PHP)" />
+                           Text="{DynamicResource Loc.AddSite.PhpBackend}" />
                 <ComboBox Padding="8,4"
                           ItemsSource="{Binding PhpVersions}"
                           DisplayMemberPath="Label"
@@ -144,7 +148,7 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Node.js" />
+                           Text="{DynamicResource Loc.AddSite.NodeJs}" />
                 <ComboBox Padding="8,4"
                           ItemsSource="{Binding NodeVersions}"
                           DisplayMemberPath="Label"
@@ -153,23 +157,23 @@
 
                 <TextBlock Margin="0,12,0,6"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Document root" />
+                           Text="{DynamicResource Loc.AddSite.DocumentRoot}" />
                 <TextBlock FontFamily="Consolas"
                            Text="{Binding DocumentRootLabel}" />
                 <TextBlock Margin="0,2,0,0"
                            FontSize="12"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Set by template" />
+                           Text="{DynamicResource Loc.AddSite.SetByTemplate}" />
 
                 <TextBlock Margin="0,16,0,8"
                            FontWeight="SemiBold"
-                           Text="Folder" />
+                           Text="{DynamicResource Loc.AddSite.Folder}" />
                 <RadioButton Margin="0,0,0,6"
-                             Content="Create under WWW (Settings)"
+                             Content="{DynamicResource Loc.AddSite.CreateUnderWww}"
                              GroupName="SitePathMode"
                              IsChecked="{Binding IsDefaultPathMode}" />
                 <RadioButton Margin="0,0,0,8"
-                             Content="Existing folder"
+                             Content="{DynamicResource Loc.AddSite.ExistingFolder}"
                              GroupName="SitePathMode"
                              IsChecked="{Binding IsCustomPathMode}" />
                 <TextBlock Margin="0,0,0,8"
@@ -183,6 +187,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Padding="10,6"
+                             FlowDirection="LeftToRight"
                              Text="{Binding CustomPath, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="1"
                             Margin="8,0,0,0"
@@ -196,7 +201,7 @@
                                    Source="{x:Static helpers:StackrootImages.FolderIcon}"
                                    RenderOptions.BitmapScalingMode="HighQuality" />
                             <TextBlock VerticalAlignment="Center"
-                                       Text="Browse…" />
+                                       Text="{DynamicResource Loc.Common.Browse}" />
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -207,11 +212,11 @@
             <CheckBox VerticalAlignment="Center"
                       IsChecked="{Binding GoToSiteDashboard}"
                       Foreground="{StaticResource StackrootTextMutedBrush}"
-                      Content="Go to site dashboard after creation" />
+                      Content="{DynamicResource Loc.AddSite.GoToDashboard}" />
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Button Width="88"
                         Margin="0,0,8,0"
-                        Content="Cancel"
+                        Content="{DynamicResource Loc.Common.Cancel}"
                         Command="{Binding CloseCommand}" />
                 <Button Width="100"
                         Content="{Binding CreateButtonText}"

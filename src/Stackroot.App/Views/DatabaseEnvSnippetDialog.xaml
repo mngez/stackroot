@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title=".env snippet"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="560"
         Height="420"
         MinWidth="480"
@@ -26,7 +27,7 @@
                        Text="{Binding DatabaseName, StringFormat=.env snippet for {0}}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Copy these lines into your site .env file."
+                       Text="{DynamicResource Loc.DatabaseEnv.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -47,11 +48,11 @@
                     Orientation="Horizontal">
             <Button MinWidth="100"
                     Margin="0,0,8,0"
-                    Content="Copy"
+                    Content="{DynamicResource Loc.Common.Copy}"
                     Style="{StaticResource StackrootPrimaryButtonStyle}"
                     Command="{Binding CopyCommand}" />
             <Button MinWidth="100"
-                    Content="Close"
+                    Content="{DynamicResource Loc.Common.Close}"
                     Command="{Binding CloseCommand}" />
         </StackPanel>
     </Grid>

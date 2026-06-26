@@ -1,0 +1,566 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ── Layout direction ── -->
+    <FlowDirection x:Key="Loc.FlowDirection">LeftToRight</FlowDirection>
+
+    <!-- ── Common actions ── -->
+    <sys:String x:Key="Loc.Common.Save">저장</sys:String>
+    <sys:String x:Key="Loc.Common.Cancel">취소</sys:String>
+    <sys:String x:Key="Loc.Common.Close">닫기</sys:String>
+    <sys:String x:Key="Loc.Common.Refresh">새로고침</sys:String>
+    <sys:String x:Key="Loc.Common.Add">+ 추가</sys:String>
+    <sys:String x:Key="Loc.Common.Edit">편집</sys:String>
+    <sys:String x:Key="Loc.Common.Delete">삭제</sys:String>
+    <sys:String x:Key="Loc.Common.Install">설치</sys:String>
+    <sys:String x:Key="Loc.Common.Uninstall">제거</sys:String>
+    <sys:String x:Key="Loc.Common.Remove">삭제</sys:String>
+    <sys:String x:Key="Loc.Common.MoreActions">추가 작업</sys:String>
+    <sys:String x:Key="Loc.Common.Browse">찾아보기…</sys:String>
+    <sys:String x:Key="Loc.Common.OpenFolder">폴더 열기</sys:String>
+    <sys:String x:Key="Loc.Common.DataFolder">데이터 폴더</sys:String>
+    <sys:String x:Key="Loc.Common.Manage">관리</sys:String>
+    <sys:String x:Key="Loc.Common.ManageArrow">관리 →</sys:String>
+    <sys:String x:Key="Loc.Common.Settings">설정</sys:String>
+    <sys:String x:Key="Loc.Common.Log">로그</sys:String>
+    <sys:String x:Key="Loc.Common.Start">시작</sys:String>
+    <sys:String x:Key="Loc.Common.Stop">중지</sys:String>
+    <sys:String x:Key="Loc.Common.Restart">재시작</sys:String>
+    <sys:String x:Key="Loc.Common.Copy">복사</sys:String>
+    <sys:String x:Key="Loc.Common.Open">열기</sys:String>
+    <sys:String x:Key="Loc.Common.Capture">캡처</sys:String>
+    <sys:String x:Key="Loc.Common.Later">나중에</sys:String>
+    <sys:String x:Key="Loc.Common.Export">내보내기</sys:String>
+    <sys:String x:Key="Loc.Common.Import">가져오기</sys:String>
+    <sys:String x:Key="Loc.Common.Clear">지우기</sys:String>
+    <sys:String x:Key="Loc.Common.Restore">복원</sys:String>
+    <sys:String x:Key="Loc.Common.Rebuild">nginx 재빌드</sys:String>
+    <sys:String x:Key="Loc.Common.Create">생성</sys:String>
+    <sys:String x:Key="Loc.Common.Backups">백업</sys:String>
+    <sys:String x:Key="Loc.Common.Enabled">활성화됨</sys:String>
+    <sys:String x:Key="Loc.Common.UseDefault">기본값 사용</sys:String>
+    <sys:String x:Key="Loc.Common.Choose">선택…</sys:String>
+    <sys:String x:Key="Loc.Common.Upload">업로드…</sys:String>
+    <sys:String x:Key="Loc.Common.Back">← 사이트</sys:String>
+    <sys:String x:Key="Loc.Common.StopAll">모두 중지</sys:String>
+    <sys:String x:Key="Loc.Common.StartAll">모두 시작</sys:String>
+    <sys:String x:Key="Loc.Common.RestartAll">모두 재시작</sys:String>
+    <sys:String x:Key="Loc.Common.Activate">활성화</sys:String>
+    <sys:String x:Key="Loc.Common.RunAgain">다시 실행</sys:String>
+    <sys:String x:Key="Loc.Common.ViewLog">로그 보기</sys:String>
+    <sys:String x:Key="Loc.Common.Dismiss">닫기</sys:String>
+    <sys:String x:Key="Loc.Common.ManageCustomCommands">사용자 정의 명령 관리</sys:String>
+    <sys:String x:Key="Loc.Common.OpenSite">사이트 열기</sys:String>
+    <sys:String x:Key="Loc.Common.OpenAdmin">관리자 페이지 열기</sys:String>
+    <sys:String x:Key="Loc.Common.Disable">비활성화</sys:String>
+    <sys:String x:Key="Loc.Common.Enable">활성화</sys:String>
+    <sys:String x:Key="Loc.Common.Disabling">비활성화 중…</sys:String>
+    <sys:String x:Key="Loc.Common.Enabling">활성화 중…</sys:String>
+    <sys:String x:Key="Loc.Common.PinToFeatured">주요 항목으로 고정</sys:String>
+    <sys:String x:Key="Loc.Common.RemoveFromFeatured">주요 항목에서 고정 해제</sys:String>
+    <sys:String x:Key="Loc.Common.KeepAliveActive">Keep-alive 활성화됨</sys:String>
+
+    <!-- ── Status ── -->
+    <sys:String x:Key="Loc.Status.Running">실행 중</sys:String>
+    <sys:String x:Key="Loc.Status.Stopped">중지됨</sys:String>
+    <sys:String x:Key="Loc.Status.Errors">오류</sys:String>
+    <sys:String x:Key="Loc.Status.Live">라이브</sys:String>
+    <sys:String x:Key="Loc.Status.LiveBadge">LIVE</sys:String>
+    <sys:String x:Key="Loc.Status.Active">활성</sys:String>
+    <sys:String x:Key="Loc.Status.Installed">설치됨</sys:String>
+    <sys:String x:Key="Loc.Status.InstalledReady">설치됨 및 준비 완료</sys:String>
+    <sys:String x:Key="Loc.Status.Ready">준비 완료</sys:String>
+    <sys:String x:Key="Loc.Status.Off">꺼짐</sys:String>
+    <sys:String x:Key="Loc.Status.Capturing">캡처 중…</sys:String>
+    <sys:String x:Key="Loc.Status.LiveUpdates">실시간 업데이트</sys:String>
+    <sys:String x:Key="Loc.Status.NoActivity">아직 활동 없음</sys:String>
+    <sys:String x:Key="Loc.Status.ClearSessionLog">세션 로그 지우기</sys:String>
+    <sys:String x:Key="Loc.Status.ThisSession">이 세션</sys:String>
+    <sys:String x:Key="Loc.Status.Activity">활동</sys:String>
+
+    <!-- ── Dashboard ── -->
+    <sys:String x:Key="Loc.Dashboard.Title">대시보드</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Subtitle">서비스, PHP FastCGI 및 활성화된 프로세스</sys:String>
+    <sys:String x:Key="Loc.Dashboard.Loading">대시보드 로딩 중…</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServices">아직 활성화된 서비스가 없습니다</sys:String>
+    <sys:String x:Key="Loc.Dashboard.NoServicesHint">서비스 페이지에서 패키지를 설치하고 서비스를 활성화하세요.</sys:String>
+    <sys:String x:Key="Loc.Dashboard.GoToServices">서비스로 이동</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpFastCgi">PHP FastCGI 리스너</sys:String>
+    <sys:String x:Key="Loc.Dashboard.PhpListeners">PHP 리스너</sys:String>
+    <sys:String x:Key="Loc.Dashboard.EnabledProcesses">활성화된 프로세스</sys:String>
+    <sys:String x:Key="Loc.Dashboard.StartAll">모두 시작</sys:String>
+    <sys:String x:Key="Loc.Dashboard.QuickActions">빠른 작업</sys:String>
+
+    <!-- ── Services ── -->
+    <sys:String x:Key="Loc.Services.Title">서비스</sys:String>
+    <sys:String x:Key="Loc.Services.Subtitle">패키지 설치, 버전 선택 및 포트 구성 — 대시보드에서 서비스 시작 및 중지</sys:String>
+    <sys:String x:Key="Loc.Services.RebuildTooltip">사이트 vhosts, 앱 도메인, 관리 도구 재생성 및 nginx 재로드</sys:String>
+
+    <!-- ── Sites ── -->
+    <sys:String x:Key="Loc.Sites.Title">웹 도메인</sys:String>
+    <sys:String x:Key="Loc.Sites.Subtitle">상태별로 그룹화된 로컬 개발 도메인</sys:String>
+    <sys:String x:Key="Loc.Sites.AddDomain">도메인 추가</sys:String>
+    <sys:String x:Key="Loc.Sites.WwwRoot">WWW 루트</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomains">아직 도메인이 없습니다</sys:String>
+    <sys:String x:Key="Loc.Sites.NoDomainsHint">템플릿을 선택하고 첫 번째 로컬 개발 도메인을 추가하세요.</sys:String>
+    <sys:String x:Key="Loc.Sites.ColName">이름</sys:String>
+    <sys:String x:Key="Loc.Sites.ColFolder">폴더</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttps">https</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenHttpsTooltip">브라우저에서 사이트 열기 (HTTPS)</sys:String>
+    <sys:String x:Key="Loc.Sites.OpenFolderTooltip">탐색기에서 사이트 폴더 열기</sys:String>
+    <sys:String x:Key="Loc.Sites.PinTooltip">주요 항목으로 고정</sys:String>
+    <sys:String x:Key="Loc.Sites.DB">DB</sys:String>
+    <sys:String x:Key="Loc.Sites.RebuildTooltip">사이트 vhosts, 앱 도메인, 관리 도구 재생성 및 nginx 재로드</sys:String>
+    <sys:String x:Key="Loc.Sites.HostsTooltip">hosts 파일 열기</sys:String>
+    <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">사이트 설정</sys:String>
+    <sys:String x:Key="Loc.Sites.NoMatch">현재 필터와 일치하는 도메인이 없습니다.</sys:String>
+
+    <!-- ── Site Manage ── -->
+    <sys:String x:Key="Loc.SiteManage.Title">사이트 대시보드</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslPaths">SSL 경로</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslTooltip">로컬 dev.crt 및 dev.key 경로</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Terminal">터미널</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Template">템플릿</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Path">경로</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Https">HTTPS</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Username">사용자 이름</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Password">비밀번호</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ShowHidePassword">비밀번호 표시/숨기기</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ChangePassword">비밀번호 변경</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RefreshScreenshot">스크린샷 새로고침</sys:String>
+    <sys:String x:Key="Loc.SiteManage.OpenBrowserTooltip">브라우저에서 사이트 열기</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoProcesses">이 사이트에 연결된 프로세스가 아직 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoDatabases">이 사이트에 연결된 데이터베이스가 아직 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoScheduled">이 사이트에 예약된 작업이 아직 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ScheduledTasksHint">이 사이트용 Cron 스타일 명령 — Stackroot가 열려 있는 동안 실행됩니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasks">모든 작업</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">전체 예약된 작업 페이지 열기</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CopyPassword">비밀번호 복사</sys:String>
+
+        <!-- ── PHP ── -->
+        <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
+        <sys:String x:Key="Loc.Php.Subtitle">설치된 PHP 버전 및 FastCGI 런타임 관리</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfiles">프로필 가져오기</sys:String>
+        <sys:String x:Key="Loc.Php.ImportTooltip">하나 이상의 PHP 프로필을 가져옵니다. 누락된 PHP 버전은 자동으로 설치됩니다.</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfiles">프로필 내보내기</sys:String>
+        <sys:String x:Key="Loc.Php.ExportTooltip">설정 및 확장 프로그램이 포함된 모든 설치된 PHP 버전을 내보냅니다.</sys:String>
+        <sys:String x:Key="Loc.Php.RuntimeTooltip">PHP 런타임 설정</sys:String>
+        <sys:String x:Key="Loc.Php.Loading">PHP 데이터 로드 중…</sys:String>
+        <sys:String x:Key="Loc.Php.EnsureFastCgi">FastCGI 확인</sys:String>
+        <sys:String x:Key="Loc.Php.Extensions">확장 기능</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfile">프로필 내보내기</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfile">프로필 가져오기</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingVersions">PHP 버전 설치 중</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingHint">설치는 백그라운드에서 실행됩니다. 위의 목록에서 다른 버전을 대기열에 추가할 수 있습니다.</sys:String>
+    
+        <!-- ── Node ── -->
+        <sys:String x:Key="Loc.Node.Title">Node</sys:String>
+        <sys:String x:Key="Loc.Node.Subtitle">nvm-windows 설치, Node 버전 추가 및 활성 런타임 전환</sys:String>
+        <sys:String x:Key="Loc.Node.NvmNotInstalled">먼저 nvm-windows를 설치하세요</sys:String>
+        <sys:String x:Key="Loc.Node.NvmHint">Stackroot는 Node 버전을 다운로드하고 전환하기 위해 nvm-windows를 사용합니다. nvm이 설치될 때까지 이 페이지의 다른 기능은 작동하지 않습니다.</sys:String>
+        <sys:String x:Key="Loc.Node.InstallNvm">nvm-windows 설치</sys:String>
+        <sys:String x:Key="Loc.Node.InstallVersion">Node 버전 설치</sys:String>
+        <sys:String x:Key="Loc.Node.InstallHint">목록에서 버전을 선택하거나 사용자 지정 버전을 입력하세요 (입력을 시작하면 드롭다운이 초기화됩니다).</sys:String>
+        <sys:String x:Key="Loc.Node.CustomSemver">선택적 사용자 지정 semver</sys:String>
+        <sys:String x:Key="Loc.Node.QuickInstall">빠른 설치 (즉시 다운로드 및 활성화)</sys:String>
+        <sys:String x:Key="Loc.Node.ActivateTooltip">이 Node 버전을 다운로드, 설치 및 활성화합니다</sys:String>
+        <sys:String x:Key="Loc.Node.InstalledVersions">설치된 버전</sys:String>
+        <sys:String x:Key="Loc.Node.NoVersions">설치된 Node 버전이 없습니다. 위의 설치 버튼이나 빠른 설치 칩을 사용하세요.</sys:String>
+        <sys:String x:Key="Loc.Node.NvmSettingsTooltip">Node 설정</sys:String>
+        <sys:String x:Key="Loc.Node.RemoveNvm">nvm 제거</sys:String>
+    
+            <!-- ── Databases ── -->
+    <sys:String x:Key="Loc.Databases.Title">데이터베이스</sys:String>
+    <sys:String x:Key="Loc.Databases.SettingsTooltip">데이터베이스 설정</sys:String>
+    <sys:String x:Key="Loc.Databases.CreateButton">+ 생성</sys:String>
+    <sys:String x:Key="Loc.Databases.Search">검색</sys:String>
+    <sys:String x:Key="Loc.Databases.Engine">엔진</sys:String>
+    <sys:String x:Key="Loc.Databases.NoMatch">현재 필터와 일치하는 데이터베이스가 없습니다.</sys:String>
+    <sys:String x:Key="Loc.Databases.ColName">이름</sys:String>
+    <sys:String x:Key="Loc.Databases.ColEngine">엔진</sys:String>
+    <sys:String x:Key="Loc.Databases.ColCreated">생성일</sys:String>
+    <sys:String x:Key="Loc.Databases.ColLastBackup">최근 백업</sys:String>
+    <sys:String x:Key="Loc.Databases.ColActions">작업</sys:String>
+    <sys:String x:Key="Loc.Databases.DotEnv">.env</sys:String>
+    <sys:String x:Key="Loc.Databases.Backup">백업</sys:String>
+
+    <!-- ── Downloads ── -->
+    <sys:String x:Key="Loc.Downloads.Title">다운로드</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColPackage">패키지</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColFile">파일</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColSize">크기</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColDownloaded">다운로드됨</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColUrl">URL</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColAction">작업</sys:String>
+
+    <!-- ── Logs ── -->
+    <sys:String x:Key="Loc.Logs.Title">로그</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupOld">오래된 로그 정리</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupAll">모든 로그 정리</sys:String>
+    <sys:String x:Key="Loc.Logs.Loading">로그 로드 중…</sys:String>
+    <sys:String x:Key="Loc.Logs.NoFiles">로그 파일을 찾을 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.Logs.ColCategory">카테고리</sys:String>
+    <sys:String x:Key="Loc.Logs.ColPath">경로</sys:String>
+    <sys:String x:Key="Loc.Logs.ColSize">크기</sys:String>
+    <sys:String x:Key="Loc.Logs.ColModified">수정일</sys:String>
+    <sys:String x:Key="Loc.Logs.ColAction">작업</sys:String>
+
+        <!-- ── Performance ── -->
+        <sys:String x:Key="Loc.Performance.Title">성능</sys:String>
+        <sys:String x:Key="Loc.Performance.Sampled">샘플링됨: </sys:String>
+        <sys:String x:Key="Loc.Performance.AppAndServices">앱 &amp; 서비스</sys:String>
+        <sys:String x:Key="Loc.Performance.TotalMemory">총 메모리: </sys:String>
+        <sys:String x:Key="Loc.Performance.PhpListeners">PHP 리스너</sys:String>
+        <sys:String x:Key="Loc.Performance.CustomProcesses">사용자 지정 프로세스</sys:String>
+        <sys:String x:Key="Loc.Performance.ColLabel">레이블</sys:String>
+        <sys:String x:Key="Loc.Performance.ColType">유형</sys:String>
+        <sys:String x:Key="Loc.Performance.ColStatus">상태</sys:String>
+        <sys:String x:Key="Loc.Performance.ColPid">PID</sys:String>
+        <sys:String x:Key="Loc.Performance.ColCpu">CPU</sys:String>
+        <sys:String x:Key="Loc.Performance.ColMemory">메모리</sys:String>
+        <sys:String x:Key="Loc.Performance.ColVersion">버전</sys:String>
+        <sys:String x:Key="Loc.Performance.ColEndpoint">엔드포인트</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipOpen">성능 페이지 열기</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipRefresh">메트릭 새로고침</sys:String>
+    
+        <!-- ── Processes ── -->
+        <sys:String x:Key="Loc.Processes.Title">프로세스</sys:String>
+        <sys:String x:Key="Loc.Processes.Subtitle">앱 전체 및 사이트 연결 백그라운드 명령을 위한 통합 관리자(Supervisor)</sys:String>
+        <sys:String x:Key="Loc.Processes.SiteFilter">사이트 필터:</sys:String>
+        <sys:String x:Key="Loc.Processes.StartAllEnabled">활성화된 모든 작업 시작</sys:String>
+        <sys:String x:Key="Loc.Processes.NoMatch">현재 필터와 일치하는 프로세스가 없습니다.</sys:String>
+        <sys:String x:Key="Loc.Processes.AddProcess">+ 프로세스 추가</sys:String>
+        <sys:String x:Key="Loc.Processes.PinTooltip">기본으로 고정</sys:String>
+    
+            <!-- ── Scheduled Tasks ── -->
+    <sys:String x:Key="Loc.ScheduledTasks.Title">예약된 작업</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.Subtitle">Cron 스타일 정기 실행 명령 — Stackroot가 열려 있는 동안 실행됩니다.</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.SiteFilter">사이트 필터:</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.RunNowTooltip">지금 실행</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.EditTooltip">편집</sys:String>
+
+    <!-- ── Tools ── -->
+    <sys:String x:Key="Loc.Tools.Title">도구</sys:String>
+    <sys:String x:Key="Loc.Tools.Subtitle">CLI 유틸리티, 관리자 UI — Stackroot에서 설치 및 업데이트 가능.</sys:String>
+    <sys:String x:Key="Loc.Tools.CheckUpdates">업데이트 확인</sys:String>
+    <sys:String x:Key="Loc.Tools.InstallTooltip">패키지 설치</sys:String>
+    <sys:String x:Key="Loc.Tools.VersionsTooltip">패키지 버전</sys:String>
+    <sys:String x:Key="Loc.Tools.SettingsTooltip">설정</sys:String>
+    <sys:String x:Key="Loc.Tools.OpenTooltip">브라우저에서 열기</sys:String>
+    <sys:String x:Key="Loc.Tools.DismissTooltip">닫기</sys:String>
+
+        <!-- ── General Settings ── -->
+        <sys:String x:Key="Loc.GeneralSettings.Title">일반 설정</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Subtitle">기본 경로, 앱 기본 동작 및 환경 기본값 구성</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AutoSave">변경 사항은 자동으로 저장됩니다.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">백업에서 복구</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AppDomain">앱 도메인</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW 경로</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">선호하는 에디터</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">사용자 지정 에디터 경로</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">종료 시 동작</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetention">로그 보존 (일수)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetentionHint">자동 정리를 비활성화하려면 0으로 설정하세요.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPath">PATH에 Stackroot에서 관리하는 php/composer/node 심(shims) 사용 (동의 필요)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPathHint">비활성화하면 Stackroot가 시스템의 php, composer 또는 node 명령어를 오버라이드하지 않습니다.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LaunchAtStartup">Windows 시작 시 Stackroot 실행</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ShowMetrics">셸 헤더에 RAM 및 CPU 표시</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CpuEvery">CPU 측정 주기</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Sec">초</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.MetricsHint">성능 페이지 링크가 포함된 가벼운 요약입니다. 더 깔끔한 헤더를 원하시면 해제하세요.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Thumbnails">사이트 썸네일 활성화 (첫 사용 시 약 300MB의 Chromium 브라우저를 다운로드합니다)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ThumbnailsHint">활성화하면 헤드리스 브라우저가 대시보드용 사이트 스크린샷을 캡처합니다.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslCa">모든 Windows 사용자에 대해 로컬 HTTPS CA 신뢰 (관리자 권한 승인 필요)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslHint">비활성화되어 있으면 SSL 신뢰 시 사용자의 계정에만 인증서가 설치되며 관리자 프롬프트가 뜨지 않습니다.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSsl">SSL 신뢰하기</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RemoveOldCas">이전 CA 제거</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.SslWarning">Windows에 여러 개의 Stackroot Local CA 항목이 표시되는 경우, 이전 CA 제거를 사용하여 현재 개발 인증서만 유지하세요.</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DiagnosticsLog">진단 로그 활성화 (개발용 보고서)</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Language">언어</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DownloadCache">다운로드 캐시 경로</sys:String>
+        <!-- ── Dialogs ── -->
+        <sys:String x:Key="Loc.AddProcess.Title">모니터링할 백그라운드 프로세스를 구성합니다.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Name">이름</sys:String>
+        <sys:String x:Key="Loc.AddProcess.LinkedSite">연결된 사이트 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.AddProcess.ProjectFolder">프로젝트 폴더</sys:String>
+        <sys:String x:Key="Loc.AddProcess.ProjectFolderHint">연결된 사이트가 없을 때의 절대적인 프로젝트 루트 경로입니다.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.WorkingDir">작업 디렉토리</sys:String>
+        <sys:String x:Key="Loc.AddProcess.WorkingDirHint">프로젝트 폴더에 대한 상대 경로 또는 이를 오버라이드하는 절대 경로입니다.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Runtime">런타임</sys:String>
+        <sys:String x:Key="Loc.AddProcess.PhpVersion">PHP 버전</sys:String>
+        <sys:String x:Key="Loc.AddProcess.PhpVersionHint">PHP 및 Composer 런타임에 사용됩니다. 기본값은 연결된 사이트의 PHP 버전입니다.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Command">명령어</sys:String>
+        <sys:String x:Key="Loc.AddProcess.CommandHint">Shell: 전체 명령어 입력. 기타 런타임: 실행 파일 뒤에 오는 인자(arguments) 입력.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.RestartDelay">재시작 지연 시간 (초)</sys:String>
+        <sys:String x:Key="Loc.AddProcess.RestartDelayHint">종료 후 재시작 전 대기 시간입니다. 기본값(2초 후 점진적 백오프)을 사용하려면 비워두세요.</sys:String>
+        <sys:String x:Key="Loc.AddProcess.AutoStart">Stackroot와 함께 자동 시작</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Featured">주요 항목 (상단에 고정)</sys:String>
+    
+        <sys:String x:Key="Loc.AddSite.Title">웹 도메인 추가</sys:String>
+        <sys:String x:Key="Loc.AddSite.Subtitle">프로젝트 템플릿을 사용하여 로컬 개발 도메인을 생성합니다.</sys:String>
+        <sys:String x:Key="Loc.AddSite.Template">템플릿</sys:String>
+        <sys:String x:Key="Loc.AddSite.SiteName">사이트 이름</sys:String>
+        <sys:String x:Key="Loc.AddSite.DomainName">도메인 이름</sys:String>
+        <sys:String x:Key="Loc.AddSite.SubdomainTooltip">서브도메인 (예: myapp)</sys:String>
+        <sys:String x:Key="Loc.AddSite.DomainAliases">도메인 별칭 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.AddSite.AliasesHint">한 줄에 하나의 별칭 입력 (예: sameapp.test 또는 *.app.test). 와일드카드 별칭은 nginx에서 작동하며, 리터럴 이름은 hosts 및 HTTPS에 추가됩니다.</sys:String>
+        <sys:String x:Key="Loc.AddSite.PhpBackend">백엔드 (PHP)</sys:String>
+        <sys:String x:Key="Loc.AddSite.NodeJs">Node.js</sys:String>
+        <sys:String x:Key="Loc.AddSite.DocumentRoot">도큐먼트 루트</sys:String>
+        <sys:String x:Key="Loc.AddSite.SetByTemplate">템플릿에 의해 설정됨</sys:String>
+        <sys:String x:Key="Loc.AddSite.Folder">폴더</sys:String>
+        <sys:String x:Key="Loc.AddSite.CreateUnderWww">WWW 하위에 생성 (설정)</sys:String>
+        <sys:String x:Key="Loc.AddSite.ExistingFolder">기존 폴더</sys:String>
+        <sys:String x:Key="Loc.AddSite.GoToDashboard">생성 후 사이트 대시보드로 이동</sys:String>
+    
+        <sys:String x:Key="Loc.ChangePassword.Title">관리자 비밀번호 변경</sys:String>
+        <sys:String x:Key="Loc.ChangePassword.Subtitle">WordPress 관리자 사용자의 새 비밀번호를 입력하세요.</sys:String>
+        <sys:String x:Key="Loc.ChangePassword.Change">변경</sys:String>
+    
+        <sys:String x:Key="Loc.CreateDatabase.Title">데이터베이스 생성</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.Subtitle">개발용 로컬 SQL 데이터베이스를 등록합니다.</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.DatabaseName">데이터베이스 이름</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.Engine">엔진</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.LinkToSite">사이트에 연결 (선택 사항)</sys:String>
+    
+        <sys:String x:Key="Loc.CronTask.Title">새 예약된 작업</sys:String>
+        <sys:String x:Key="Loc.CronTask.Label">레이블</sys:String>
+        <sys:String x:Key="Loc.CronTask.LinkedSite">연결된 사이트 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.CronTask.Command">명령어</sys:String>
+        <sys:String x:Key="Loc.CronTask.WorkingDir">작업 디렉토리</sys:String>
+        <sys:String x:Key="Loc.CronTask.Schedule">일정</sys:String>
+        <sys:String x:Key="Loc.CronTask.Minute">분</sys:String>
+        <sys:String x:Key="Loc.CronTask.Hour">시</sys:String>
+        <sys:String x:Key="Loc.CronTask.Day">일</sys:String>
+        <sys:String x:Key="Loc.CronTask.Month">월</sys:String>
+        <sys:String x:Key="Loc.CronTask.Weekday">요일</sys:String>
+        <sys:String x:Key="Loc.CronTask.CaptureLog">출력을 로그 파일에 기록</sys:String>
+    
+        <sys:String x:Key="Loc.CustomCommands.Title">사용자 지정 명령어</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ImportTooltip">다른 사이트에서 내보낸 파일로부터 명령어 추가</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ExportTooltip">다른 사이트에서 가져올 수 있도록 명령어를 파일로 저장</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Label">레이블</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Command">명령어</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ButtonColors">버튼 색상 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ColorText">텍스트</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ColorBackground">배경</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ResetColors">기본 색상으로 재설정</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Icon">아이콘 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.RemoveIcon">아이콘 제거</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Preview">미리보기</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Select">명령어를 선택하거나 새로 추가하세요.</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.RunningWarning">실행 중인 명령어는 삭제할 수 없습니다. 명령어를 먼저 중지하세요.</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseBackups.Subtitle">백업 파일을 선택하고 일치하는 데이터베이스로 복원하세요.</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColFile">파일</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColDatabase">데이터베이스</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColEngine">엔진</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColCreated">생성일</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColSize">크기</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseEnv.Subtitle">이 줄들을 사이트의 .env 파일에 복사하세요.</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseSettings.Title">데이터베이스 설정</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Subtitle">설정된 인증 정보는 MySQL/MariaDB에 자동으로 적용됩니다. 로컬 개발 환경용이므로 비밀번호는 평문으로 표시됩니다.</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.MysqlCredentials">MySQL 인증 정보</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.MariaDbCredentials">MariaDB 인증 정보</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Username">사용자 이름</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Password">비밀번호</sys:String>
+    
+        <sys:String x:Key="Loc.DevSslPaths.Title">로컬 SSL 경로</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.Subtitle">Stackroot 개발 인증서 파일 (PEM)입니다. Node 서버나 .env 파일 내에서 이 경로들을 사용하세요.</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.Certificate">인증서 (dev.crt)</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.PrivateKey">개인 키 (dev.key)</sys:String>
+    
+        <sys:String x:Key="Loc.Downloads.NoActive">진행 중인 다운로드 없음</sys:String>
+        <sys:String x:Key="Loc.Downloads.RunInBackground">백그라운드에서 실행</sys:String>
+        <sys:String x:Key="Loc.Downloads.CloseTooltip">닫기</sys:String>
+    
+        <sys:String x:Key="Loc.EditSite.Title">웹 도메인 수정</sys:String>
+        <sys:String x:Key="Loc.EditSite.Subtitle">템플릿, PHP 백엔드, HTTPS 설정 및 개발 프록시를 업데이트합니다.</sys:String>
+        <sys:String x:Key="Loc.EditSite.Domain">도메인</sys:String>
+        <sys:String x:Key="Loc.EditSite.DomainFixed">도메인은 변경할 수 없습니다 — 이름을 바꾸려면 삭제 후 다시 추가하세요.</sys:String>
+        <sys:String x:Key="Loc.EditSite.DomainAliases">도메인 별칭 (선택 사항)</sys:String>
+        <sys:String x:Key="Loc.EditSite.AliasesHint">한 줄에 하나의 별칭 입력 (예: sameapp.test 또는 *.app.test). 와일드카드 별칭은 nginx에서 작동하며, 리터럴 이름은 hosts 및 HTTPS에 추가됩니다.</sys:String>
+        <sys:String x:Key="Loc.EditSite.Folder">폴더</sys:String>
+        <sys:String x:Key="Loc.EditSite.FolderHint">nginx 도큐먼트 루트는 이 폴더와 템플릿 도큐먼트 루트 설정을 따릅니다.</sys:String>
+        <sys:String x:Key="Loc.EditSite.Template">템플릿</sys:String>
+        <sys:String x:Key="Loc.EditSite.SiteName">사이트 이름</sys:String>
+        <sys:String x:Key="Loc.EditSite.PhpBackend">백엔드 (PHP)</sys:String>
+        <sys:String x:Key="Loc.EditSite.DocumentRoot">도큐먼트 루트</sys:String>
+        <sys:String x:Key="Loc.EditSite.VhostEnabled">활성화됨 (nginx vhost + hosts 항목 추가)</sys:String>
+        <sys:String x:Key="Loc.EditSite.ForceHttps">HTTPS 강제 적용 (HTTP → HTTPS 리다이렉트)</sys:String>
+        <sys:String x:Key="Loc.EditSite.HttpsHint">비활성화하면 사이트가 HTTP로만 서비스되므로, 브라우저가 HTTPS로 자동 업그레이드하는 것을 방지할 수 있습니다.</sys:String>
+        <sys:String x:Key="Loc.EditSite.DevProxies">개발 프록시</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddRegexProxy">Regex 프록시 추가</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddProxy">프록시 추가</sys:String>
+        <sys:String x:Key="Loc.EditSite.NoProxies">설정된 프록시가 없습니다 — 예: /vite/ 경로를 로컬 개발 서버로 라우팅하려면 프록시를 추가하세요.</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyEnabled">활성화됨</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyName">이름</sys:String>
+        <sys:String x:Key="Loc.EditSite.MatchType">매칭 유형</sys:String>
+        <sys:String x:Key="Loc.EditSite.LocationPattern">위치(Location) 패턴</sys:String>
+        <sys:String x:Key="Loc.EditSite.PatternHint">전체 nginx location 줄이 아닌 패턴(예: ^/path$)만 붙여넣으세요.</sys:String>
+        <sys:String x:Key="Loc.EditSite.WebSocket">WebSocket 지원</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyDirectives">프록시 지시어 (Directives)</sys:String>
+        <sys:String x:Key="Loc.EditSite.ResetDefaults">기본값으로 재설정</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddDirective">지시어 추가</sys:String>
+    
+        <sys:String x:Key="Loc.FirstRun.OpenStackroot">Stackroot 열기</sys:String>
+
+        <sys:String x:Key="Loc.Laravel.Title">Laravel 설치</sys:String>
+        <sys:String x:Key="Loc.Laravel.Subtitle">Laravel 프로젝트를 구성합니다. 모든 필드가 미리 채워져 있습니다.</sys:String>
+        <sys:String x:Key="Loc.Laravel.DatabaseName">데이터베이스 이름</sys:String>
+        <sys:String x:Key="Loc.Laravel.DatabaseEngine">데이터베이스 엔진</sys:String>
+        <sys:String x:Key="Loc.Laravel.StarterKit">스타터 키(Starter kit)</sys:String>
+        <sys:String x:Key="Loc.Laravel.Stack">스택(Stack)</sys:String>
+        <sys:String x:Key="Loc.Laravel.RunNpmBuild">Composer 완료 후 „npm install &amp;&amp; npm run build“ 실행</sys:String>
+        <sys:String x:Key="Loc.Laravel.NpmHint">Node.js가 필요합니다. 수동으로 실행하려면 체크를 해제하세요.</sys:String>
+        <sys:String x:Key="Loc.Laravel.RunMigrations">데이터베이스 마이그레이션 실행 (php artisan migrate)</sys:String>
+    
+        <sys:String x:Key="Loc.Mailpit.Title">Mailpit 설정</sys:String>
+        <sys:String x:Key="Loc.Mailpit.Subtitle">PHP에서 발송되는 외부 메일을 캡처하기 위한 웹 UI입니다.</sys:String>
+        <sys:String x:Key="Loc.Mailpit.AutoRestart">중지 시 자동 재시작 (Keep alive)</sys:String>
+        <sys:String x:Key="Loc.Mailpit.SmtpPort">SMTP 포트</sys:String>
+        <sys:String x:Key="Loc.Mailpit.WebPort">웹 UI 포트 (내부)</sys:String>
+        <sys:String x:Key="Loc.Mailpit.WebPortHint">앱 도메인의 /mail 경로로 프록시됩니다. 포트가 이미 사용 중인 경우에만 변경하세요.</sys:String>
+        <sys:String x:Key="Loc.Mailpit.AutoStart">Stackroot 시작 시 자동으로 시작</sys:String>
+    
+        <sys:String x:Key="Loc.NginxHttp.Title">Nginx HTTP 설정</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Subtitle">메인 nginx.conf 기본값을 조정합니다. sites-enabled에 있는 사이트 vhosts 설정은 여전히 Stackroot에 의해 업데이트됩니다.</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ManualControl">수동 제어</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ManageManually">메인 nginx.conf를 수동으로 관리</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.OpenConfig">nginx.conf 열기</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.WorkersAndEvents">워커(Workers) 및 이벤트</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.LimitsAndHashing">제한 및 해싱</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Transport">전송(Transport)</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Gzip">Gzip</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.EnableGzip">gzip 압축 활성화</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Logging">로깅(Logging)</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.WriteAccessLog">접근 로그(access log) 기록</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.PhpTimeouts">PHP / FastCGI 타임아웃</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.DevProxyTimeouts">개발 프록시 타임아웃 (Vite 등)</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.MultiAccept">multi_accept on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Sendfile">sendfile on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.TcpNoPush">tcp_nopush on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ResetDefaults">조정값들을 권장 기본값으로 재설정</sys:String>
+    
+        <sys:String x:Key="Loc.NodeSettings.Title">Node 설정</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.Subtitle">사이트 프로세스용 npm 레지스트리 및 nvm 동작을 구성합니다.</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.NpmRegistry">npm 레지스트리</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.AutoNvmrc">.nvmrc 파일이 있을 때 자동으로 사용 (autoUseNvmrc)</sys:String>
+    
+        <sys:String x:Key="Loc.PackageInstall.Title">PHP로 설치</sys:String>
+        <sys:String x:Key="Loc.PackageInstall.NoPhp">카탈로그에서 호환 가능한 PHP 버전을 찾을 수 없습니다.</sys:String>
+        <sys:String x:Key="Loc.PackageInstall.PhpVersion">PHP 버전 (필수)</sys:String>
+    
+        <sys:String x:Key="Loc.PackageVersions.NoVersions">카탈로그에 버전이 없습니다.</sys:String>
+        <sys:String x:Key="Loc.PackageVersions.Installed">설치됨</sys:String>
+        <sys:String x:Key="Loc.PackageVersions.Active">활성화됨</sys:String>
+    
+        <sys:String x:Key="Loc.PhpExtensions.Subtitle">ext/ 폴더에 내장되어 있거나 PECL을 통해 설치된 확장 기능을 전환합니다. Stackroot 서비스가 필요한 확장 기능은 해당 서비스가 설치될 때까지 활성화되지 않습니다.</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.FilterTooltip">확장 기능 이름 또는 설명으로 필터링</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.EnableAllReady">준비된 모든 확장 기능 활성화</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.ResetToDefaults">기본값으로 재설정</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.InstallPecl">PECL 설치</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.PeclHint">확장 기능은 해당 PHP 버전에 맞는 Windows 빌드가 있는 경우에만 여기에 표시됩니다.</sys:String>
+    
+        <sys:String x:Key="Loc.PhpMyAdmin.Title">phpMyAdmin 설정</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.Subtitle">MySQL / MariaDB용 웹 UI입니다.</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.UrlPath">URL 경로</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.PhpVersion">PHP 버전</sys:String>
+    
+        <sys:String x:Key="Loc.PhpRedisAdmin.Title">phpRedisAdmin 설정</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">„서비스“ → „Redis“ 메뉴에 설정된 호스트/포트를 사용하여 Redis에 연결합니다.</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL 경로</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP 버전</sys:String>
+    
+        <sys:String x:Key="Loc.PhpRuntime.Title">고급 — PHP 런타임</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.Subtitle">설치된 각 버전은 포트 블록(기본 포트 + 오프셋)에서 php-cgi 워커 풀을 구동합니다. 이 설정을 변경해야 하는 경우는 거의 없습니다.</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI 호스트</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.FastCgiPort">FastCGI 기본 포트</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.WorkersPerVersion">버전당 워커 수 (1–8)</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.WorkersHint">2개 이상의 php-cgi 워커를 실행하면 하나의 워커가 회수되거나 재시작되는 동안에도 nginx가 서비스를 계속 제공하여 요청이 끊기는 것을 방지합니다.</sys:String>
+    
+        <sys:String x:Key="Loc.PhpVersionSettings.Subtitle">이 PHP 버전에 대한 php.ini 기본값을 조정합니다. 확장 기능은 계속 PHP 페이지에서 관리됩니다.</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ManualControl">수동 제어</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ManageManually">php.ini 파일 수동 관리</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.OpenIni">php.ini 열기</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.RuntimeLimits">실행 제한</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.InputAndSockets">입력 및 소켓</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.PathCache">경로 캐시</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.OPcache">OPcache</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.EnableOPcache">OPcache 활성화</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ErrorsAndWarnings">오류 및 경고</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.DisplayErrors">브라우저에 오류 표시 (display_errors)</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.LogErrors">오류를 파일에 기록 (log_errors)</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.HideWarnings">PHP 경고 숨기기</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.HideDeprecations">권장되지 않는 기능(Deprecations) 알림 숨기기</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ResetDefaults">기본값으로 재설정</sys:String>
+    
+        <sys:String x:Key="Loc.PickDatabase.Title">대상 데이터베이스 선택</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.Subtitle">이 백업을 복원할 데이터베이스를 선택하세요:</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.Replace">데이터베이스 교체 (복원 전 삭제 후 재생성)</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">비활성화: 기존 데이터베이스에 가져옵니다. 활성화: 대상 데이터베이스를 먼저 비운 후 복원합니다.</sys:String>
+    
+        <sys:String x:Key="Loc.ServiceSettings.Subtitle">서비스를 활성화하고, 자동 시작을 선택하고, 네트워크 설정을 구성합니다.</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.AutoStart">Stackroot 시작 시 자동으로 시작</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.AutoRestart">중지 시 자동 재시작 (Keep alive)</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.ActivePackage">활성화된 패키지 버전</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.PackageHint">활성 버전은 서비스 페이지의 패키지 버전 버튼에서 변경할 수 있습니다.</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.Host">호스트</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.Port">포트</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.SslPort">SSL 포트</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.EnableHttps">HTTPS 활성화 (SSL)</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.HttpPerformance">HTTP 성능 설정…</sys:String>
+    
+        <sys:String x:Key="Loc.SiteProcessLog.LiveUpdates">실시간 업데이트</sys:String>
+    
+        <sys:String x:Key="Loc.SiteSettings.Title">사이트 설정</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.Subtitle">Stackroot가 로컬 도메인 확인을 관리하는 방식을 제어합니다.</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.AutoHosts">활성화된 도메인에 대해 Windows hosts 파일을 자동으로 업데이트</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.AutoHostsHint">활성화하면 Stackroot가 로컬 도메인에 대한 127.0.0.1 항목을 작성합니다. 접근이 거부되는 경우 관리자 권한이 필요합니다.</sys:String>
+    
+        <sys:String x:Key="Loc.TestDns.Title">Stackroot DNS 설정</sys:String>
+
+        <sys:String x:Key="Loc.TestDns.Subtitle">구성된 접미사를 127.0.0.1:53의 Stackroot DNS로 라우팅합니다. 로컬 이름은 아래에서 설정한 IP로 확인됩니다 (기본값 127.0.0.1).</sys:String>
+        <sys:String x:Key="Loc.TestDns.EnabledHint">도우미 서비스를 중지하고 NRPT 규칙을 제거하려면 끄고 저장하세요. Windows에서 한 번 관리자 승인을 요청할 수 있습니다.</sys:String>
+        <sys:String x:Key="Loc.TestDns.ResolveIp">해당 IP로 확인</sys:String>
+        <sys:String x:Key="Loc.TestDns.ResolveIpHint">로컬 사이트에 대해 반환되는 IPv4 또는 IPv6 (기본값 127.0.0.1). DNS는 여전히 127.0.0.1:53에서 수신 대기하며, hosts 파일도 이 IP를 사용합니다.</sys:String>
+        <sys:String x:Key="Loc.TestDns.AutoStart">Stackroot 시작 시 자동으로 시작</sys:String>
+        <sys:String x:Key="Loc.TestDns.LogQueries">DNS 쿼리를 파일에 기록</sys:String>
+        <sys:String x:Key="Loc.TestDns.LogQueriesHint">각 쿼리를 Logs\test-dns-queries.jsonl 파일에 기록합니다. 기본값은 비활성입니다.</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesHeader">접미사 및 복구</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesLabel">접미사 (한 줄에 하나씩, 앞의 점 포함):</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesHint">예시: .test, .dev, .com — 공용 접미사는 실제 도메인에 영향을 미치므로 필요할 때만 사용하세요.</sys:String>
+        <sys:String x:Key="Loc.TestDns.IfInternetStops">인터넷 작동이 멈춘 경우</sys:String>
+        <sys:String x:Key="Loc.TestDns.RecoveryHint">StackrootDnsHelper 및 모든 Stackroot NRPT 규칙을 제거합니다:</sys:String>
+        <sys:String x:Key="Loc.TestDns.CopyCleanup">정리 명령어 복사</sys:String>
+    
+        <sys:String x:Key="Loc.WordPress.Title">WordPress 설치</sys:String>
+        <sys:String x:Key="Loc.WordPress.Subtitle">WordPress 사이트를 구성합니다. 모든 필드가 미리 채워져 있습니다.</sys:String>
+        <sys:String x:Key="Loc.WordPress.SiteTitle">사이트 제목</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminUsername">관리자 사용자 이름</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminPassword">관리자 비밀번호</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminEmail">관리자 이메일</sys:String>
+        <sys:String x:Key="Loc.WordPress.DatabaseName">데이터베이스 이름</sys:String>
+        <sys:String x:Key="Loc.WordPress.DatabaseEngine">데이터베이스 엔진</sys:String>
+    
+        <!-- ── Service and process status labels ── -->
+        <sys:String x:Key="Loc.Status.Error">오류</sys:String>
+        <sys:String x:Key="Loc.Status.Starting">시작 중…</sys:String>
+        <sys:String x:Key="Loc.Status.Restarting">재시작 중…</sys:String>
+        <sys:String x:Key="Loc.Status.Recovering">복구 중…</sys:String>
+        <sys:String x:Key="Loc.Status.Installing">설치 중...</sys:String>
+        <sys:String x:Key="Loc.Status.DisabledInSettings">설정에서 비활성화됨</sys:String>
+        <sys:String x:Key="Loc.Status.NotInstalled">설치되지 않음</sys:String>
+        <sys:String x:Key="Loc.Status.Disabled">비활성화됨</sys:String>
+        <sys:String x:Key="Loc.Status.Unavailable">사용 불가</sys:String>
+    
+
+    <!-- ── Main Window (missing keys) ── -->
+    <sys:String x:Key="Loc.MainWindow.TrustCertificate">인증서 신뢰</sys:String>
+    <sys:String x:Key="Loc.MainWindow.UpdateNow">지금 업데이트</sys:String>
+    <sys:String x:Key="Loc.MainWindow.OpenPerformanceTooltip">성능 페이지 열기</sys:String>
+    <sys:String x:Key="Loc.MainWindow.RefreshMetricsTooltip">메트릭 새로고침</sys:String>
+</ResourceDictionary>

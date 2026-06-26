@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Downloads"
+        <TextBlock Text="{DynamicResource Loc.Downloads.Title}"
                    FontSize="28"
                    FontWeight="SemiBold" />
 
@@ -41,11 +41,11 @@
                                Source="{x:Static helpers:StackrootImages.FolderIcon}"
                                RenderOptions.BitmapScalingMode="HighQuality" />
                         <TextBlock VerticalAlignment="Center"
-                                   Text="Open folder" />
+                                   Text="{DynamicResource Loc.Common.OpenFolder}" />
                     </StackPanel>
                 </Button>
                 <Button Width="96"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -84,15 +84,15 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Package" Binding="{Binding PackageId}" Width="160" />
-                    <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="2*" />
-                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="110" />
-                    <DataGridTextColumn Header="Downloaded" Binding="{Binding DownloadedAt}" Width="160" />
-                    <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="3*" />
-                    <DataGridTemplateColumn Header="Action" Width="100">
+                    <DataGridTextColumn Header="{DynamicResource Loc.Downloads.ColPackage}" Binding="{Binding PackageId}" Width="160" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Downloads.ColFile}" Binding="{Binding FileName}" Width="2*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Downloads.ColSize}" Binding="{Binding SizeText}" Width="110" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Downloads.ColDownloaded}" Binding="{Binding DownloadedAt}" Width="160" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Downloads.ColUrl}" Binding="{Binding Url}" Width="3*" />
+                    <DataGridTemplateColumn Header="{DynamicResource Loc.Downloads.ColAction}" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <controls:OverflowMenuButton DangerLabel="Remove"
+                                <controls:OverflowMenuButton DangerLabel="{DynamicResource Loc.Common.Remove}"
                                                              DangerCommand="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                              DangerCommandParameter="{Binding}"
                                                              ButtonWidth="30"

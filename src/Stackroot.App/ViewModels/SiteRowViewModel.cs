@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using Stackroot.App.Commands;
+using Stackroot.App.Localization;
 using Stackroot.Core.Sites.Management;
 using Stackroot.Core.Sites.Models;
 
@@ -61,7 +62,9 @@ public sealed class SiteRowViewModel : ViewModelBase
     public string PathSummary => _site.Path;
     public bool SiteIsEnabled => _site.Enabled;
     public bool SiteIsDisabled => !_site.Enabled;
-    public string EnableDisableLabel => SiteIsEnabled ? "Disable" : "Enable";
+    public string EnableDisableLabel => SiteIsEnabled
+        ? LocalizationManager.Get("Loc.Common.Disable", "Disable")
+        : LocalizationManager.Get("Loc.Common.Enable", "Enable");
 
     public bool IsToggling
     {
@@ -79,7 +82,7 @@ public sealed class SiteRowViewModel : ViewModelBase
 
     public bool IsNotToggling => !IsToggling;
     public string ToggleButtonLabel => IsToggling
-        ? (SiteIsEnabled ? "Disabling…" : "Enabling…")
+        ? (SiteIsEnabled ? LocalizationManager.Get("Loc.Common.Disabling", "Disabling…") : LocalizationManager.Get("Loc.Common.Enabling", "Enabling…"))
         : EnableDisableLabel; 
 
     public bool IsFeatured => _site.Featured == true;

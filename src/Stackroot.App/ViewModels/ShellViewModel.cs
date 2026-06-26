@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
+using Stackroot.App.Localization;
 using Stackroot.App.Commands;
 using Stackroot.App.Services;
 using Stackroot.App.Services.AppUpdate;
@@ -69,26 +70,11 @@ public sealed class ShellViewModel : ViewModelBase
             ["scheduled"] = () => services.GetRequiredService<ScheduledTasksPage>()
         };
 
-        MainNavigationItems = new ObservableCollection<NavigationItem>(
-        [
-            CreateNav("dashboard", "Dashboard", "\uE80F"),
-            CreateNav("sites", "Sites", "\uE774"),
-            CreateNav("php", "PHP", "\uE943"),
-            CreateNav("node", "Node", "\uE8D7"),
-            CreateNav("services", "Services", "\uE90F"),
-            CreateNav("tools", "Tools", "\uE115"),
-            CreateNav("databases", "Databases", "\uE8F1"),
-            CreateNav("processes", "Processes", "\uE768"),
-            CreateNav("scheduled", "Scheduled", "\uE823"),
-            CreateNav("logs", "Logs", "\uE8EA"),
-            CreateNav("performance", "Performance", "\uE9D9")
-        ]);
+        MainNavigationItems = new ObservableCollection<NavigationItem>();
+        BottomNavigationItems = new ObservableCollection<NavigationItem>();
+        PopulateNavigationItems();
 
-        BottomNavigationItems = new ObservableCollection<NavigationItem>(
-        [
-            CreateNav("downloads", "Downloads", "\uE896"),
-            CreateNav("settings", "Settings", "\uE713")
-        ]);
+        LocalizationManager.LanguageChanged += (s, e) => PopulateNavigationItems();
 
         NavigateTo("dashboard");
         runtimeStateService.StartBackgroundPolling();
@@ -345,6 +331,26 @@ public sealed class ShellViewModel : ViewModelBase
 
     private NavigationItem CreateNav(string key, string title, string iconGlyph) =>
         new(key, title, iconGlyph, new RelayCommand(_ => Navigate(key)));
+
+    private void PopulateNavigationItems()
+    {
+        MainNavigationItems.Clear();
+        MainNavigationItems.Add(CreateNav("dashboard", LocalizationManager.Get("Loc.Dashboard.Title", "Dashboard"), "\uE80F"));
+        MainNavigationItems.Add(CreateNav("sites", LocalizationManager.Get("Loc.Sites.Title", "Sites"), "\uE774"));
+        MainNavigationItems.Add(CreateNav("php", LocalizationManager.Get("Loc.Php.Title", "PHP"), "\uE943"));
+        MainNavigationItems.Add(CreateNav("node", LocalizationManager.Get("Loc.Node.Title", "Node"), "\uE8D7"));
+        MainNavigationItems.Add(CreateNav("services", LocalizationManager.Get("Loc.Services.Title", "Services"), "\uE90F"));
+        MainNavigationItems.Add(CreateNav("tools", LocalizationManager.Get("Loc.Tools.Title", "Tools"), "\uE115"));
+        MainNavigationItems.Add(CreateNav("databases", LocalizationManager.Get("Loc.Databases.Title", "Databases"), "\uE8F1"));
+        MainNavigationItems.Add(CreateNav("processes", LocalizationManager.Get("Loc.Processes.Title", "Processes"), "\uE768"));
+        MainNavigationItems.Add(CreateNav("scheduled", LocalizationManager.Get("Loc.ScheduledTasks.Title", "Scheduled"), "\uE823"));
+        MainNavigationItems.Add(CreateNav("logs", LocalizationManager.Get("Loc.Logs.Title", "Logs"), "\uE8EA"));
+        MainNavigationItems.Add(CreateNav("performance", LocalizationManager.Get("Loc.Performance.Title", "Performance"), "\uE9D9"));
+
+        BottomNavigationItems.Clear();
+        BottomNavigationItems.Add(CreateNav("downloads", LocalizationManager.Get("Loc.Downloads.Title", "Downloads"), "\uE896"));
+        BottomNavigationItems.Add(CreateNav("settings", LocalizationManager.Get("Loc.Common.Settings", "Settings"), "\uE713"));
+    }
 
     private void ForceNavigateTo(string route)
     {

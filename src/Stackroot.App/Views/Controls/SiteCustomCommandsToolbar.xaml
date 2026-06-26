@@ -21,7 +21,7 @@
                                     Height="28"
                                     Padding="0"
                                     Margin="8,0,0,0"
-                                    ToolTip="Dismiss"
+                                    ToolTip="{DynamicResource Loc.Common.Dismiss}"
                                     Style="{StaticResource StackrootIconButtonStyle}"
                                     Command="{Binding DataContext.DismissCustomStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
@@ -42,7 +42,7 @@
                                     Margin="8,0,0,0"
                                     Padding="8,4"
                                     FontSize="12"
-                                    Content="View log"
+                                    Content="{DynamicResource Loc.Common.ViewLog}"
                                     ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
                                     PreviewMouseLeftButtonDown="OnCustomCommandViewLogClick"
                                     Visibility="{Binding ShowViewLogButton, Converter={StaticResource BoolToVis}}" />
@@ -58,13 +58,13 @@
 
         <WrapPanel Margin="0,8,0,0">
             <Button Padding="10,6"
-                    Content="Open site"
+                    Content="{DynamicResource Loc.Common.OpenSite}"
                     Style="{StaticResource StackrootPrimaryButtonStyle}"
                     Command="{Binding OpenSiteCommand}"
                     Visibility="{Binding ShowOpenSiteButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
             <Button Margin="8,0,0,0"
                     Padding="10,6"
-                    Content="Open admin"
+                    Content="{DynamicResource Loc.Common.OpenAdmin}"
                     Command="{Binding OpenPostInstallAdminCommand}"
                     Visibility="{Binding ShowOpenAdminButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
             <ItemsControl ItemsSource="{Binding CustomCommandItems}">
@@ -95,7 +95,7 @@
             <Button Margin="8,0,0,0"
                     Width="32"
                     Height="32"
-                    ToolTip="Manage custom commands"
+                    ToolTip="{DynamicResource Loc.Common.ManageCustomCommands}"
                     Style="{StaticResource StackrootPrimaryIconButtonStyle}"
                     Command="{Binding ManageCustomCommandsCommand}">
                 <TextBlock FontFamily="{StaticResource StackrootIconFont}"

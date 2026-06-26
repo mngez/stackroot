@@ -27,25 +27,25 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Node"
+                <TextBlock Text="{DynamicResource Loc.Node.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Install nvm-windows, add Node versions, and switch the active runtime" />
+                           Text="{DynamicResource Loc.Node.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
-                        ToolTip="Node settings"
+                        ToolTip="{DynamicResource Loc.Node.NvmSettingsTooltip}"
                         Command="{Binding OpenSettingsCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                FontSize="14"
                                Text="&#xE713;" />
                 </Button>
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -66,17 +66,17 @@
             <StackPanel>
                 <TextBlock FontSize="18"
                            FontWeight="SemiBold"
-                           Text="Install nvm-windows first" />
+                           Text="{DynamicResource Loc.Node.NvmNotInstalled}" />
                 <TextBlock Margin="0,8,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Stackroot uses nvm-windows to download and switch Node versions. Nothing else on this page works until nvm is installed."
+                           Text="{DynamicResource Loc.Node.NvmHint}"
                            TextWrapping="Wrap" />
                 <Button Margin="0,16,0,0"
                         HorizontalAlignment="Left"
                         MinWidth="160"
                         Padding="16,8"
                         Style="{StaticResource StackrootPrimaryButtonStyle}"
-                        Content="Install nvm-windows"
+                        Content="{DynamicResource Loc.Node.InstallNvm}"
                         Command="{Binding InstallNvmCommand}" />
             </StackPanel>
         </Border>
@@ -123,7 +123,7 @@
                                 Content="{Binding UpdateNvmLabel}"
                                 Command="{Binding UpdateNvmCommand}"
                                 Visibility="{Binding CanUpdateNvm, Converter={StaticResource BoolToVis}}" />
-                        <controls:OverflowMenuButton DangerLabel="Remove nvm"
+                        <controls:OverflowMenuButton DangerLabel="{DynamicResource Loc.Node.RemoveNvm}"
                                                      DangerCommand="{Binding UninstallNvmCommand}"
                                                      ButtonWidth="30"
                                                      ButtonHeight="28" />
@@ -142,11 +142,11 @@
                 Visibility="{Binding ShowNodeSections, Converter={StaticResource BoolToVis}}">
             <StackPanel>
                 <TextBlock FontWeight="SemiBold"
-                           Text="Install Node version" />
+                           Text="{DynamicResource Loc.Node.InstallVersion}" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Pick a version from the list, or type a custom version (the dropdown clears when you start typing)."
+                           Text="{DynamicResource Loc.Node.InstallHint}"
                            TextWrapping="Wrap" />
 
                 <Grid Margin="0,12,0,0">
@@ -168,13 +168,14 @@
                              Margin="0,0,8,0"
                              Padding="10,6"
                              FontFamily="Consolas"
-                             ToolTip="Optional custom semver"
+                             FlowDirection="LeftToRight"
+                             ToolTip="{DynamicResource Loc.Node.CustomSemver}"
                              Text="{Binding CustomVersionInput, UpdateSourceTrigger=PropertyChanged}" />
 
                     <Button Grid.Column="2"
                             MinWidth="100"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"
-                            Content="Install"
+                            Content="{DynamicResource Loc.Common.Install}"
                             Command="{Binding InstallNodeCommand}" />
 
                     <ProgressBar Grid.Column="3"
@@ -189,7 +190,7 @@
                            FontSize="12"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Quick install (downloads and activates immediately)" />
+                           Text="{DynamicResource Loc.Node.QuickInstall}" />
 
                 <ItemsControl ItemsSource="{Binding RecommendedVersions}">
                     <ItemsControl.ItemsPanel>
@@ -203,7 +204,7 @@
                                     Margin="0,0,6,6"
                                     Padding="10,4"
                                     Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                    ToolTip="Download, install, and activate this Node version"
+                                    ToolTip="{DynamicResource Loc.Node.ActivateTooltip}"
                                     Command="{Binding DataContext.InstallRecommendedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}">
                                 <TextBlock Text="{Binding StringFormat=Install {0}}" />
@@ -218,7 +219,7 @@
                     Margin="0,14,0,24"
                     Visibility="{Binding ShowNodeSections, Converter={StaticResource BoolToVis}}">
             <TextBlock FontWeight="SemiBold"
-                       Text="Installed versions" />
+                       Text="{DynamicResource Loc.Node.InstalledVersions}" />
 
             <Border Margin="0,10,0,0"
                     Padding="16"
@@ -228,7 +229,7 @@
                     CornerRadius="10"
                     Visibility="{Binding ShowEmptyInstalledMessage, Converter={StaticResource BoolToVis}}">
                 <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="No Node versions installed yet. Use Install above or a quick-install chip." />
+                           Text="{DynamicResource Loc.Node.NoVersions}" />
             </Border>
 
             <ItemsControl Margin="0,10,0,0"
@@ -263,7 +264,7 @@
                                             <TextBlock FontSize="11"
                                                        FontWeight="Bold"
                                                        Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                       Text="Active" />
+                                                       Text="{DynamicResource Loc.Status.Active}" />
                                         </Border>
                                     </StackPanel>
                                     <Border Margin="0,8,0,0"
@@ -287,12 +288,12 @@
                                             Orientation="Horizontal">
                                     <Button Margin="0,0,6,0"
                                             Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                            Content="Activate"
+                                            Content="{DynamicResource Loc.Common.Activate}"
                                             IsEnabled="{Binding CanInteract}"
                                             Command="{Binding DataContext.ActivateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Version}"
                                             Visibility="{Binding ShowActivateButton, Converter={StaticResource BoolToVis}}" />
-                                    <controls:OverflowMenuButton DangerLabel="Remove"
+                                    <controls:OverflowMenuButton DangerLabel="{DynamicResource Loc.Common.Remove}"
                                                                  DangerCommand="{Binding DataContext.UninstallNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                  DangerCommandParameter="{Binding Version}"
                                                                  ButtonWidth="30"

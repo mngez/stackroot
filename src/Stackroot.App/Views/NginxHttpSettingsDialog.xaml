@@ -1,8 +1,9 @@
-<Window x:Class="Stackroot.App.Views.NginxHttpSettingsDialog"
+﻿<Window x:Class="Stackroot.App.Views.NginxHttpSettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Stackroot.App.Views.Controls"
-        Title="Nginx HTTP settings"
+        Title="{DynamicResource Loc.NginxHttp.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="540"
         MinWidth="500"
         MaxHeight="760"
@@ -34,10 +35,10 @@
         <StackPanel Grid.Row="0">
             <TextBlock FontSize="20"
                        FontWeight="SemiBold"
-                       Text="Nginx HTTP settings" />
+                       Text="{DynamicResource Loc.NginxHttp.Title}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Tune the main nginx.conf defaults. Site vhosts in sites-enabled are still updated by Stackroot."
+                       Text="{DynamicResource Loc.NginxHttp.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -46,11 +47,12 @@
                       VerticalScrollBarVisibility="Auto"
                       IsEnabled="{Binding IsIdle}">
             <StackPanel>
-                <TextBlock Style="{StaticResource SectionTitle}" Margin="0" Text="Manual control" />
+                <TextBlock Style="{StaticResource SectionTitle}" Margin="0"
+                           Text="{DynamicResource Loc.NginxHttp.ManualControl}" />
                 <CheckBox Margin="0,8,0,0"
                           IsChecked="{Binding ManageMainConfigManually}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Manage main nginx.conf manually" />
+                        <TextBlock Text="{DynamicResource Loc.NginxHttp.ManageManually}" />
                         <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ManageMainConfigManually}" />
                     </StackPanel>
                 </CheckBox>
@@ -62,11 +64,12 @@
                 <Button Margin="0,8,0,0"
                         HorizontalAlignment="Left"
                         Padding="12,6"
-                        Content="Open nginx.conf"
+                        Content="{DynamicResource Loc.NginxHttp.OpenConfig}"
                         Command="{Binding OpenMainConfigCommand}" />
 
                 <StackPanel IsEnabled="{Binding IsAutoTuningEnabled}">
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Workers and events" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.WorkersAndEvents}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -78,24 +81,25 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="worker_processes" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.WorkerProcesses}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding WorkerProcesses, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding WorkerProcesses, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="worker_connections" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.WorkerConnections}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding WorkerConnections, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding WorkerConnections, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <CheckBox Margin="0,10,0,0" IsChecked="{Binding MultiAccept}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="multi_accept on" />
+                            <TextBlock Text="{DynamicResource Loc.NginxHttp.MultiAccept}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.MultiAccept}" />
                         </StackPanel>
                     </CheckBox>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Limits and hashing" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.LimitsAndHashing}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -107,14 +111,14 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="keepalive_timeout (seconds)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.KeepaliveTimeout}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding KeepaliveTimeout, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding KeepaliveTimeout, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="client_max_body_size" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ClientMaxBodySize}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding ClientMaxBodySize, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding ClientMaxBodySize, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <Grid Margin="0,12,0,0">
@@ -128,35 +132,37 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="types_hash_max_size" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.TypesHashMaxSize}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding TypesHashMaxSize, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding TypesHashMaxSize, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="server_names_hash_bucket_size" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ServerNamesHashBucketSize}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding ServerNamesHashBucketSize, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding ServerNamesHashBucketSize, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Transport" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.Transport}" />
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding Sendfile}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="sendfile on" />
+                            <TextBlock Text="{DynamicResource Loc.NginxHttp.Sendfile}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.Sendfile}" />
                         </StackPanel>
                     </CheckBox>
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding TcpNopush}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="tcp_nopush on" />
+                            <TextBlock Text="{DynamicResource Loc.NginxHttp.TcpNoPush}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.TcpNopush}" />
                         </StackPanel>
                     </CheckBox>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Gzip" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.Gzip}" />
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding GzipEnabled}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Enable gzip compression" />
+                            <TextBlock Text="{DynamicResource Loc.NginxHttp.EnableGzip}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.GzipEnabled}" />
                         </StackPanel>
                     </CheckBox>
@@ -171,21 +177,22 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="gzip_comp_level (1-9)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.GzipCompLevel}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding GzipCompLevel, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding GzipCompLevel, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="gzip_min_length (bytes)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.GzipMinLength}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding GzipMinLength, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding GzipMinLength, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Logging" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.Logging}" />
                     <CheckBox Margin="0,8,0,0" IsChecked="{Binding AccessLogEnabled}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Write access log" />
+                            <TextBlock Text="{DynamicResource Loc.NginxHttp.WriteAccessLog}" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.AccessLogEnabled}" />
                         </StackPanel>
                     </CheckBox>
@@ -200,7 +207,8 @@
                                   SelectedItem="{Binding ErrorLogLevel}" />
                     </StackPanel>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="PHP / FastCGI timeouts" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.PhpTimeouts}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -212,14 +220,14 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="connect (seconds)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.FastCgiConnectTimeout}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding FastCgiConnectTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding FastCgiConnectTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="send (seconds)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.FastCgiSendTimeout}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding FastCgiSendTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding FastCgiSendTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <StackPanel Margin="0,10,0,0" Width="240" HorizontalAlignment="Left">
@@ -227,10 +235,11 @@
                             <TextBlock Style="{StaticResource FieldLabel}" Text="read (seconds)" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.FastCgiReadTimeout}" />
                         </StackPanel>
-                        <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding FastCgiReadTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding FastCgiReadTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
-                    <TextBlock Style="{StaticResource SectionTitle}" Text="Dev proxy timeouts (Vite, etc.)" />
+                    <TextBlock Style="{StaticResource SectionTitle}"
+                               Text="{DynamicResource Loc.NginxHttp.DevProxyTimeouts}" />
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -242,14 +251,14 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="connect (seconds)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ProxyConnectTimeout}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding ProxyConnectTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding ProxyConnectTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="send (seconds)" />
                                 <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ProxySendTimeout}" />
                             </StackPanel>
-                            <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding ProxySendTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding ProxySendTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
                     <StackPanel Margin="0,10,0,0" Width="240" HorizontalAlignment="Left">
@@ -257,13 +266,13 @@
                             <TextBlock Style="{StaticResource FieldLabel}" Text="read (seconds)" />
                             <controls:SettingHintIcon Hint="{x:Static controls:NginxHttpSettingHints.ProxyReadTimeout}" />
                         </StackPanel>
-                        <TextBox Margin="0,4,0,0" Padding="10,6" Text="{Binding ProxyReadTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Margin="0,4,0,0" Padding="10,6" FlowDirection="LeftToRight" Text="{Binding ProxyReadTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <Button Margin="0,18,0,0"
                             HorizontalAlignment="Left"
                             Padding="12,6"
-                            Content="Reset tuning to recommended defaults"
+                            Content="{DynamicResource Loc.NginxHttp.ResetDefaults}"
                             Command="{Binding ResetDefaultsCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -279,7 +288,7 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Width="88"
                             Margin="0,0,8,0"
-                            Content="Close"
+                            Content="{DynamicResource Loc.Common.Close}"
                             Command="{Binding CloseCommand}" />
                     <Button Width="88"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"

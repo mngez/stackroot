@@ -16,7 +16,7 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Databases"
+                <TextBlock Text="{DynamicResource Loc.Databases.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
@@ -27,7 +27,7 @@
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button Style="{StaticResource StackrootIconButtonStyle}"
                         Margin="0,0,10,0"
-                        ToolTip="Database settings"
+                        ToolTip="{DynamicResource Loc.Databases.SettingsTooltip}"
                         Command="{Binding OpenSettingsCommand}">
                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                FontSize="14"
@@ -37,17 +37,17 @@
                         MinHeight="36"
                         Margin="0,0,10,0"
                         Padding="14,8"
-                        Content="Backups"
+                        Content="{DynamicResource Loc.Common.Backups}"
                         Command="{Binding OpenBackupsCommand}" />
                 <Button MinWidth="116"
                         MinHeight="36"
                         Margin="0,0,10,0"
                         Padding="14,8"
                         Style="{StaticResource StackrootPrimaryButtonStyle}"
-                        Content="+ Create"
+                        Content="{DynamicResource Loc.Databases.CreateButton}"
                         Command="{Binding OpenCreateDialogCommand}" />
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -69,7 +69,7 @@
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
-                               Text="Search" />
+                               Text="{DynamicResource Loc.Databases.Search}" />
                     <TextBox Margin="0,6,0,0"
                              Padding="10,6"
                              Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
@@ -78,7 +78,7 @@
                 <StackPanel Grid.Column="1" Margin="0,0,10,0">
                     <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
                                FontSize="12"
-                               Text="Engine" />
+                               Text="{DynamicResource Loc.Databases.Engine}" />
                     <ComboBox Margin="0,6,0,0"
                               Padding="8,4"
                               ItemsSource="{Binding EngineFilters}"
@@ -92,7 +92,7 @@
                         Margin="0,22,0,0"
                         VerticalAlignment="Bottom"
                         Padding="14,8"
-                        Content="Clear"
+                        Content="{DynamicResource Loc.Common.Clear}"
                         Command="{Binding ClearFiltersCommand}" />
             </Grid>
         </Border>
@@ -100,7 +100,7 @@
         <TextBlock Grid.Row="2"
                    Margin="0,10,0,0"
                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                   Text="No databases match the current filters."
+                   Text="{DynamicResource Loc.Databases.NoMatch}"
                    Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}" />
 
         <Border Grid.Row="3"
@@ -140,11 +140,11 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
-                    <DataGridTextColumn Header="Engine" Binding="{Binding Engine}" Width="*" />
-                    <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" Width="1.6*" />
-                    <DataGridTextColumn Header="Last backup" Binding="{Binding LastBackupAt}" Width="1.6*" />
-                    <DataGridTemplateColumn Header="Actions" Width="315">
+                    <DataGridTextColumn Header="{DynamicResource Loc.Databases.ColName}" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Databases.ColEngine}" Binding="{Binding Engine}" Width="*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Databases.ColCreated}" Binding="{Binding CreatedAt}" Width="1.6*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Databases.ColLastBackup}" Binding="{Binding LastBackupAt}" Width="1.6*" />
+                    <DataGridTemplateColumn Header="{DynamicResource Loc.Databases.ColActions}" Width="315">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -155,14 +155,14 @@
                                             VerticalAlignment="Center"
                                             Command="{Binding DataContext.OpenRowEnvCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Name}" />
-                                    <Button Content="Backups"
+                                    <Button Content="{DynamicResource Loc.Common.Backups}"
                                             Margin="0,0,6,0"
                                             Padding="8,3"
                                             MinHeight="26"
                                             VerticalAlignment="Center"
                                             Command="{Binding DataContext.OpenRowBackupsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Name}" />
-                                    <Button Content="Backup"
+                                    <Button Content="{DynamicResource Loc.Databases.Backup}"
                                             Margin="0,0,6,0"
                                             Padding="8,3"
                                             MinHeight="26"
@@ -170,7 +170,7 @@
                                             Command="{Binding DataContext.BackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Name}" />
                                     <controls:OverflowMenuButton Margin="0,0,0,0"
-                                                                 DangerLabel="Delete"
+                                                                 DangerLabel="{DynamicResource Loc.Common.Delete}"
                                                                  DangerCommand="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                  DangerCommandParameter="{Binding Name}"
                                                                  ButtonWidth="30"

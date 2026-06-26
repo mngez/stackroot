@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stackroot.App.Commands;
+using Stackroot.App.Localization;
 using Stackroot.App.Helpers;
 using Stackroot.App.Scheduling;
 using Stackroot.App.Services;
@@ -520,7 +521,9 @@ public sealed class DashboardViewModel : ViewModelBase
     public bool ShowLoadingState => Services.Count == 0 && IsRefreshing;
     public bool ShowEmptyState => _dashboardInitialized && !HasServices && !IsRefreshing;
     public bool AnyRunning => Services.Any(s => s.IsRunning);
-    public string StartOrRestartAllLabel => AnyRunning ? "Restart all" : "Start all";
+    public string StartOrRestartAllLabel => AnyRunning
+        ? LocalizationManager.Get("Loc.Common.RestartAll", "Restart all")
+        : LocalizationManager.Get("Loc.Common.StartAll", "Start all");
 
     public int RunningCount => Services.Count(s => s.IsRunning);
     public int StoppedCount => Services.Count(s => !s.IsRunning);

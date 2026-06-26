@@ -31,7 +31,7 @@
 
             <StackPanel>
 
-                <TextBlock Text="Services"
+                <TextBlock Text="{DynamicResource Loc.Services.Title}"
 
                            FontSize="28"
 
@@ -41,7 +41,7 @@
 
                            Foreground="{StaticResource StackrootTextMutedBrush}"
 
-                           Text="Install packages, pick versions, and configure ports — start and stop services from the Dashboard" />
+                           Text="{DynamicResource Loc.Services.Subtitle}" />
 
             </StackPanel>
 
@@ -52,12 +52,12 @@
                         MinHeight="36"
                         Margin="0,0,10,0"
                         Padding="14,8"
-                        ToolTip="Regenerate site vhosts, app domain, admin tools, and reload nginx"
-                        Content="Rebuild nginx"
+                        ToolTip="{DynamicResource Loc.Services.RebuildTooltip}"
+                        Content="{DynamicResource Loc.Common.Rebuild}"
                         Command="{Binding RebuildNginxCommand}" />
 
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
 
             </StackPanel>
@@ -170,7 +170,7 @@
                                                                            FontSize="12"
                                                                            Foreground="#4CAE8C"
                                                                            Text="⚡"
-                                                                           ToolTip="Keep-alive active"
+                                                                           ToolTip="{DynamicResource Loc.Common.KeepAliveActive}"
                                                                            Visibility="{Binding IsSupervised, Converter={StaticResource BoolToVis}}" />
                                                             </StackPanel>
 
@@ -274,7 +274,7 @@
 
                                                                                Foreground="{StaticResource StackrootAccentTextBrush}"
 
-                                                                               Text="LIVE" />
+                                                                               Text="{DynamicResource Loc.Status.LiveBadge}" />
 
                                                                 </Border>
 
@@ -296,13 +296,13 @@
 
                                                                                Foreground="{Binding StatusColor}"
 
-                                                                               Text="{Binding StatusText}"
+                                                                               Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}"
 
                                                                                TextAlignment="Right"
 
                                                                                TextTrimming="CharacterEllipsis"
 
-                                                                               ToolTip="{Binding StatusText}" />
+                                                                               ToolTip="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" />
 
                                                                     <ProgressBar Margin="0,5,0,0"
 
@@ -324,7 +324,7 @@
 
                                                                         Style="{StaticResource StackrootIconButtonStyle}"
 
-                                                                        ToolTip="Service settings"
+                                                                        ToolTip="{DynamicResource Loc.Common.Settings}"
 
                                                                         Command="{Binding SettingsCommand}"
 
@@ -348,7 +348,7 @@
 
                                                                         Style="{StaticResource StackrootPrimaryIconButtonStyle}"
 
-                                                                        ToolTip="Install package"
+                                                                        ToolTip="{DynamicResource Loc.Tools.InstallTooltip}"
 
                                                                         Command="{Binding InstallCommand}"
 
@@ -370,7 +370,7 @@
 
                                                                         Style="{StaticResource StackrootIconButtonStyle}"
 
-                                                                        ToolTip="Package versions"
+                                                                        ToolTip="{DynamicResource Loc.Tools.VersionsTooltip}"
 
                                                                         Command="{Binding VersionsCommand}"
 

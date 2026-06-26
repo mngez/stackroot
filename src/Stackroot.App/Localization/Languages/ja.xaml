@@ -1,0 +1,566 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ── Layout direction ── -->
+    <FlowDirection x:Key="Loc.FlowDirection">LeftToRight</FlowDirection>
+
+    <!-- ── Common actions ── -->
+    <sys:String x:Key="Loc.Common.Save">保存</sys:String>
+    <sys:String x:Key="Loc.Common.Cancel">キャンセル</sys:String>
+    <sys:String x:Key="Loc.Common.Close">闭じる</sys:String>
+    <sys:String x:Key="Loc.Common.Refresh">更新</sys:String>
+    <sys:String x:Key="Loc.Common.Add">+ 追加</sys:String>
+    <sys:String x:Key="Loc.Common.Edit">编辑</sys:String>
+    <sys:String x:Key="Loc.Common.Delete">削除</sys:String>
+    <sys:String x:Key="Loc.Common.Install">インストール</sys:String>
+    <sys:String x:Key="Loc.Common.Uninstall">アンインストール</sys:String>
+    <sys:String x:Key="Loc.Common.Remove">削除</sys:String>
+    <sys:String x:Key="Loc.Common.MoreActions">その他のアクション</sys:String>
+    <sys:String x:Key="Loc.Common.Browse">参照…</sys:String>
+    <sys:String x:Key="Loc.Common.OpenFolder">フォルダーを開く</sys:String>
+    <sys:String x:Key="Loc.Common.DataFolder">データフォルダー</sys:String>
+    <sys:String x:Key="Loc.Common.Manage">管理</sys:String>
+    <sys:String x:Key="Loc.Common.ManageArrow">管理 →</sys:String>
+    <sys:String x:Key="Loc.Common.Settings">設定</sys:String>
+    <sys:String x:Key="Loc.Common.Log">ログ</sys:String>
+    <sys:String x:Key="Loc.Common.Start">起動</sys:String>
+    <sys:String x:Key="Loc.Common.Stop">停止</sys:String>
+    <sys:String x:Key="Loc.Common.Restart">再起動</sys:String>
+    <sys:String x:Key="Loc.Common.Copy">コピー</sys:String>
+    <sys:String x:Key="Loc.Common.Open">開く</sys:String>
+    <sys:String x:Key="Loc.Common.Capture">キャプチャ</sys:String>
+    <sys:String x:Key="Loc.Common.Later">後で</sys:String>
+    <sys:String x:Key="Loc.Common.Export">エクスポート</sys:String>
+    <sys:String x:Key="Loc.Common.Import">インポート</sys:String>
+    <sys:String x:Key="Loc.Common.Clear">クリア</sys:String>
+    <sys:String x:Key="Loc.Common.Restore">復元</sys:String>
+    <sys:String x:Key="Loc.Common.Rebuild">nginx 再構築</sys:String>
+    <sys:String x:Key="Loc.Common.Create">作成</sys:String>
+    <sys:String x:Key="Loc.Common.Backups">バックアップ</sys:String>
+    <sys:String x:Key="Loc.Common.Enabled">有効</sys:String>
+    <sys:String x:Key="Loc.Common.UseDefault">デフォルトを使用</sys:String>
+    <sys:String x:Key="Loc.Common.Choose">選択…</sys:String>
+    <sys:String x:Key="Loc.Common.Upload">アップロード…</sys:String>
+    <sys:String x:Key="Loc.Common.Back">← サイト</sys:String>
+    <sys:String x:Key="Loc.Common.StopAll">すべて停止</sys:String>
+    <sys:String x:Key="Loc.Common.StartAll">すべて起動</sys:String>
+    <sys:String x:Key="Loc.Common.RestartAll">すべて再起動</sys:String>
+    <sys:String x:Key="Loc.Common.Activate">有効化</sys:String>
+    <sys:String x:Key="Loc.Common.RunAgain">再実行</sys:String>
+    <sys:String x:Key="Loc.Common.ViewLog">ログを表示</sys:String>
+    <sys:String x:Key="Loc.Common.Dismiss">閉じる</sys:String>
+    <sys:String x:Key="Loc.Common.ManageCustomCommands">カスタムコマンドの管理</sys:String>
+    <sys:String x:Key="Loc.Common.OpenSite">サイトを開く</sys:String>
+    <sys:String x:Key="Loc.Common.OpenAdmin">管理画面を開く</sys:String>
+    <sys:String x:Key="Loc.Common.Disable">無効化</sys:String>
+    <sys:String x:Key="Loc.Common.Enable">有効化</sys:String>
+    <sys:String x:Key="Loc.Common.Disabling">无効化中…</sys:String>
+    <sys:String x:Key="Loc.Common.Enabling">有効化中…</sys:String>
+    <sys:String x:Key="Loc.Common.PinToFeatured">おすすめに固定</sys:String>
+    <sys:String x:Key="Loc.Common.RemoveFromFeatured">おすすめから外す</sys:String>
+    <sys:String x:Key="Loc.Common.KeepAliveActive">Keep-alive 有効</sys:String>
+
+        <!-- ── Status ── -->
+        <sys:String x:Key="Loc.Status.Running">実行中</sys:String>
+        <sys:String x:Key="Loc.Status.Stopped">停止</sys:String>
+        <sys:String x:Key="Loc.Status.Errors">エラー</sys:String>
+        <sys:String x:Key="Loc.Status.Live">ライブ</sys:String>
+        <sys:String x:Key="Loc.Status.LiveBadge">ライブ</sys:String>
+        <sys:String x:Key="Loc.Status.Active">アクティブ</sys:String>
+        <sys:String x:Key="Loc.Status.Installed">インストール済み</sys:String>
+        <sys:String x:Key="Loc.Status.InstalledReady">インストール済み・準備完了</sys:String>
+        <sys:String x:Key="Loc.Status.Ready">準備完了</sys:String>
+        <sys:String x:Key="Loc.Status.Off">オフ</sys:String>
+        <sys:String x:Key="Loc.Status.Capturing">キャプチャ中…</sys:String>
+        <sys:String x:Key="Loc.Status.LiveUpdates">ライブ更新</sys:String>
+        <sys:String x:Key="Loc.Status.NoActivity">アクティビティはまだありません</sys:String>
+        <sys:String x:Key="Loc.Status.ClearSessionLog">セッションログをクリア</sys:String>
+        <sys:String x:Key="Loc.Status.ThisSession">このセッション</sys:String>
+        <sys:String x:Key="Loc.Status.Activity">アクティビティ</sys:String>
+    
+        <!-- ── Dashboard ── -->
+        <sys:String x:Key="Loc.Dashboard.Title">ダッシュボード</sys:String>
+        <sys:String x:Key="Loc.Dashboard.Subtitle">サービス、PHP FastCGI、および有効なプロセス</sys:String>
+        <sys:String x:Key="Loc.Dashboard.Loading">ダッシュボードを読み込み中…</sys:String>
+        <sys:String x:Key="Loc.Dashboard.NoServices">有効なサービスはまだありません</sys:String>
+        <sys:String x:Key="Loc.Dashboard.NoServicesHint">「サービス」ページからパッケージをインストールし、サービスを有効にしてください。</sys:String>
+        <sys:String x:Key="Loc.Dashboard.GoToServices">サービスへ移動</sys:String>
+        <sys:String x:Key="Loc.Dashboard.PhpFastCgi">PHP FastCGI リスナー</sys:String>
+        <sys:String x:Key="Loc.Dashboard.PhpListeners">PHP リスナー</sys:String>
+        <sys:String x:Key="Loc.Dashboard.EnabledProcesses">有効なプロセス</sys:String>
+        <sys:String x:Key="Loc.Dashboard.StartAll">すべて起動</sys:String>
+        <sys:String x:Key="Loc.Dashboard.QuickActions">クイックアクション</sys:String>
+    
+        <!-- ── Services ── -->
+        <sys:String x:Key="Loc.Services.Title">サービス</sys:String>
+        <sys:String x:Key="Loc.Services.Subtitle">パッケージのインストール、バージョンの選択、ポートの設定 — ダッシュボードからサービスの起動/停止が可能</sys:String>
+        <sys:String x:Key="Loc.Services.RebuildTooltip">サイトの vhosts、アプリドメイン、管理ツールを再生成し、nginx を再読み込み</sys:String>
+    
+        <!-- ── Sites ── -->
+        <sys:String x:Key="Loc.Sites.Title">Web ドメイン</sys:String>
+        <sys:String x:Key="Loc.Sites.Subtitle">ステータスごとにグループ化されたローカル開発ドメイン</sys:String>
+        <sys:String x:Key="Loc.Sites.AddDomain">ドメインを追加</sys:String>
+        <sys:String x:Key="Loc.Sites.WwwRoot">WWW ルート</sys:String>
+        <sys:String x:Key="Loc.Sites.NoDomains">ドメインはまだありません</sys:String>
+        <sys:String x:Key="Loc.Sites.NoDomainsHint">テンプレートを選択し、最初のローカル開発ドメインを追加してください。</sys:String>
+        <sys:String x:Key="Loc.Sites.ColName">名前</sys:String>
+        <sys:String x:Key="Loc.Sites.ColFolder">フォルダー</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenHttps">https</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenHttpsTooltip">ブラウザーでサイトを開く (HTTPS)</sys:String>
+        <sys:String x:Key="Loc.Sites.OpenFolderTooltip">エクスプローラーでサイトのフォルダーを開く</sys:String>
+        <sys:String x:Key="Loc.Sites.PinTooltip">おすすめに固定</sys:String>
+        <sys:String x:Key="Loc.Sites.DB">DB</sys:String>
+        <sys:String x:Key="Loc.Sites.RebuildTooltip">サイトの vhosts、アプリドメイン、管理ツールを再生成し、nginx を再読み込み</sys:String>
+        <sys:String x:Key="Loc.Sites.HostsTooltip">hosts ファイルを開く</sys:String>
+        <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">サイト設定</sys:String>
+        <sys:String x:Key="Loc.Sites.NoMatch">現在のフィルターに一致するドメインはありません。</sys:String>
+    
+            <!-- ── Site Manage ── -->
+    <sys:String x:Key="Loc.SiteManage.Title">サイトダッシュボード</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslPaths">SSLパス</sys:String>
+    <sys:String x:Key="Loc.SiteManage.SslTooltip">ローカルの dev.crt および dev.key のパス</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Terminal">ターミナル</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Template">テンプレート</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Path">パス</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Https">HTTPS</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Username">ユーザー名</sys:String>
+    <sys:String x:Key="Loc.SiteManage.Password">パスワード</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ShowHidePassword">パスワードの表示/非表示</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ChangePassword">パスワード変更</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RefreshScreenshot">スクリーンショットを更新</sys:String>
+    <sys:String x:Key="Loc.SiteManage.OpenBrowserTooltip">ブラウザでサイトを開く</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoProcesses">このサイトにリンクされているプロセスはまだありません。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoDatabases">このサイトにリンクされているデータベースはまだありません。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoScheduled">このサイトのスケジュール済みタスクはまだありません。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.ScheduledTasksHint">このサイトのCron形式のコマンド — Stackrootが開いている間実行されます。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasks">すべてのタスク</sys:String>
+    <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">スケジュール済みタスクの完全なページを開く</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CopyPassword">パスワードをコピー</sys:String>
+
+        <!-- ── PHP ── -->
+        <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
+        <sys:String x:Key="Loc.Php.Subtitle">インストール済みの PHP バージョンと FastCGI ランタイムの管理</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfiles">プロファイルのインポート</sys:String>
+        <sys:String x:Key="Loc.Php.ImportTooltip">1つ以上の PHP プロファイルをインポートします。見つからない PHP バージョンは自動的にインストールされます。</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfiles">プロファイルのエクスポート</sys:String>
+        <sys:String x:Key="Loc.Php.ExportTooltip">設定と拡張機能を含む、すべてのインストール済み PHP バージョンをエクスポートします。</sys:String>
+        <sys:String x:Key="Loc.Php.RuntimeTooltip">PHP ランタイム設定</sys:String>
+        <sys:String x:Key="Loc.Php.Loading">PHP データを読み込み中…</sys:String>
+        <sys:String x:Key="Loc.Php.EnsureFastCgi">FastCGI の確認</sys:String>
+        <sys:String x:Key="Loc.Php.Extensions">拡張機能</sys:String>
+        <sys:String x:Key="Loc.Php.ExportProfile">プロファイルのエクスポート</sys:String>
+        <sys:String x:Key="Loc.Php.ImportProfile">プロファイルのインポート</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingVersions">PHP バージョンをインストール中</sys:String>
+        <sys:String x:Key="Loc.Php.InstallingHint">インストールはバックグラウンドで実行されます。上のリストから別のバージョンをキューに追加できます。</sys:String>
+    
+        <!-- ── Node ── -->
+        <sys:String x:Key="Loc.Node.Title">Node</sys:String>
+        <sys:String x:Key="Loc.Node.Subtitle">nvm-windows のインストール、Node バージョンの追加、アクティブなランタイムの切り替え</sys:String>
+        <sys:String x:Key="Loc.Node.NvmNotInstalled">最初に nvm-windows をインストールしてください</sys:String>
+        <sys:String x:Key="Loc.Node.NvmHint">Stackroot は Node バージョンのダウンロードと切り替えに nvm-windows を使用します。nvm がインストールされるまで、このページの他の機能は動作しません。</sys:String>
+        <sys:String x:Key="Loc.Node.InstallNvm">nvm-windows をインストール</sys:String>
+        <sys:String x:Key="Loc.Node.InstallVersion">Node バージョンをインストール</sys:String>
+        <sys:String x:Key="Loc.Node.InstallHint">リストからバージョンを選択するか、カスタムバージョンを入力します（入力を開始するとドロップダウンがクリアされます）。</sys:String>
+        <sys:String x:Key="Loc.Node.CustomSemver">オプションのカスタム semver</sys:String>
+        <sys:String x:Key="Loc.Node.QuickInstall">クイックインストール（即座にダウンロードして有効化）</sys:String>
+        <sys:String x:Key="Loc.Node.ActivateTooltip">この Node バージョンをダウンロード、インストール、および有効化します</sys:String>
+        <sys:String x:Key="Loc.Node.InstalledVersions">インストール済みのバージョン</sys:String>
+        <sys:String x:Key="Loc.Node.NoVersions">Node バージョンがまだインストールされていません。上の「インストール」またはクイックインストールチップを使用してください。</sys:String>
+        <sys:String x:Key="Loc.Node.NvmSettingsTooltip">Node 設定</sys:String>
+        <sys:String x:Key="Loc.Node.RemoveNvm">nvm を削除</sys:String>
+    
+           <!-- ── Databases ── -->
+    <sys:String x:Key="Loc.Databases.Title">データベース</sys:String>
+    <sys:String x:Key="Loc.Databases.SettingsTooltip">データベース設定</sys:String>
+    <sys:String x:Key="Loc.Databases.CreateButton">+ 作成</sys:String>
+    <sys:String x:Key="Loc.Databases.Search">検索</sys:String>
+    <sys:String x:Key="Loc.Databases.Engine">エンジン</sys:String>
+    <sys:String x:Key="Loc.Databases.NoMatch">現在のフィルターに一致するデータベースはありません。</sys:String>
+    <sys:String x:Key="Loc.Databases.ColName">名前</sys:String>
+    <sys:String x:Key="Loc.Databases.ColEngine">エンジン</sys:String>
+    <sys:String x:Key="Loc.Databases.ColCreated">作成日</sys:String>
+    <sys:String x:Key="Loc.Databases.ColLastBackup">最終バックアップ</sys:String>
+    <sys:String x:Key="Loc.Databases.ColActions">アクション</sys:String>
+    <sys:String x:Key="Loc.Databases.DotEnv">.env</sys:String>
+    <sys:String x:Key="Loc.Databases.Backup">バックアップ</sys:String>
+
+    <!-- ── Downloads ── -->
+    <sys:String x:Key="Loc.Downloads.Title">ダウンロード</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColPackage">パッケージ</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColFile">ファイル</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColSize">サイズ</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColDownloaded">ダウンロード済み</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColUrl">URL</sys:String>
+    <sys:String x:Key="Loc.Downloads.ColAction">アクション</sys:String>
+
+    <!-- ── Logs ── -->
+    <sys:String x:Key="Loc.Logs.Title">ログ</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupOld">古いログをクリーンアップ</sys:String>
+    <sys:String x:Key="Loc.Logs.CleanupAll">すべてのログをクリーンアップ</sys:String>
+    <sys:String x:Key="Loc.Logs.Loading">ログを読み込み中…</sys:String>
+    <sys:String x:Key="Loc.Logs.NoFiles">ログファイルが見つかりません。</sys:String>
+    <sys:String x:Key="Loc.Logs.ColCategory">カテゴリ</sys:String>
+    <sys:String x:Key="Loc.Logs.ColPath">パス</sys:String>
+    <sys:String x:Key="Loc.Logs.ColSize">サイズ</sys:String>
+    <sys:String x:Key="Loc.Logs.ColModified">変更日</sys:String>
+    <sys:String x:Key="Loc.Logs.ColAction">アクション</sys:String>
+ 
+        <!-- ── Performance ── -->
+        <sys:String x:Key="Loc.Performance.Title">パフォーマンス</sys:String>
+        <sys:String x:Key="Loc.Performance.Sampled">サンプリング: </sys:String>
+        <sys:String x:Key="Loc.Performance.AppAndServices">アプリ &amp; サービス</sys:String>
+        <sys:String x:Key="Loc.Performance.TotalMemory">トータルメモリ: </sys:String>
+        <sys:String x:Key="Loc.Performance.PhpListeners">PHP リスナー</sys:String>
+        <sys:String x:Key="Loc.Performance.CustomProcesses">カスタムプロセス</sys:String>
+        <sys:String x:Key="Loc.Performance.ColLabel">ラベル</sys:String>
+        <sys:String x:Key="Loc.Performance.ColType">タイプ</sys:String>
+        <sys:String x:Key="Loc.Performance.ColStatus">ステータス</sys:String>
+        <sys:String x:Key="Loc.Performance.ColPid">PID</sys:String>
+        <sys:String x:Key="Loc.Performance.ColCpu">CPU</sys:String>
+        <sys:String x:Key="Loc.Performance.ColMemory">メモリ</sys:String>
+        <sys:String x:Key="Loc.Performance.ColVersion">バージョン</sys:String>
+        <sys:String x:Key="Loc.Performance.ColEndpoint">エンドポイント</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipOpen">パフォーマンスページを開く</sys:String>
+        <sys:String x:Key="Loc.Performance.TooltipRefresh">メトリクスを更新</sys:String>
+    
+        <!-- ── Processes ── -->
+        <sys:String x:Key="Loc.Processes.Title">プロセス</sys:String>
+        <sys:String x:Key="Loc.Processes.Subtitle">アプリ全体およびサイト連動のバックグラウンドコマンドを一元管理するスーパーバイザー</sys:String>
+        <sys:String x:Key="Loc.Processes.SiteFilter">サイトフィルター:</sys:String>
+        <sys:String x:Key="Loc.Processes.StartAllEnabled">有効なものをすべて開始</sys:String>
+        <sys:String x:Key="Loc.Processes.NoMatch">現在のフィルターに一致するプロセスはありません。</sys:String>
+        <sys:String x:Key="Loc.Processes.AddProcess">+ プロセスを追加</sys:String>
+        <sys:String x:Key="Loc.Processes.PinTooltip">注目にピン留め</sys:String>
+    
+            <!-- ── Scheduled Tasks ── -->
+    <sys:String x:Key="Loc.ScheduledTasks.Title">スケジュール済みタスク</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.Subtitle">Cron形式の定期実行コマンド — Stackrootが開いている間実行されます。</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.SiteFilter">サイトフィルター:</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.RunNowTooltip">今すぐ実行</sys:String>
+    <sys:String x:Key="Loc.ScheduledTasks.EditTooltip">編集</sys:String>
+
+    <!-- ── Tools ── -->
+    <sys:String x:Key="Loc.Tools.Title">ツール</sys:String>
+    <sys:String x:Key="Loc.Tools.Subtitle">CLIユーティリティ、管理UI — Stackrootからインストールおよびアップデート可能。</sys:String>
+    <sys:String x:Key="Loc.Tools.CheckUpdates">アップデートを確認</sys:String>
+    <sys:String x:Key="Loc.Tools.InstallTooltip">パッケージをインストール</sys:String>
+    <sys:String x:Key="Loc.Tools.VersionsTooltip">パッケージバージョン</sys:String>
+    <sys:String x:Key="Loc.Tools.SettingsTooltip">設定</sys:String>
+    <sys:String x:Key="Loc.Tools.OpenTooltip">ブラウザで開く</sys:String>
+    <sys:String x:Key="Loc.Tools.DismissTooltip">閉じる</sys:String>
+
+        <!-- ── General Settings ── -->
+        <sys:String x:Key="Loc.GeneralSettings.Title">一般設定</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Subtitle">ベースパス、アプリの動作、および環境のデフォルトの設定</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AutoSave">変更は自動的に保存されます。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">バックアップから復元</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AppDomain">アプリドメイン</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW パス</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">推奨エディタ</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">カスタムエディタのパス</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">閉じる時の動作</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetention">ログ保持期間（日数）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LogRetentionHint">自動クリーンアップを無効にするには 0 に設定します。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPath">PATH 内で Stackroot 管理の php/composer/node シムを使用する（オプトイン）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.AddBinToPathHint">無効にすると、Stackroot はシステムの php、composer、または node コマンドを上書きしません。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.LaunchAtStartup">Windows 起動時に Stackroot を起動する</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ShowMetrics">シェルヘッダーに RAM と CPU を表示する</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.CpuEvery">CPU 更新間隔</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Sec">秒</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.MetricsHint">パフォーマンスページへのリンク付きの軽量な概要。ヘッダーをすっきりさせるにはオフにします。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Thumbnails">サイトのサムネイルを有効にする（初回使用時に約 300 MB の Chromium ブラウザをダウンロードします）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.ThumbnailsHint">有効にすると、ヘッドレスブラウザがダッシュボード用にサイトのスクリーンショットをキャプチャします。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslCa">すべての Windows ユーザーに対してローカル HTTPS CA を信頼する（管理者権限の承認が必要）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSslHint">オフの場合、「SSL を信頼する」はユーザーアカウントのみに証明書をインストールし、管理者のプロンプトは表示されません。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.TrustSsl">SSL を信頼する</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.RemoveOldCas">古い CA を削除する</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.SslWarning">Windows に複数の Stackroot Local CA エントリが表示される場合は、「古い CA を削除する」を使用して現在の開発証明書のみを保持してください。</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DiagnosticsLog">診断ログを有効にする（開発用レポート）</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.Language">言語</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.DownloadCache">ダウンロードキャッシュのパス</sys:String>
+        <!-- ── Dialogs ── -->
+        <sys:String x:Key="Loc.AddProcess.Title">監視対象のバックグラウンドプロセスを設定します。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Name">名前</sys:String>
+        <sys:String x:Key="Loc.AddProcess.LinkedSite">リンクされたサイト（オプション）</sys:String>
+        <sys:String x:Key="Loc.AddProcess.ProjectFolder">プロジェクトフォルダー</sys:String>
+        <sys:String x:Key="Loc.AddProcess.ProjectFolderHint">サイトがリンクされていない場合の絶対プロジェクトルート。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.WorkingDir">作業ディレクトリ</sys:String>
+        <sys:String x:Key="Loc.AddProcess.WorkingDirHint">プロジェクトフォルダーからの相対パス、またはそれを上書きする絶対パス。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Runtime">ランタイム</sys:String>
+        <sys:String x:Key="Loc.AddProcess.PhpVersion">PHP バージョン</sys:String>
+        <sys:String x:Key="Loc.AddProcess.PhpVersionHint">PHP および Composer ランタイムに使用されます。デフォルトはリンクされたサイトの PHP バージョンです。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Command">コマンド</sys:String>
+        <sys:String x:Key="Loc.AddProcess.CommandHint">シェル: 完全なコマンド。その他のランタイム: 実行ファイルに続く引数。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.RestartDelay">再起動遅延（秒）</sys:String>
+        <sys:String x:Key="Loc.AddProcess.RestartDelayHint">終了から再起動までの待ち時間。デフォルト（2秒、その後段階的に増加）にする場合は空欄のままにします。</sys:String>
+        <sys:String x:Key="Loc.AddProcess.AutoStart">Stackroot 起動時に自動開始</sys:String>
+        <sys:String x:Key="Loc.AddProcess.Featured">おすすめ（最上部に固定）</sys:String>
+    
+        <sys:String x:Key="Loc.AddSite.Title">Web ドメインを追加</sys:String>
+        <sys:String x:Key="Loc.AddSite.Subtitle">プロジェクトテンプレートを使用してローカル開発ドメインを作成します。</sys:String>
+        <sys:String x:Key="Loc.AddSite.Template">テンプレート</sys:String>
+        <sys:String x:Key="Loc.AddSite.SiteName">サイト名</sys:String>
+        <sys:String x:Key="Loc.AddSite.DomainName">ドメイン名</sys:String>
+        <sys:String x:Key="Loc.AddSite.SubdomainTooltip">サブドメイン（例: myapp）</sys:String>
+        <sys:String x:Key="Loc.AddSite.DomainAliases">ドメインエイリアス（オプション）</sys:String>
+        <sys:String x:Key="Loc.AddSite.AliasesHint">1行に1つのエイリアス（例: sameapp.test または *.app.test）。ワイルドカードエイリアスは nginx で動作します。リテラル名は hosts と HTTPS に追加されます。</sys:String>
+        <sys:String x:Key="Loc.AddSite.PhpBackend">バックエンド (PHP)</sys:String>
+        <sys:String x:Key="Loc.AddSite.NodeJs">Node.js</sys:String>
+        <sys:String x:Key="Loc.AddSite.DocumentRoot">ドキュメントルート</sys:String>
+        <sys:String x:Key="Loc.AddSite.SetByTemplate">テンプレートによる設定</sys:String>
+        <sys:String x:Key="Loc.AddSite.Folder">フォルダー</sys:String>
+        <sys:String x:Key="Loc.AddSite.CreateUnderWww">WWW 配下に作成（設定）</sys:String>
+        <sys:String x:Key="Loc.AddSite.ExistingFolder">既存のフォルダー</sys:String>
+        <sys:String x:Key="Loc.AddSite.GoToDashboard">作成後にサイトダッシュボードへ移動する</sys:String>
+    
+        <sys:String x:Key="Loc.ChangePassword.Title">管理者パスワードの変更</sys:String>
+        <sys:String x:Key="Loc.ChangePassword.Subtitle">WordPress 管理者ユーザーの新しいパスワードを入力してください。</sys:String>
+        <sys:String x:Key="Loc.ChangePassword.Change">変更</sys:String>
+    
+        <sys:String x:Key="Loc.CreateDatabase.Title">データベースの作成</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.Subtitle">開発用のローカル SQL データベースを登録します。</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.DatabaseName">データベース名</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.Engine">エンジン</sys:String>
+        <sys:String x:Key="Loc.CreateDatabase.LinkToSite">サイトにリンク（オプション）</sys:String>
+    
+        <sys:String x:Key="Loc.CronTask.Title">新しいスケジュール済みタスク</sys:String>
+        <sys:String x:Key="Loc.CronTask.Label">ラベル</sys:String>
+        <sys:String x:Key="Loc.CronTask.LinkedSite">リンクされたサイト（オプション）</sys:String>
+        <sys:String x:Key="Loc.CronTask.Command">コマンド</sys:String>
+        <sys:String x:Key="Loc.CronTask.WorkingDir">作業ディレクトリ</sys:String>
+        <sys:String x:Key="Loc.CronTask.Schedule">スケジュール</sys:String>
+        <sys:String x:Key="Loc.CronTask.Minute">分</sys:String>
+        <sys:String x:Key="Loc.CronTask.Hour">時</sys:String>
+        <sys:String x:Key="Loc.CronTask.Day">日</sys:String>
+        <sys:String x:Key="Loc.CronTask.Month">月</sys:String>
+        <sys:String x:Key="Loc.CronTask.Weekday">曜日</sys:String>
+        <sys:String x:Key="Loc.CronTask.CaptureLog">出力をログファイルに記録する</sys:String>
+    
+        <sys:String x:Key="Loc.CustomCommands.Title">カスタムコマンド</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ImportTooltip">別のサイトからエクスポートされたファイルからコマンドを追加する</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ExportTooltip">別のサイトでインポート可能なファイルにコマンドを保存する</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Label">ラベル</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Command">コマンド</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ButtonColors">ボタンの色（オプション）</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ColorText">テキスト</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ColorBackground">背景</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.ResetColors">色をデフォルトに戻す</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Icon">アイコン（オプション）</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.RemoveIcon">アイコンを削除</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Preview">プレビュー</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.Select">コマンドを選択するか、新しいコマンドを追加してください。</sys:String>
+        <sys:String x:Key="Loc.CustomCommands.RunningWarning">実行中のコマンドは削除できません。最初にコマンドを停止してください。</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseBackups.Subtitle">バックアップファイルを選択し、一致するデータベースに復元します。</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColFile">ファイル</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColDatabase">データベース</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColEngine">エンジン</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColCreated">作成日</sys:String>
+        <sys:String x:Key="Loc.DatabaseBackups.ColSize">サイズ</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseEnv.Subtitle">これらの行をサイトの .env ファイルにコピーします。</sys:String>
+    
+        <sys:String x:Key="Loc.DatabaseSettings.Title">データベース設定</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Subtitle">設定の認証情報は MySQL/MariaDB に自動的に適用されます。ローカル開発用のため、パスワードはプレーンテキストで表示されます。</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.MysqlCredentials">MySQL 認証情報</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.MariaDbCredentials">MariaDB 認証情報</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Username">ユーザー名</sys:String>
+        <sys:String x:Key="Loc.DatabaseSettings.Password">パスワード</sys:String>
+    
+        <sys:String x:Key="Loc.DevSslPaths.Title">ローカル SSL パス</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.Subtitle">Stackroot 開発用証明書ファイル (PEM)。Node サーバーや .env 内でこれらのパスを使用します。</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.Certificate">証明書 (dev.crt)</sys:String>
+        <sys:String x:Key="Loc.DevSslPaths.PrivateKey">秘密鍵 (dev.key)</sys:String>
+    
+        <sys:String x:Key="Loc.Downloads.NoActive">アクティブなダウンロードはありません</sys:String>
+        <sys:String x:Key="Loc.Downloads.RunInBackground">バックグラウンドで実行</sys:String>
+        <sys:String x:Key="Loc.Downloads.CloseTooltip">閉じる</sys:String>
+    
+        <sys:String x:Key="Loc.EditSite.Title">Web ドメインを編集</sys:String>
+        <sys:String x:Key="Loc.EditSite.Subtitle">テンプレート、PHP バックエンド、HTTPS の動作、および開発用プロキシを更新します。</sys:String>
+        <sys:String x:Key="Loc.EditSite.Domain">ドメイン</sys:String>
+        <sys:String x:Key="Loc.EditSite.DomainFixed">ドメインは変更できません — 名前を変更するには削除して再追加してください。</sys:String>
+        <sys:String x:Key="Loc.EditSite.DomainAliases">ドメインエイリアス（オプション）</sys:String>
+        <sys:String x:Key="Loc.EditSite.AliasesHint">1行に1つのエイリアス（例: sameapp.test または *.app.test）。ワイルドカードエイリアスは nginx で動作します。リテラル名は hosts と HTTPS に追加されます。</sys:String>
+        <sys:String x:Key="Loc.EditSite.Folder">フォルダー</sys:String>
+        <sys:String x:Key="Loc.EditSite.FolderHint">nginx のドキュメントルートは、このフォルダーとテンプレートのドキュメントルートに従います。</sys:String>
+        <sys:String x:Key="Loc.EditSite.Template">テンプレート</sys:String>
+        <sys:String x:Key="Loc.EditSite.SiteName">サイト名</sys:String>
+        <sys:String x:Key="Loc.EditSite.PhpBackend">バックエンド (PHP)</sys:String>
+        <sys:String x:Key="Loc.EditSite.DocumentRoot">ドキュメントルート</sys:String>
+        <sys:String x:Key="Loc.EditSite.VhostEnabled">有効（nginx vhost + hosts エントリ）</sys:String>
+        <sys:String x:Key="Loc.EditSite.ForceHttps">HTTPS を強制（HTTP → HTTPS リダイレクト）</sys:String>
+        <sys:String x:Key="Loc.EditSite.HttpsHint">無効な場合、サイトは HTTP のみで提供され、ブラウザによる HTTPS への自動アップグレードを回避します。</sys:String>
+        <sys:String x:Key="Loc.EditSite.DevProxies">開発用プロキシ</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddRegexProxy">正規表現プロキシを追加</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddProxy">プロキシを追加</sys:String>
+        <sys:String x:Key="Loc.EditSite.NoProxies">プロキシはまだありません — /vite/ などをローカル開発サーバーにルーティングするために追加してください。</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyEnabled">有効</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyName">名前</sys:String>
+        <sys:String x:Key="Loc.EditSite.MatchType">一致タイプ</sys:String>
+        <sys:String x:Key="Loc.EditSite.LocationPattern">ロケーションパターン</sys:String>
+        <sys:String x:Key="Loc.EditSite.PatternHint">nginx の location 行全体ではなく、パターンのみ（例: ^/path$）を貼り付けてください。</sys:String>
+        <sys:String x:Key="Loc.EditSite.WebSocket">WebSocket サポート</sys:String>
+        <sys:String x:Key="Loc.EditSite.ProxyDirectives">プロキシディレクティブ</sys:String>
+        <sys:String x:Key="Loc.EditSite.ResetDefaults">デフォルトに戻す</sys:String>
+        <sys:String x:Key="Loc.EditSite.AddDirective">ディレクティブを追加</sys:String>
+    
+        <sys:String x:Key="Loc.FirstRun.OpenStackroot">Stackroot を開く</sys:String>
+
+        <sys:String x:Key="Loc.Laravel.Title">Laravel のインストール</sys:String>
+        <sys:String x:Key="Loc.Laravel.Subtitle">Laravel プロジェクトを設定します。すべてのフィールドがあらかじめ入力されています。</sys:String>
+        <sys:String x:Key="Loc.Laravel.DatabaseName">データベース名</sys:String>
+        <sys:String x:Key="Loc.Laravel.DatabaseEngine">データベースエンジン</sys:String>
+        <sys:String x:Key="Loc.Laravel.StarterKit">スターターキット</sys:String>
+        <sys:String x:Key="Loc.Laravel.Stack">スタック</sys:String>
+        <sys:String x:Key="Loc.Laravel.RunNpmBuild">Composer の後に „npm install &amp;&amp; npm run build“ を実行する</sys:String>
+        <sys:String x:Key="Loc.Laravel.NpmHint">Node.js が必要です。手動で実行したい場合はチェックを外してください。</sys:String>
+        <sys:String x:Key="Loc.Laravel.RunMigrations">データベースマイグレーションを実行する (php artisan migrate)</sys:String>
+    
+        <sys:String x:Key="Loc.Mailpit.Title">Mailpit 設定</sys:String>
+        <sys:String x:Key="Loc.Mailpit.Subtitle">PHP からの送信メールをキャッチするための Web UI。</sys:String>
+        <sys:String x:Key="Loc.Mailpit.AutoRestart">停止した場合に自動再起動する（生存確認）</sys:String>
+        <sys:String x:Key="Loc.Mailpit.SmtpPort">SMTP ポート</sys:String>
+        <sys:String x:Key="Loc.Mailpit.WebPort">Web UI ポート（内部）</sys:String>
+        <sys:String x:Key="Loc.Mailpit.WebPortHint">アプリドメインの /mail でプロキシされます。ポートが使用中の場合のみ変更してください。</sys:String>
+        <sys:String x:Key="Loc.Mailpit.AutoStart">Stackroot 起動時に自動開始する</sys:String>
+    
+        <sys:String x:Key="Loc.NginxHttp.Title">Nginx HTTP 設定</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Subtitle">メインの nginx.conf のデフォルト値を調整します。sites-enabled 内のサイト vhost は引き続き Stackroot によって更新されます。</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ManualControl">手動制御</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ManageManually">メインの nginx.conf を手動で管理する</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.OpenConfig">nginx.conf を開く</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.WorkersAndEvents">ワーカーとイベント</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.LimitsAndHashing">制限とハッシュ</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Transport">トランスポート</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Gzip">Gzip</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.EnableGzip">gzip 圧縮を有効にする</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Logging">ロギング</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.WriteAccessLog">アクセスログを書き込む</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.PhpTimeouts">PHP / FastCGI タイムアウト</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.DevProxyTimeouts">開発プロキシタイムアウト (Vite など)</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.MultiAccept">multi_accept on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.Sendfile">sendfile on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.TcpNoPush">tcp_nopush on</sys:String>
+        <sys:String x:Key="Loc.NginxHttp.ResetDefaults">チューニングを推奨されるデフォルト値にリセットする</sys:String>
+    
+        <sys:String x:Key="Loc.NodeSettings.Title">Node 設定</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.Subtitle">サイトプロセス用の npm レジストリと nvm の動作を設定します。</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.NpmRegistry">npm レジストリ</sys:String>
+        <sys:String x:Key="Loc.NodeSettings.AutoNvmrc">.nvmrc が存在する場合は自動的に使用する (autoUseNvmrc)</sys:String>
+    
+        <sys:String x:Key="Loc.PackageInstall.Title">PHP でインストール</sys:String>
+        <sys:String x:Key="Loc.PackageInstall.NoPhp">カタログに互換性のある PHP バージョンが見つかりません。</sys:String>
+        <sys:String x:Key="Loc.PackageInstall.PhpVersion">PHP バージョン (必須)</sys:String>
+    
+        <sys:String x:Key="Loc.PackageVersions.NoVersions">カタログにバージョンがありません。</sys:String>
+        <sys:String x:Key="Loc.PackageVersions.Installed">インストール済み</sys:String>
+        <sys:String x:Key="Loc.PackageVersions.Active">有効</sys:String>
+    
+        <sys:String x:Key="Loc.PhpExtensions.Subtitle">ext/ に同梱されている拡張機能、または PECL 経由でインストールされた拡張機能を切り替えます。Stackroot サービスを必要とする拡張機能は、そのサービスがインストールされるまで無効のままになります。</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.FilterTooltip">拡張機能の名前または説明でフィルター</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.EnableAllReady">準備が整ったものをすべて有効化</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.ResetToDefaults">デフォルトにリセット</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.InstallPecl">PECL をインストール</sys:String>
+        <sys:String x:Key="Loc.PhpExtensions.PeclHint">拡張機能は、この PHP バージョン用の Windows ビルドが存在する場合のみここに表示されます。</sys:String>
+    
+        <sys:String x:Key="Loc.PhpMyAdmin.Title">phpMyAdmin 設定</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.Subtitle">MySQL / MariaDB 用の Web UI。</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.UrlPath">URL パス</sys:String>
+        <sys:String x:Key="Loc.PhpMyAdmin.PhpVersion">PHP バージョン</sys:String>
+    
+        <sys:String x:Key="Loc.PhpRedisAdmin.Title">phpRedisAdmin 設定</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">「サービス」→「Redis」のホスト/ポートを使用して Redis に接続します。</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL パス</sys:String>
+        <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP バージョン</sys:String>
+    
+        <sys:String x:Key="Loc.PhpRuntime.Title">詳細設定 — PHP ランタイム</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.Subtitle">インストールされた各バージョンは、ポートブロック（ベースポート + オフセット）上で php-cgi ワーカーのプールを実行します。これを変更する必要はほとんどありません。</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI ホスト</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.FastCgiPort">FastCGI ベースポート</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.WorkersPerVersion">バージョンごとのワーカー数 (1–8)</sys:String>
+        <sys:String x:Key="Loc.PhpRuntime.WorkersHint">2つ以上の php-cgi ワーカーを実行すると、ワーカーのリサイクルや再起動中も nginx がサービスを提供し続けることができ、リクエストが切断されるのを防ぎます。</sys:String>
+    
+        <sys:String x:Key="Loc.PhpVersionSettings.Subtitle">この PHP バージョンの php.ini のデフォルト値を調整します。拡張機能は引き続き PHP ページから管理されます。</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ManualControl">手動制御</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ManageManually">php.ini を手動で管理する</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.OpenIni">php.ini を開く</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.RuntimeLimits">実行制限</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.InputAndSockets">入力とソケット</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.PathCache">パスキャッシュ</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.OPcache">OPcache</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.EnableOPcache">OPcache を有効にする</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ErrorsAndWarnings">エラーと警告</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.DisplayErrors">ブラウザにエラーを表示する (display_errors)</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.LogErrors">エラーをファイルに記録する (log_errors)</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.HideWarnings">PHP 警告を非表示にする</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.HideDeprecations">非推奨通知を非表示にする</sys:String>
+        <sys:String x:Key="Loc.PhpVersionSettings.ResetDefaults">デフォルトにリセット</sys:String>
+    
+        <sys:String x:Key="Loc.PickDatabase.Title">対象データベースの選択</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.Subtitle">このバックアップを復元するデータベースを選択してください：</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.Replace">データベースを置換（復元前に削除して再作成）</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">オフ：既存のデータベースにインポートします。オン：最初に対象データベースをクリアしてから復元します。</sys:String>
+    
+        <sys:String x:Key="Loc.ServiceSettings.Subtitle">サービスを有効にし、自動起動を選択し、ネットワーク設定を構成します。</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.AutoStart">Stackroot 起動時に自動開始する</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.AutoRestart">停止した場合に自動再起動する（生存確認）</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.ActivePackage">有効なパッケージバージョン</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.PackageHint">有効なバージョンは、サービスページのパッケージバージョンボタンから変更できます。</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.Host">ホスト</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.Port">ポート</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.SslPort">SSL ポート</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.EnableHttps">HTTPS を有効にする (SSL)</sys:String>
+        <sys:String x:Key="Loc.ServiceSettings.HttpPerformance">HTTP パフォーマンス設定…</sys:String>
+    
+        <sys:String x:Key="Loc.SiteProcessLog.LiveUpdates">ライブ更新</sys:String>
+    
+        <sys:String x:Key="Loc.SiteSettings.Title">サイト設定</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.Subtitle">Stackroot がローカルドメイン名前解決を管理する方法を制御します。</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.AutoHosts">有効なドメインの Windows hosts ファイルを自動的に更新する</sys:String>
+        <sys:String x:Key="Loc.SiteSettings.AutoHostsHint">有効にすると、Stackroot はローカルドメイン用に 127.0.0.1 のエントリを書き込みます。アクセスが拒否された場合は管理者権限が必要です。</sys:String>
+    
+        <sys:String x:Key="Loc.TestDns.Title">Stackroot DNS 設定</sys:String>
+
+        <sys:String x:Key="Loc.TestDns.Subtitle">構成されたサフィックスを 127.0.0.1:53 の Stackroot DNS にルーティングします。ローカル名は以下で設定した IP に解決されます（デフォルトは 127.0.0.1）。</sys:String>
+        <sys:String x:Key="Loc.TestDns.EnabledHint">オフにして保存すると、ヘルパーサービスが停止し、NRPT ルールが削除されます。Windows から一度管理者承認を求められる場合があります。</sys:String>
+        <sys:String x:Key="Loc.TestDns.ResolveIp">解決先 IP</sys:String>
+        <sys:String x:Key="Loc.TestDns.ResolveIpHint">ローカルサイトに対して返される IPv4 または IPv6（デフォルトは 127.0.0.1）。DNS は引き続き 127.0.0.1:53 でリッスンし、hosts ファイルもこの IP を使用します。</sys:String>
+        <sys:String x:Key="Loc.TestDns.AutoStart">Stackroot 起動時に自動開始する</sys:String>
+        <sys:String x:Key="Loc.TestDns.LogQueries">DNS クエリをファイルに記録する</sys:String>
+        <sys:String x:Key="Loc.TestDns.LogQueriesHint">各クエリを Logs\test-dns-queries.jsonl に書き込みます。デフォルトはオフです。</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesHeader">サフィックスとリカバリ</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesLabel">サフィックス（1行に1つ、先頭のドットを含める）：</sys:String>
+        <sys:String x:Key="Loc.TestDns.SuffixesHint">例: .test, .dev, .com — 公開サフィックスは実際のドメインに影響するため、必要な場合にのみ使用してください。</sys:String>
+        <sys:String x:Key="Loc.TestDns.IfInternetStops">インターネットが機能しなくなった場合</sys:String>
+        <sys:String x:Key="Loc.TestDns.RecoveryHint">StackrootDnsHelper とすべての Stackroot NRPT ルールを削除します：</sys:String>
+        <sys:String x:Key="Loc.TestDns.CopyCleanup">クリーンアップコマンドをコピー</sys:String>
+    
+        <sys:String x:Key="Loc.WordPress.Title">WordPress のインストール</sys:String>
+        <sys:String x:Key="Loc.WordPress.Subtitle">WordPress サイトを設定します。すべてのフィールドがあらかじめ入力されています。</sys:String>
+        <sys:String x:Key="Loc.WordPress.SiteTitle">サイトのタイトル</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminUsername">管理者ユーザー名</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminPassword">管理者パスワード</sys:String>
+        <sys:String x:Key="Loc.WordPress.AdminEmail">管理者メールアドレス</sys:String>
+        <sys:String x:Key="Loc.WordPress.DatabaseName">データベース名</sys:String>
+        <sys:String x:Key="Loc.WordPress.DatabaseEngine">データベースエンジン</sys:String>
+    
+        <!-- ── Service and process status labels ── -->
+        <sys:String x:Key="Loc.Status.Error">エラー</sys:String>
+        <sys:String x:Key="Loc.Status.Starting">起動中…</sys:String>
+        <sys:String x:Key="Loc.Status.Restarting">再起動中…</sys:String>
+        <sys:String x:Key="Loc.Status.Recovering">復旧中…</sys:String>
+        <sys:String x:Key="Loc.Status.Installing">インストール中...</sys:String>
+        <sys:String x:Key="Loc.Status.DisabledInSettings">設定で無効化</sys:String>
+        <sys:String x:Key="Loc.Status.NotInstalled">未インストール</sys:String>
+        <sys:String x:Key="Loc.Status.Disabled">無効</sys:String>
+        <sys:String x:Key="Loc.Status.Unavailable">利用不可</sys:String>
+    
+
+    <!-- ── Main Window (missing keys) ── -->
+    <sys:String x:Key="Loc.MainWindow.TrustCertificate">証明書を信頼</sys:String>
+    <sys:String x:Key="Loc.MainWindow.UpdateNow">今すぐ更新</sys:String>
+    <sys:String x:Key="Loc.MainWindow.OpenPerformanceTooltip">パフォーマンスページを開く</sys:String>
+    <sys:String x:Key="Loc.MainWindow.RefreshMetricsTooltip">メトリクスを更新</sys:String>
+</ResourceDictionary>

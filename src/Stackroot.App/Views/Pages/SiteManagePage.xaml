@@ -24,7 +24,7 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Site dashboard"
+                <TextBlock Text="{DynamicResource Loc.SiteManage.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
@@ -39,7 +39,7 @@
                         <TextBlock FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource StackrootAccentTextBrush}"
-                                   Text="Live" />
+                                   Text="{DynamicResource Loc.Status.Live}" />
                     </Border>
                     <Border Margin="8,0,0,0"
                             Padding="8,2"
@@ -50,7 +50,7 @@
                         <TextBlock FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="#9BB8F0"
-                                   Text="HTTPS" />
+                                   Text="{DynamicResource Loc.SiteManage.Https}" />
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -80,7 +80,7 @@
                 </Button>
                 <Button MinWidth="72"
                         Margin="0,0,10,0"
-                        Content="Edit"
+                        Content="{DynamicResource Loc.Common.Edit}"
                         Command="{Binding EditSiteCommand}" />
                 <Button MinWidth="88"
                         Margin="0,0,10,0"
@@ -102,20 +102,20 @@
                         Visibility="{Binding SiteDisabled, Converter={StaticResource BoolToVis}}" />
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
-                        Content="Terminal"
+                        Content="{DynamicResource Loc.SiteManage.Terminal}"
                         Command="{Binding OpenTerminalCommand}" />
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
-                        Content="SSL paths"
-                        ToolTip="Local dev.crt and dev.key paths"
+                        Content="{DynamicResource Loc.SiteManage.SslPaths}"
+                        ToolTip="{DynamicResource Loc.SiteManage.SslTooltip}"
                         Command="{Binding OpenSslPathsCommand}"
                         Visibility="{Binding HasDevSslPaths, Converter={StaticResource BoolToVis}}" />
                 <Button MinWidth="100"
-                        Content="← Sites"
+                        Content="{DynamicResource Loc.Common.Back}"
                         Command="{Binding BackCommand}" />
             </StackPanel>
         </DockPanel>
@@ -136,7 +136,7 @@
                                     Width="32"
                                     Height="32"
                                     Padding="0"
-                                    ToolTip="Open site in browser"
+                                    ToolTip="{DynamicResource Loc.SiteManage.OpenBrowserTooltip}"
                                     Style="{StaticResource StackrootIconButtonStyle}"
                                     Command="{Binding OpenSiteCommand}">
                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -147,7 +147,7 @@
                                 <TextBlock FontSize="11"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                                           Text="TEMPLATE" />
+                                           Text="{DynamicResource Loc.SiteManage.Template}" />
                                 <TextBlock Margin="0,6,0,0"
                                            FontSize="16"
                                            FontWeight="SemiBold"
@@ -165,7 +165,7 @@
                             <TextBlock FontSize="11"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="PHP" />
+                                       Text="{DynamicResource Loc.Php.Title}" />
                             <ComboBox Margin="0,6,0,0"
                                       Padding="6,4"
                                       ItemsSource="{Binding PhpVersions}"
@@ -184,7 +184,7 @@
                             <TextBlock FontSize="11"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Node.js" />
+                                       Text="{DynamicResource Loc.AddSite.NodeJs}" />
                             <ComboBox Margin="0,6,0,0"
                                       Padding="6,4"
                                       ItemsSource="{Binding NodeVersions}"
@@ -204,7 +204,7 @@
                                     Width="32"
                                     Height="32"
                                     Padding="0"
-                                    ToolTip="Open site folder"
+                                    ToolTip="{DynamicResource Loc.Common.OpenFolder}"
                                     Style="{StaticResource StackrootIconButtonStyle}"
                                     Command="{Binding OpenFolderCommand}">
                                 <Image Width="16"
@@ -216,7 +216,7 @@
                                 <TextBlock FontSize="11"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                                           Text="PATH" />
+                                           Text="{DynamicResource Loc.SiteManage.Path}" />
                                 <TextBlock Margin="0,6,0,0"
                                            FontSize="13"
                                            Text="{Binding Site.Path}"
@@ -248,7 +248,7 @@
                                     <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource StackrootAccentTextBrush}"
                                                Text="{Binding PostInstallWpLabel, Mode=OneWay}" />
                                     <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Installed and ready" />
+                                               Text="{DynamicResource Loc.Status.InstalledReady}" />
                                 </StackPanel>
                             </DockPanel>
 
@@ -265,28 +265,28 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
-                                           Foreground="{StaticResource StackrootTextMutedBrush}" Text="Username" />
+                                           Foreground="{StaticResource StackrootTextMutedBrush}" Text="{DynamicResource Loc.SiteManage.Username}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Margin="8,0" VerticalAlignment="Center"
                                            FontFamily="Consolas" Text="{Binding PostInstallAdminUser}" />
                                 <Button Grid.Row="0" Grid.Column="2" Width="60" Height="28" Padding="8,2"
-                                        Content="Copy" Style="{StaticResource StackrootInlineButtonStyle}"
+                                        Content="{DynamicResource Loc.Common.Copy}" Style="{StaticResource StackrootInlineButtonStyle}"
                                         Command="{Binding CopyPasswordCommand}" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,6,0,0" VerticalAlignment="Center"
-                                           Foreground="{StaticResource StackrootTextMutedBrush}" Text="Password" />
+                                           Foreground="{StaticResource StackrootTextMutedBrush}" Text="{DynamicResource Loc.SiteManage.Password}" />
                                 <TextBlock Grid.Row="1" Grid.Column="1" Margin="8,6,0,0" VerticalAlignment="Center"
                                            FontFamily="Consolas" Text="{Binding PostInstallPasswordDisplay}" />
                                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,6,0,0" Orientation="Horizontal">
                                     <Button Width="28" Height="28" Padding="4"
-                                            Content="👁" ToolTip="Show/hide password"
+                                            Content="👁" ToolTip="{DynamicResource Loc.SiteManage.ShowHidePassword}"
                                             Style="{StaticResource StackrootInlineButtonStyle}"
                                             Command="{Binding TogglePasswordCommand}" />
                                     <Button Width="28" Height="28" Padding="4" Margin="4,0,0,0"
-                                            Content="📋" ToolTip="Copy password"
+                                            Content="📋" ToolTip="{DynamicResource Loc.SiteManage.CopyPassword}"
                                             Style="{StaticResource StackrootInlineButtonStyle}"
                                             Command="{Binding CopyPasswordCommand}" />
                                     <Button Width="28" Height="28" Padding="4" Margin="4,0,0,0"
-                                            Content="🔄" ToolTip="Change password"
+                                            Content="🔄" ToolTip="{DynamicResource Loc.SiteManage.ChangePassword}"
                                             Style="{StaticResource StackrootInlineButtonStyle}"
                                             Command="{Binding ChangePasswordCommand}" />
                                 </StackPanel>
@@ -313,7 +313,7 @@
                                         Background="#990A0F1A">
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" />
-                                        <TextBlock Text="Capturing…" FontSize="12"
+                                        <TextBlock Text="{DynamicResource Loc.Status.Capturing}" FontSize="12"
                                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    Margin="0,6,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
@@ -329,7 +329,7 @@
                                         Margin="0,0,4,4"
                                         Width="28" Height="28"
                                         Padding="2"
-                                        ToolTip="Refresh screenshot"
+                                        ToolTip="{DynamicResource Loc.SiteManage.RefreshScreenshot}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowRefreshButton, Converter={StaticResource BoolToVis}}">
@@ -342,7 +342,7 @@
                                         HorizontalAlignment="Center"
                                         MinWidth="100"
                                         Padding="14,8"
-                                        Content="Capture"
+                                        Content="{DynamicResource Loc.Common.Capture}"
                                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowCaptureButton, Converter={StaticResource BoolToVis}}" />
@@ -371,7 +371,7 @@
                                 <Run Text="{Binding PostInstallLaravelVersion, Mode=OneWay, StringFormat=' {}', TargetNullValue=''}" />
                             </TextBlock>
                             <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Installed and ready" />
+                                       Text="{DynamicResource Loc.Status.InstalledReady}" />
 
                             <controls:SiteCustomCommandsToolbar ShowOpenSiteButton="True" />
                         </StackPanel>
@@ -391,7 +391,7 @@
                                         Background="#990A0F1A">
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" />
-                                        <TextBlock Text="Capturing…" FontSize="12"
+                                        <TextBlock Text="{DynamicResource Loc.Status.Capturing}" FontSize="12"
                                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    Margin="0,6,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
@@ -405,7 +405,7 @@
                                         Margin="0,0,4,4"
                                         Width="28" Height="28"
                                         Padding="2"
-                                        ToolTip="Refresh screenshot"
+                                        ToolTip="{DynamicResource Loc.SiteManage.RefreshScreenshot}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowRefreshButton, Converter={StaticResource BoolToVis}}">
@@ -417,7 +417,7 @@
                                         HorizontalAlignment="Center"
                                         MinWidth="100"
                                         Padding="14,8"
-                                        Content="Capture"
+                                        Content="{DynamicResource Loc.Common.Capture}"
                                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowCaptureButton, Converter={StaticResource BoolToVis}}" />
@@ -444,7 +444,7 @@
                             <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource StackrootAccentTextBrush}"
                                        Text="{Binding TemplateLabel, Mode=OneWay}" />
                             <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Ready" />
+                                       Text="{DynamicResource Loc.Status.Ready}" />
 
                             <controls:SiteCustomCommandsToolbar ShowOpenSiteButton="True" />
                         </StackPanel>
@@ -463,7 +463,7 @@
                                         Background="#990A0F1A">
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="⏳" FontSize="32" HorizontalAlignment="Center" />
-                                        <TextBlock Text="Capturing…" FontSize="12"
+                                        <TextBlock Text="{DynamicResource Loc.Status.Capturing}" FontSize="12"
                                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                                    Margin="0,6,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
@@ -477,7 +477,7 @@
                                         Margin="0,0,4,4"
                                         Width="28" Height="28"
                                         Padding="2"
-                                        ToolTip="Refresh screenshot"
+                                        ToolTip="{DynamicResource Loc.SiteManage.RefreshScreenshot}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowRefreshButton, Converter={StaticResource BoolToVis}}">
@@ -489,7 +489,7 @@
                                         HorizontalAlignment="Center"
                                         MinWidth="100"
                                         Padding="14,8"
-                                        Content="Capture"
+                                        Content="{DynamicResource Loc.Common.Capture}"
                                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                                         Command="{Binding CaptureThumbnailCommand}"
                                         Visibility="{Binding ShowCaptureButton, Converter={StaticResource BoolToVis}}" />
@@ -515,7 +515,7 @@
                             <Button DockPanel.Dock="Right"
                                     MinWidth="120"
                                     Padding="14,8"
-                                    Content="Install"
+                                    Content="{DynamicResource Loc.Common.Install}"
                                     Style="{StaticResource StackrootPrimaryButtonStyle}"
                                     Command="{Binding InstallSiteCommand}" />
                         </DockPanel>
@@ -537,7 +537,7 @@
                         <DockPanel LastChildFill="False">
                             <TextBlock FontSize="16"
                                        FontWeight="SemiBold"
-                                       Text="Quick actions" />
+                                       Text="{DynamicResource Loc.Dashboard.QuickActions}" />
                         </DockPanel>
 
                         <Border Margin="0,10,0,0"
@@ -553,7 +553,7 @@
                                         Height="28"
                                         Padding="0"
                                         Margin="8,0,0,0"
-                                        ToolTip="Dismiss"
+                                        ToolTip="{DynamicResource Loc.Common.Dismiss}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding DismissCommandStatusCommand}"
                                         Visibility="{Binding ShowDismissCommandStatus, Converter={StaticResource BoolToVis}}">
@@ -565,14 +565,14 @@
                                         Margin="8,0,0,0"
                                         Padding="8,4"
                                         FontSize="12"
-                                        Content="Cancel"
+                                        Content="{DynamicResource Loc.Common.Cancel}"
                                         Command="{Binding CancelCommandStatusCommand}"
                                         Visibility="{Binding ShowCancelCommandStatus, Converter={StaticResource BoolToVis}}" />
                                 <Button DockPanel.Dock="Right"
                                         Margin="8,0,0,0"
                                         Padding="8,4"
                                         FontSize="12"
-                                        Content="View log"
+                                        Content="{DynamicResource Loc.Common.ViewLog}"
                                         ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
                                         PreviewMouseLeftButtonDown="OnQuickActionViewLogClick"
                                         Visibility="{Binding ShowCommandLogButton, Converter={StaticResource BoolToVis}}" />
@@ -690,11 +690,11 @@
                         <DockPanel LastChildFill="False">
                             <TextBlock FontSize="16"
                                        FontWeight="SemiBold"
-                                       Text="Databases" />
+                                       Text="{DynamicResource Loc.Databases.Title}" />
                             <Button DockPanel.Dock="Right"
                                     Padding="8,4"
                                     FontSize="12"
-                                    Content="+ Create"
+                                    Content="{DynamicResource Loc.Databases.CreateButton}"
                                     Style="{StaticResource StackrootPrimaryButtonStyle}"
                                     Command="{Binding CreateDatabaseCommand}" />
                         </DockPanel>
@@ -712,7 +712,7 @@
                                         Height="28"
                                         Padding="0"
                                         Margin="8,0,0,0"
-                                        ToolTip="Dismiss"
+                                        ToolTip="{DynamicResource Loc.Common.Dismiss}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding DismissDatabaseStatusCommand}">
                                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -728,7 +728,7 @@
 
                         <TextBlock Margin="0,10,0,0"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                                   Text="No databases linked to this site yet."
+                                   Text="{DynamicResource Loc.SiteManage.NoDatabases}"
                                    Visibility="{Binding ShowNoLinkedDatabases, Converter={StaticResource BoolToVis}}" />
 
                         <ItemsControl Margin="0,10,0,0"
@@ -782,16 +782,16 @@
                         <DockPanel LastChildFill="False">
                             <TextBlock FontSize="16"
                                        FontWeight="SemiBold"
-                                       Text="Processes" />
+                                       Text="{DynamicResource Loc.Processes.Title}" />
                             <StackPanel DockPanel.Dock="Right"
                                         Orientation="Horizontal">
                                 <Button Margin="0,0,6,0"
                                         Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                        Content="Start all"
+                                        Content="{DynamicResource Loc.Common.StartAll}"
                                         Command="{Binding StartAllProcessesCommand}" />
                                 <Button Margin="0,0,6,0"
                                         Style="{StaticResource StackrootInlineStopButtonStyle}"
-                                        Content="Stop all"
+                                        Content="{DynamicResource Loc.Common.StopAll}"
                                         Command="{Binding StopAllProcessesCommand}" />
                                 <Button Padding="8,4"
                                         FontSize="12"
@@ -814,7 +814,7 @@
                                         Height="28"
                                         Padding="0"
                                         Margin="8,0,0,0"
-                                        ToolTip="Dismiss"
+                                        ToolTip="{DynamicResource Loc.Common.Dismiss}"
                                         Style="{StaticResource StackrootIconButtonStyle}"
                                         Command="{Binding DismissProcessStatusCommand}">
                                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -857,7 +857,7 @@
 
                         <TextBlock Margin="0,12,0,0"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                                   Text="No processes linked to this site yet."
+                                   Text="{DynamicResource Loc.SiteManage.NoProcesses}"
                                    Visibility="{Binding ShowNoSiteProcesses, Converter={StaticResource BoolToVis}}" />
 
                         <ItemsControl Margin="0,12,0,0"
@@ -933,7 +933,7 @@
                                                 <TextBlock FontSize="11"
                                                            FontWeight="Bold"
                                                            Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                           Text="LIVE" />
+                                                           Text="{DynamicResource Loc.Status.LiveBadge}" />
                                             </Border>
 
                                             <TextBlock Grid.Column="3"
@@ -942,12 +942,12 @@
                                                        VerticalAlignment="Center"
                                                        FontWeight="SemiBold"
                                                        Foreground="{Binding StatusColor}"
-                                                       Text="{Binding StatusText}"
+                                                       Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}"
                                                        TextAlignment="Right" />
 
                                             <WrapPanel Grid.Column="4"
                                                        VerticalAlignment="Center">
-                                                <Button Content="Log"
+                                                <Button Content="{DynamicResource Loc.Common.Log}"
                                                         Width="56"
                                                         Height="32"
                                                         Margin="0,0,6,0"
@@ -955,7 +955,7 @@
                                                         Command="{Binding DataContext.ViewProcessLogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}"
                                                         Visibility="{Binding ShowLogButton, Converter={StaticResource BoolToVis}}" />
-                                                <Button Content="Start"
+                                                <Button Content="{DynamicResource Loc.Common.Start}"
                                                         Width="56"
                                                         Height="32"
                                                         Margin="0,0,6,0"
@@ -964,7 +964,7 @@
                                                         Command="{Binding DataContext.StartProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding Id}"
                                                         Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}" />
-                                                <Button Content="Stop"
+                                                <Button Content="{DynamicResource Loc.Common.Stop}"
                                                         Width="56"
                                                         Height="32"
                                                         Margin="0,0,6,0"
@@ -973,7 +973,7 @@
                                                         Command="{Binding DataContext.StopProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding Id}"
                                                         Visibility="{Binding ShowStopButton, Converter={StaticResource BoolToVis}}" />
-                                                <Button Content="Restart"
+                                                <Button Content="{DynamicResource Loc.Common.Restart}"
                                                         Width="64"
                                                         Height="32"
                                                         Margin="0,0,6,0"
@@ -981,7 +981,7 @@
                                                         Command="{Binding DataContext.RestartProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding Id}"
                                                         Visibility="{Binding ShowRestartButton, Converter={StaticResource BoolToVis}}" />
-                                                <Button Content="Edit"
+                                                <Button Content="{DynamicResource Loc.Common.Edit}"
                                                         Width="56"
                                                         Height="32"
                                                         Margin="0,0,6,0"
@@ -989,7 +989,7 @@
                                                         Command="{Binding DataContext.EditProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}" />
                                                 <controls:OverflowMenuButton Margin="0,0,0,0"
-                                                                             DangerLabel="Remove"
+                                                                             DangerLabel="{DynamicResource Loc.Common.Remove}"
                                                                              DangerCommand="{Binding DataContext.RemoveProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                              DangerCommandParameter="{Binding}"
                                                                              ButtonWidth="30"
@@ -1015,28 +1015,28 @@
                             <StackPanel>
                                 <TextBlock FontSize="16"
                                            FontWeight="SemiBold"
-                                           Text="Scheduled tasks" />
+                                           Text="{DynamicResource Loc.ScheduledTasks.Title}" />
                                 <TextBlock Margin="0,4,0,0"
                                            Foreground="{StaticResource StackrootTextMutedBrush}"
                                            FontSize="12"
-                                           Text="Cron-style commands for this site — runs while Stackroot is open." />
+                                           Text="{DynamicResource Loc.SiteManage.ScheduledTasksHint}" />
                             </StackPanel>
                             <StackPanel DockPanel.Dock="Right"
                                         Orientation="Horizontal">
                                 <Button Margin="0,0,6,0"
                                         Padding="8,4"
                                         FontSize="12"
-                                        Content="All tasks"
-                                        ToolTip="Open the full scheduled tasks page"
+                                        Content="{DynamicResource Loc.SiteManage.AllTasks}"
+                                        ToolTip="{DynamicResource Loc.SiteManage.AllTasksTooltip}"
                                         Command="{Binding OpenAllScheduledTasksCommand}" />
                                 <Button Margin="0,0,6,0"
                                         Padding="8,4"
                                         FontSize="12"
-                                        Content="Refresh"
+                                        Content="{DynamicResource Loc.Common.Refresh}"
                                         Command="{Binding RefreshScheduledTasksCommand}" />
                                 <Button Padding="8,4"
                                         FontSize="12"
-                                        Content="+ Add"
+                                        Content="{DynamicResource Loc.Common.Add}"
                                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                                         Command="{Binding AddScheduledTaskCommand}" />
                             </StackPanel>
@@ -1045,7 +1045,7 @@
                         <TextBlock Margin="0,12,0,0"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                    FontSize="12"
-                                   Text="No scheduled tasks for this site yet."
+                                   Text="{DynamicResource Loc.SiteManage.NoScheduled}"
                                    Visibility="{Binding ShowNoScheduledTasks, Converter={StaticResource BoolToVis}}" />
 
                         <ItemsControl Margin="0,12,0,0"
@@ -1115,7 +1115,7 @@
                                                 <Button Width="30"
                                                         Height="30"
                                                         Padding="0"
-                                                        ToolTip="Run now"
+                                                        ToolTip="{DynamicResource Loc.ScheduledTasks.RunNowTooltip}"
                                                         Style="{StaticResource StackrootIconButtonStyle}"
                                                         Command="{Binding RunNowCommand}"
                                                         Content="{Binding RunButtonText}" />
@@ -1124,7 +1124,7 @@
                                                         Margin="2,0,0,0"
                                                         Padding="2"
                                                         FontSize="11"
-                                                        Content="Log"
+                                                        Content="{DynamicResource Loc.Common.Log}"
                                                         IsEnabled="{Binding HasLog}"
                                                         ToolTip="{x:Static helpers:StackrootLogViewer.CtrlClickEditorToolTip}"
                                                         PreviewMouseLeftButtonDown="OnScheduledTaskLogClick" />
@@ -1132,13 +1132,13 @@
                                                         Height="30"
                                                         Margin="2,0,0,0"
                                                         Padding="0"
-                                                        ToolTip="Edit"
+                                                        ToolTip="{DynamicResource Loc.ScheduledTasks.EditTooltip}"
                                                         Style="{StaticResource StackrootIconButtonStyle}"
                                                         Content="✎"
                                                         Command="{Binding DataContext.EditScheduledTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding}" />
                                                 <controls:OverflowMenuButton Margin="2,0,0,0"
-                                                                             DangerLabel="Delete"
+                                                                             DangerLabel="{DynamicResource Loc.Common.Delete}"
                                                                              DangerCommand="{Binding DeleteCommand}"
                                                                              ButtonWidth="30"
                                                                              ButtonHeight="30" />

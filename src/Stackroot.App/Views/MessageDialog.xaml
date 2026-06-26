@@ -4,6 +4,7 @@
         xmlns:vm="clr-namespace:Stackroot.App.ViewModels"
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title="{Binding Title, FallbackValue=Message}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="480"
         MinWidth="400"
         MaxWidth="560"

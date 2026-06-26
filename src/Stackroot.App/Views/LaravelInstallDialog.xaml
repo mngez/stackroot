@@ -1,7 +1,8 @@
 <Window x:Class="Stackroot.App.Views.LaravelInstallDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Install Laravel"
+        Title="{DynamicResource Loc.Laravel.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="480" MinWidth="440"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
@@ -17,32 +18,38 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Install Laravel" />
+            <TextBlock FontSize="20" FontWeight="SemiBold"
+                       Text="{DynamicResource Loc.Laravel.Title}" />
             <TextBlock Margin="0,6,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Configure your Laravel project. All fields are pre-filled." TextWrapping="Wrap" />
+                       Text="{DynamicResource Loc.Laravel.Subtitle}"
+                       TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
             <!-- Database name -->
-            <TextBlock Margin="0,0,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database name" />
+            <TextBlock Margin="0,0,0,4" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="{DynamicResource Loc.Laravel.DatabaseName}" />
             <TextBox Padding="10,6" Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged}" />
 
             <!-- Database engine -->
-            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Database engine" />
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="{DynamicResource Loc.Laravel.DatabaseEngine}" />
             <ComboBox Padding="8,6"
                       ItemsSource="{Binding DatabaseEngines}"
                       DisplayMemberPath="Label"
                       SelectedItem="{Binding SelectedEngine}" />
 
             <!-- Starter kit -->
-            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Starter kit" />
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="{DynamicResource Loc.Laravel.StarterKit}" />
             <ComboBox Padding="8,6"
                       ItemsSource="{Binding StarterKits}"
                       DisplayMemberPath="Label"
                       SelectedItem="{Binding SelectedStarterKit}" />
 
             <!-- Stack (shown only when starter kit is chosen) -->
-            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}" Text="Stack" />
+            <TextBlock Margin="0,12,0,4" Foreground="{StaticResource StackrootTextMutedBrush}"
+                       Text="{DynamicResource Loc.Laravel.Stack}" />
             <ComboBox Padding="8,6"
                       IsEnabled="{Binding ShowStackOptions}"
                       ItemsSource="{Binding Stacks}"
@@ -51,21 +58,27 @@
 
             <!-- npm build -->
             <CheckBox Margin="0,16,0,0"
-                      Content="Run npm install &amp;&amp; npm run build after Composer"
+                      Content="{DynamicResource Loc.Laravel.RunNpmBuild}"
                       IsChecked="{Binding RunNpmBuild}" />
             <TextBlock Margin="0,4,0,0" Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Requires Node.js. Uncheck if you prefer to run it manually." TextWrapping="Wrap" />
+                       Text="{DynamicResource Loc.Laravel.NpmHint}"
+                       TextWrapping="Wrap" />
 
             <!-- migrations -->
             <CheckBox Margin="0,12,0,0"
-                      Content="Run database migrations (php artisan migrate)"
+                      Content="{DynamicResource Loc.Laravel.RunMigrations}"
                       IsChecked="{Binding RunMigrations}" />
         </StackPanel>
 
         <DockPanel Grid.Row="2" Margin="0,18,0,0" LastChildFill="False">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Width="88" Margin="0,0,8,0" Content="Cancel" Command="{Binding CancelCommand}" />
-                <Button Width="100" Content="Install" Style="{StaticResource StackrootPrimaryButtonStyle}" Command="{Binding InstallCommand}" />
+                <Button Width="88" Margin="0,0,8,0"
+                        Content="{DynamicResource Loc.Common.Cancel}"
+                        Command="{Binding CancelCommand}" />
+                <Button Width="100"
+                        Content="{DynamicResource Loc.Common.Install}"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Command="{Binding InstallCommand}" />
             </StackPanel>
         </DockPanel>
     </Grid>

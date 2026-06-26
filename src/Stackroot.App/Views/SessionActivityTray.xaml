@@ -88,7 +88,7 @@
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center">
                             <Button Style="{StaticResource StackrootTrayHeaderIconButtonStyle}"
-                                    ToolTip="Clear session log"
+                                    ToolTip="{DynamicResource Loc.Status.ClearSessionLog}"
                                     Command="{Binding ClearCommand}">
                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                            FontSize="10"
@@ -96,7 +96,7 @@
                             </Button>
                             <Button Margin="4,0,0,0"
                                     Style="{StaticResource StackrootTrayHeaderIconButtonStyle}"
-                                    ToolTip="Close"
+                                    ToolTip="{DynamicResource Loc.Common.Close}"
                                     Command="{Binding CloseCommand}">
                                 <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                            FontSize="10"
@@ -107,12 +107,12 @@
                                     VerticalAlignment="Center">
                             <TextBlock FontWeight="SemiBold"
                                        VerticalAlignment="Center"
-                                       Text="Activity" />
+                                       Text="{DynamicResource Loc.Status.Activity}" />
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
                                        FontSize="11"
-                                       Text="This session" />
+                                       Text="{DynamicResource Loc.Status.ThisSession}" />
                         </StackPanel>
                     </DockPanel>
 
@@ -147,7 +147,7 @@
                     <TextBlock DockPanel.Dock="Top"
                                Margin="12,12"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="No activity yet"
+                               Text="{DynamicResource Loc.Status.NoActivity}"
                                Visibility="{Binding ShowEmptyPanel, Converter={StaticResource BoolToVis}}" />
 
                     <ScrollViewer MaxHeight="320"

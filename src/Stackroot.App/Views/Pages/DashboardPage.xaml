@@ -15,12 +15,12 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Dashboard"
+                <TextBlock Text="{DynamicResource Loc.Dashboard.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Services, PHP FastCGI, and enabled processes" />
+                           Text="{DynamicResource Loc.Dashboard.Subtitle}" />
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Right"
@@ -29,7 +29,7 @@
                         MinWidth="100"
                         Padding="12,6"
                         Style="{StaticResource StackrootStopButtonStyle}"
-                        Content="Stop all"
+                        Content="{DynamicResource Loc.Common.StopAll}"
                         Command="{Binding StopAllCommand}" />
                 <Button Margin="0,4,10,0"
                         MinWidth="108"
@@ -40,7 +40,7 @@
                 <Button Margin="0,4,10,0"
                         MinWidth="88"
                         Padding="12,6"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
                 <Button Margin="0,4,0,0"
                         MinWidth="100"
@@ -54,7 +54,7 @@
                                Source="{x:Static helpers:StackrootImages.FolderIcon}"
                                RenderOptions.BitmapScalingMode="HighQuality" />
                         <TextBlock VerticalAlignment="Center"
-                                   Text="Data folder" />
+                                   Text="{DynamicResource Loc.Common.DataFolder}" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -105,7 +105,7 @@
                                     <TextBlock HorizontalAlignment="Center"
                                                FontSize="11"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Running" />
+                                               Text="{DynamicResource Loc.Status.Running}" />
                                     <TextBlock Margin="0,2,0,0"
                                                HorizontalAlignment="Center"
                                                FontSize="22"
@@ -124,7 +124,7 @@
                                     <TextBlock HorizontalAlignment="Center"
                                                FontSize="11"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="Stopped" />
+                                               Text="{DynamicResource Loc.Status.Stopped}" />
                                     <TextBlock Margin="0,2,0,0"
                                                HorizontalAlignment="Center"
                                                FontSize="22"
@@ -139,7 +139,7 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Foreground="{StaticResource StackrootAccentBrush}"
-                                Content="Manage →"
+                                Content="{DynamicResource Loc.Common.ManageArrow}"
                                 Command="{Binding OpenServicesCommand}" />
                     </DockPanel>
                 </Border>
@@ -155,7 +155,7 @@
                         <TextBlock FontSize="16"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
-                                   Text="Loading dashboard…" />
+                                   Text="{DynamicResource Loc.Dashboard.Loading}" />
                         <ProgressBar Margin="0,14,0,0"
                                      Width="220"
                                      Height="4"
@@ -177,15 +177,15 @@
                         <TextBlock FontSize="18"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
-                                   Text="No enabled services yet" />
+                                   Text="{DynamicResource Loc.Dashboard.NoServices}" />
                         <TextBlock Margin="0,8,0,0"
                                    HorizontalAlignment="Center"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
-                                   Text="Install packages and enable services from the Services page."
+                                   Text="{DynamicResource Loc.Dashboard.NoServicesHint}"
                                    TextAlignment="Center" />
                         <Button Margin="0,16,0,0"
                                 Style="{StaticResource StackrootPrimaryButtonStyle}"
-                                Content="Go to Services"
+                                Content="{DynamicResource Loc.Dashboard.GoToServices}"
                                 Command="{Binding OpenServicesCommand}" />
                     </StackPanel>
                 </Border>
@@ -235,7 +235,7 @@
                                                        FontSize="12"
                                                        Foreground="#4CAE8C"
                                                        Text="⚡"
-                                                       ToolTip="Keep-alive active"
+                                                       ToolTip="{DynamicResource Loc.Common.KeepAliveActive}"
                                                        Visibility="{Binding IsSupervised, Converter={StaticResource BoolToVis}}" />
                                         </StackPanel>
                                         <TextBlock Margin="0,1,0,0"
@@ -273,7 +273,7 @@
                                         <TextBlock FontSize="11"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                   Text="LIVE" />
+                                                   Text="{DynamicResource Loc.Status.LiveBadge}" />
                                     </Border>
 
                                     <StackPanel Grid.Column="3"
@@ -282,7 +282,7 @@
                                                 VerticalAlignment="Center">
                                         <TextBlock FontWeight="SemiBold"
                                                    Foreground="{Binding StatusColor}"
-                                                   Text="{Binding StatusText}"
+                                                   Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}"
                                                    TextAlignment="Right" />
                                         <ProgressBar Margin="0,5,0,0"
                                                      Height="3"
@@ -297,7 +297,7 @@
                                                 Height="36"
                                                 Margin="0,0,8,0"
                                                 Style="{StaticResource StackrootIconButtonStyle}"
-                                                ToolTip="Service settings"
+                                                ToolTip="{DynamicResource Loc.Common.Settings}"
                                                 Command="{Binding SettingsCommand}">
                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                                        FontSize="14"
@@ -307,7 +307,7 @@
                                                 Height="36"
                                                 Margin="0,0,8,0"
                                                 Style="{StaticResource StackrootPrimaryIconButtonStyle}"
-                                                ToolTip="Start"
+                                                ToolTip="{DynamicResource Loc.Common.Start}"
                                                 Command="{Binding StartCommand}"
                                                 Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}">
                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -318,7 +318,7 @@
                                                 Height="36"
                                                 Margin="0,0,8,0"
                                                 Style="{StaticResource StackrootStopIconButtonStyle}"
-                                                ToolTip="Stop"
+                                                ToolTip="{DynamicResource Loc.Common.Stop}"
                                                 Command="{Binding StopCommand}"
                                                 Visibility="{Binding ShowStopButton, Converter={StaticResource BoolToVis}}">
                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -328,7 +328,7 @@
                                         <Button Width="36"
                                                 Height="36"
                                                 Style="{StaticResource StackrootIconButtonStyle}"
-                                                ToolTip="Restart"
+                                                ToolTip="{DynamicResource Loc.Common.Restart}"
                                                 Command="{Binding RestartCommand}"
                                                 Visibility="{Binding ShowRestartButton, Converter={StaticResource BoolToVis}}">
                                             <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -352,7 +352,7 @@
                     <StackPanel>
                         <TextBlock FontSize="18"
                                    FontWeight="SemiBold"
-                                   Text="PHP FastCGI listeners" />
+                                   Text="{DynamicResource Loc.Dashboard.PhpFastCgi}" />
                         <ItemsControl Margin="0,12,0,0"
                                       ItemsSource="{Binding PhpListeners}">
                             <ItemsControl.ItemTemplate>
@@ -401,7 +401,7 @@
                                                 <TextBlock FontSize="11"
                                                            FontWeight="Bold"
                                                            Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                           Text="LIVE" />
+                                                           Text="{DynamicResource Loc.Status.LiveBadge}" />
                                             </Border>
 
                                             <TextBlock Grid.Column="3"
@@ -409,23 +409,23 @@
                                                        VerticalAlignment="Center"
                                                        FontWeight="SemiBold"
                                                        Foreground="{Binding StatusColor}"
-                                                       Text="{Binding StatusText}" />
+                                                       Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" />
 
                                             <StackPanel Grid.Column="4"
                                                         Orientation="Horizontal"
                                                         VerticalAlignment="Center">
                                                 <Button Margin="0,0,6,0"
                                                         Style="{StaticResource StackrootInlineButtonStyle}"
-                                                        Content="Log"
+                                                        Content="{DynamicResource Loc.Common.Log}"
                                                         Command="{Binding OpenLogCommand}"
                                                         Visibility="{Binding ShowLogButton, Converter={StaticResource BoolToVis}}" />
                                                 <Button Margin="0,0,6,0"
                                                         Style="{StaticResource StackrootInlineStopButtonStyle}"
-                                                        Content="Stop"
+                                                        Content="{DynamicResource Loc.Common.Stop}"
                                                         Command="{Binding StopCommand}"
                                                         Visibility="{Binding ShowStopButton, Converter={StaticResource BoolToVis}}" />
                                                 <Button Style="{StaticResource StackrootInlineButtonStyle}"
-                                                        Content="Restart"
+                                                        Content="{DynamicResource Loc.Common.Restart}"
                                                         Command="{Binding RestartCommand}" />
                                             </StackPanel>
                                         </Grid>
@@ -448,18 +448,28 @@
                             <StackPanel>
                                 <TextBlock FontSize="18"
                                            FontWeight="SemiBold"
-                                           Text="Enabled processes" />
+                                           Text="{DynamicResource Loc.Dashboard.EnabledProcesses}" />
                                 <StackPanel Margin="0,8,0,0"
                                             Orientation="Horizontal">
-                                    <TextBlock Margin="0,0,18,0"
-                                               Foreground="{StaticResource StackrootAccentTextBrush}"
-                                               Text="{Binding RunningProcessCount, StringFormat=Running: {0}}" />
-                                    <TextBlock Margin="0,0,18,0"
-                                               Foreground="{StaticResource StackrootTextMutedBrush}"
-                                               Text="{Binding StoppedProcessCount, StringFormat=Stopped: {0}}" />
-                                    <TextBlock Foreground="{StaticResource StackrootDangerTextBrush}"
-                                               Text="{Binding ErrorProcessCount, StringFormat=Errors: {0}}"
-                                               Visibility="{Binding HasProcessErrors, Converter={StaticResource BoolToVis}}" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0">
+                                        <TextBlock Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                   Text="{DynamicResource Loc.Status.Running}" />
+                                        <TextBlock Foreground="{StaticResource StackrootAccentTextBrush}"
+                                                   Text="{Binding RunningProcessCount, StringFormat=': {0}'}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0">
+                                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{DynamicResource Loc.Status.Stopped}" />
+                                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                   Text="{Binding StoppedProcessCount, StringFormat=': {0}'}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                Visibility="{Binding HasProcessErrors, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Foreground="{StaticResource StackrootDangerTextBrush}"
+                                                   Text="{DynamicResource Loc.Status.Errors}" />
+                                        <TextBlock Foreground="{StaticResource StackrootDangerTextBrush}"
+                                                   Text="{Binding ErrorProcessCount, StringFormat=': {0}'}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel DockPanel.Dock="Right"
@@ -467,17 +477,17 @@
                                         Orientation="Horizontal">
                                 <Button Margin="0,0,6,0"
                                         Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                        Content="Start all"
+                                        Content="{DynamicResource Loc.Dashboard.StartAll}"
                                         Command="{Binding StartAllProcessesCommand}" />
                                 <Button Margin="0,0,6,0"
                                         Style="{StaticResource StackrootInlineStopButtonStyle}"
-                                        Content="Stop all"
+                                        Content="{DynamicResource Loc.Common.StopAll}"
                                         Command="{Binding StopAllProcessesCommand}" />
                                 <Button Style="{StaticResource StackrootButtonStyle}"
                                         Background="Transparent"
                                         BorderThickness="0"
                                         Foreground="{StaticResource StackrootAccentBrush}"
-                                        Content="Manage →"
+                                        Content="{DynamicResource Loc.Common.ManageArrow}"
                                         Command="{Binding OpenProcessesCommand}" />
                             </StackPanel>
                         </DockPanel>
@@ -560,7 +570,7 @@
                                                 <TextBlock FontSize="11"
                                                            FontWeight="Bold"
                                                            Foreground="{StaticResource StackrootAccentTextBrush}"
-                                                           Text="LIVE" />
+                                                           Text="{DynamicResource Loc.Status.LiveBadge}" />
                                             </Border>
 
                                             <TextBlock Grid.Column="3"
@@ -568,28 +578,28 @@
                                                        VerticalAlignment="Center"
                                                        FontWeight="SemiBold"
                                                        Foreground="{Binding StatusColor}"
-                                                       Text="{Binding StatusText}" />
+                                                       Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" />
 
                                             <StackPanel Grid.Column="4"
                                                         Orientation="Horizontal"
                                                         VerticalAlignment="Center">
                                                 <Button Margin="0,0,6,0"
                                                         Style="{StaticResource StackrootInlineButtonStyle}"
-                                                        Content="Log"
+                                                        Content="{DynamicResource Loc.Common.Log}"
                                                         Command="{Binding OpenLogCommand}"
                                                         Visibility="{Binding ShowLogButton, Converter={StaticResource BoolToVis}}" />
                                                 <Button Margin="0,0,6,0"
                                                         Style="{StaticResource StackrootInlinePrimaryButtonStyle}"
-                                                        Content="Start"
+                                                        Content="{DynamicResource Loc.Common.Start}"
                                                         Command="{Binding StartCommand}"
                                                         Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}" />
                                                 <Button Margin="0,0,6,0"
                                                         Style="{StaticResource StackrootInlineStopButtonStyle}"
-                                                        Content="Stop"
+                                                        Content="{DynamicResource Loc.Common.Stop}"
                                                         Command="{Binding StopCommand}"
                                                         Visibility="{Binding ShowStopButton, Converter={StaticResource BoolToVis}}" />
                                                 <Button Style="{StaticResource StackrootInlineButtonStyle}"
-                                                        Content="Restart"
+                                                        Content="{DynamicResource Loc.Common.Restart}"
                                                         Command="{Binding RestartCommand}"
                                                         Visibility="{Binding ShowRestartButton, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>

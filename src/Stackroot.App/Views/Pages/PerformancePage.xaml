@@ -44,7 +44,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Performance"
+            <TextBlock Text="{DynamicResource Loc.Performance.Title}"
                        FontSize="28"
                        FontWeight="SemiBold" />
 
@@ -53,12 +53,12 @@
                        LastChildFill="False">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="Sampled: " />
+                               Text="{DynamicResource Loc.Performance.Sampled}" />
                     <TextBlock Text="{Binding SampledAt}" />
                 </StackPanel>
                 <Button DockPanel.Dock="Right"
                         Width="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </DockPanel>
 
@@ -75,11 +75,11 @@
                                LastChildFill="False">
                         <TextBlock FontSize="16"
                                    FontWeight="SemiBold"
-                                   Text="App &amp; services" />
+                                   Text="{DynamicResource Loc.Performance.AppAndServices}" />
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal">
                             <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Total memory: " />
+                                       Text="{DynamicResource Loc.Performance.TotalMemory}" />
                             <TextBlock Text="{Binding ServiceTotalMemory}" />
                         </StackPanel>
                     </DockPanel>
@@ -87,12 +87,12 @@
                     <DataGrid Style="{StaticResource PerformanceDataGridStyle}"
                               ItemsSource="{Binding ServiceItems}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
-                            <DataGridTextColumn Header="Type" Binding="{Binding Kind}" Width="120" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
-                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
-                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColLabel}" Binding="{Binding Label}" Width="2*" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColType}" Binding="{Binding Kind}" Width="120" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColStatus}" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColPid}" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColCpu}" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColMemory}" Binding="{Binding Memory}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
@@ -112,11 +112,11 @@
                                LastChildFill="False">
                         <TextBlock FontSize="16"
                                    FontWeight="SemiBold"
-                                   Text="PHP listeners" />
+                                   Text="{DynamicResource Loc.Performance.PhpListeners}" />
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal">
                             <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Total memory: " />
+                                       Text="{DynamicResource Loc.Performance.TotalMemory}" />
                             <TextBlock Text="{Binding PhpTotalMemory}" />
                         </StackPanel>
                     </DockPanel>
@@ -124,12 +124,12 @@
                     <DataGrid Style="{StaticResource PerformanceDataGridStyle}"
                               ItemsSource="{Binding PhpItems}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Version" Binding="{Binding Label}" Width="*" />
-                            <DataGridTextColumn Header="Endpoint" Binding="{Binding Endpoint}" Width="160" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
-                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
-                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColVersion}" Binding="{Binding Label}" Width="*" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColEndpoint}" Binding="{Binding Endpoint}" Width="160" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColStatus}" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColPid}" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColCpu}" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColMemory}" Binding="{Binding Memory}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
@@ -149,11 +149,11 @@
                                LastChildFill="False">
                         <TextBlock FontSize="16"
                                    FontWeight="SemiBold"
-                                   Text="Custom processes" />
+                                   Text="{DynamicResource Loc.Performance.CustomProcesses}" />
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal">
                             <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
-                                       Text="Total memory: " />
+                                       Text="{DynamicResource Loc.Performance.TotalMemory}" />
                             <TextBlock Text="{Binding ProcessTotalMemory}" />
                         </StackPanel>
                     </DockPanel>
@@ -161,11 +161,11 @@
                     <DataGrid Style="{StaticResource PerformanceDataGridStyle}"
                               ItemsSource="{Binding ProcessItems}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
-                            <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="90" />
-                            <DataGridTextColumn Header="CPU" Binding="{Binding Cpu}" Width="90" />
-                            <DataGridTextColumn Header="Memory" Binding="{Binding Memory}" Width="110" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColLabel}" Binding="{Binding Label}" Width="2*" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColStatus}" Binding="{Binding Status}" Width="120" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColPid}" Binding="{Binding Pid}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColCpu}" Binding="{Binding Cpu}" Width="90" />
+                            <DataGridTextColumn Header="{DynamicResource Loc.Performance.ColMemory}" Binding="{Binding Memory}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>

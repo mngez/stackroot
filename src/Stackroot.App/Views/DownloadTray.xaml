@@ -10,7 +10,7 @@
                 Height="36"
                 Padding="0"
                 Style="{StaticResource StackrootIconButtonStyle}"
-                ToolTip="Downloads"
+                ToolTip="{DynamicResource Loc.Downloads.Title}"
                 Command="{Binding ToggleCommand}"
                 PreviewMouseLeftButtonDown="TrayButton_PreviewMouseLeftButtonDown">
             <Grid>
@@ -63,7 +63,7 @@
                         <Button DockPanel.Dock="Right"
                                 VerticalAlignment="Center"
                                 Style="{StaticResource StackrootTrayHeaderIconButtonStyle}"
-                                ToolTip="Close"
+                                ToolTip="{DynamicResource Loc.Common.Close}"
                                 Command="{Binding CloseCommand}">
                             <TextBlock FontFamily="{StaticResource StackrootIconFont}"
                                        FontSize="10"
@@ -73,12 +73,12 @@
                                     VerticalAlignment="Center">
                             <TextBlock FontWeight="SemiBold"
                                        VerticalAlignment="Center"
-                                       Text="Downloads" />
+                                       Text="{DynamicResource Loc.Downloads.Title}" />
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
                                        FontSize="11"
-                                       Text="Run in background" />
+                                       Text="{DynamicResource Loc.Downloads.RunInBackground}" />
                         </StackPanel>
                     </DockPanel>
 
@@ -89,7 +89,7 @@
                     <TextBlock DockPanel.Dock="Top"
                                Margin="12,12"
                                Foreground="{StaticResource StackrootTextMutedBrush}"
-                               Text="No active downloads"
+                               Text="{DynamicResource Loc.Downloads.NoActive}"
                                Visibility="{Binding ShowEmptyPanel, Converter={StaticResource BoolToVis}}" />
 
                     <ScrollViewer MaxHeight="320"
@@ -116,7 +116,7 @@
                                                             Height="24"
                                                             Padding="4,0"
                                                             FontSize="11"
-                                                            Content="Cancel"
+                                                            Content="{DynamicResource Loc.Common.Cancel}"
                                                             Command="{Binding CancelCommand}"
                                                             Visibility="{Binding ShowCancel, Converter={StaticResource BoolToVis}}" />
                                                 </StackPanel>

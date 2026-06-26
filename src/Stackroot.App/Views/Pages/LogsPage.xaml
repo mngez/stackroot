@@ -13,7 +13,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Logs"
+        <TextBlock Text="{DynamicResource Loc.Logs.Title}"
                    FontSize="28"
                    FontWeight="SemiBold" />
 
@@ -27,14 +27,14 @@
                         Orientation="Horizontal">
                 <Button Width="124"
                         Margin="0,0,8,0"
-                        Content="Cleanup old"
+                        Content="{DynamicResource Loc.Logs.CleanupOld}"
                         Command="{Binding CleanupRetentionCommand}" />
                 <Button Width="112"
                         Margin="0,0,8,0"
-                        Content="Cleanup all"
+                        Content="{DynamicResource Loc.Logs.CleanupAll}"
                         Command="{Binding CleanupAllCommand}" />
                 <Button Width="96"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -52,7 +52,7 @@
                 <TextBlock FontSize="16"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
-                           Text="Loading logs…" />
+                           Text="{DynamicResource Loc.Logs.Loading}" />
                 <ProgressBar Margin="0,14,0,0"
                              Width="220"
                              Height="4"
@@ -75,7 +75,7 @@
             <TextBlock HorizontalAlignment="Center"
                        FontSize="15"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="No log files found." />
+                       Text="{DynamicResource Loc.Logs.NoFiles}" />
         </Border>
 
         <!-- Data grid -->
@@ -115,14 +115,14 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" />
-                    <DataGridTextColumn Header="Path" Binding="{Binding RelativePath}" Width="*" />
-                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="120" />
-                    <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedAt}" Width="180" />
-                    <DataGridTemplateColumn Header="Action" Width="100">
+                    <DataGridTextColumn Header="{DynamicResource Loc.Logs.ColCategory}" Binding="{Binding Category}" Width="120" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Logs.ColPath}" Binding="{Binding RelativePath}" Width="*" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Logs.ColSize}" Binding="{Binding SizeText}" Width="120" />
+                    <DataGridTextColumn Header="{DynamicResource Loc.Logs.ColModified}" Binding="{Binding ModifiedAt}" Width="180" />
+                    <DataGridTemplateColumn Header="{DynamicResource Loc.Logs.ColAction}" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Open"
+                                <Button Content="{DynamicResource Loc.Common.Open}"
                                         Padding="6,2"
                                         MinHeight="22"
                                         VerticalAlignment="Center"

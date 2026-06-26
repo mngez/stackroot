@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding VersionLabel, StringFormat=Extensions — {0}}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
         Width="680"
         MinWidth="560"
         Height="560"
@@ -24,7 +25,7 @@
                        Text="{Binding VersionLabel, StringFormat=Extensions — {0}}" />
             <TextBlock Margin="0,6,0,0"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
-                       Text="Toggle extensions shipped in ext/ or installed via PECL. Extensions that need a Stackroot service stay off until that service is installed."
+                       Text="{DynamicResource Loc.PhpExtensions.Subtitle}"
                        TextWrapping="Wrap" />
         </StackPanel>
 
@@ -34,14 +35,14 @@
                      Padding="10,6"
                      Tag="Search extensions…"
                      Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Filter by extension name or description" />
+                     ToolTip="{DynamicResource Loc.PhpExtensions.FilterTooltip}" />
             <Button Margin="0,0,8,8"
                     Padding="10,4"
-                    Content="Enable all ready"
+                    Content="{DynamicResource Loc.PhpExtensions.EnableAllReady}"
                     Command="{Binding EnableAllReadyCommand}" />
             <Button Margin="0,0,8,8"
                     Padding="10,4"
-                    Content="Reset to defaults"
+                    Content="{DynamicResource Loc.PhpExtensions.ResetToDefaults}"
                     Command="{Binding ResetExtensionsCommand}" />
             <Button Margin="0,0,8,8"
                     Padding="10,4"
@@ -116,16 +117,14 @@
 
                 <TextBlock Margin="0,14,0,8"
                            FontWeight="SemiBold"
-                           Text="Install PECL" />
+                           Text="{DynamicResource Loc.PhpExtensions.InstallPecl}" />
                 <TextBlock Margin="0,0,0,8"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            FontSize="12"
-                           Text="Extensions appear here only when a Windows build exists for this PHP version."
+                           Text="{DynamicResource Loc.PhpExtensions.PeclHint}"
                            TextWrapping="Wrap" />
 
                 <ItemsControl ItemsSource="{Binding InstallablePecl}">
-
-
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,0,0,6"
@@ -151,7 +150,7 @@
                                             Width="76"
                                             VerticalAlignment="Center"
                                             Margin="12,0,0,0"
-                                            Content="Install"
+                                            Content="{DynamicResource Loc.Common.Install}"
                                             Command="{Binding DataContext.InstallPeclCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}" />
                                 </Grid>
@@ -170,7 +169,7 @@
                        TextWrapping="Wrap" />
             <Button DockPanel.Dock="Right"
                     Width="88"
-                    Content="Close"
+                    Content="{DynamicResource Loc.Common.Close}"
                     Command="{Binding CloseCommand}" />
         </DockPanel>
     </Grid>

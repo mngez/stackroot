@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using Stackroot.App.Commands;
 using Stackroot.App.Helpers;
+using Stackroot.App.Localization;
 using Stackroot.App.Services;
 using Stackroot.Core.Abstractions;
 using Stackroot.Core.IO;
@@ -41,6 +42,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private int _shellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds;
     private bool _launchAtStartup;
     private bool _trustSslCaMachineWide;
+    private string _language = "en";
     private string _statusMessage = string.Empty;
     private bool _showCorruptedSettingsBanner;
     private string _corruptedSettingsBannerText = string.Empty;
@@ -279,6 +281,21 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     public string ShellMetricsCpuRefreshHint =>
         $"CPU refresh every {ShellMetricsDefaults.ClampCpuRefreshSeconds(ShellMetricsCpuRefreshSeconds)}s ({ShellMetricsDefaults.MinCpuRefreshSeconds}-{ShellMetricsDefaults.MaxCpuRefreshSeconds}). RAM updates every 30s.";
 
+    public IReadOnlyList<LanguageOption> AvailableLanguages => LocalizationManager.AvailableLanguages;
+
+    public string Language
+    {
+        get => _language;
+        set
+        {
+            if (SetProperty(ref _language, value))
+            {
+                LocalizationManager.Apply(value);
+                Save();
+            }
+        }
+    }
+
     public string BinPathPreview => Path.Combine(StackrootPathResolver.Resolve(ensureDirectories: false).RuntimeRoot, "bin");
 
     public string StatusMessage
@@ -320,6 +337,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
                 ?? ShellMetricsDefaults.CpuRefreshSeconds;
             LaunchAtStartup = settings.General.LaunchAtStartup ?? false;
             TrustSslCaMachineWide = settings.General.TrustSslCaMachineWide ?? false;
+            _language = settings.General.Language ?? "en";
+            RaisePropertyChanged(nameof(Language));
             StatusMessage = string.Empty;
         }
         finally
@@ -366,7 +385,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         ShellMetricsEnabled = ShellMetricsEnabled,
         ShellMetricsCpuRefreshSeconds = ShellMetricsDefaults.ClampCpuRefreshSeconds(ShellMetricsCpuRefreshSeconds),
         LaunchAtStartup = LaunchAtStartup,
-        TrustSslCaMachineWide = TrustSslCaMachineWide
+        TrustSslCaMachineWide = TrustSslCaMachineWide,
+        Language = _language
     };
 
     private async Task SaveAsync(GeneralSettings settings, int version)

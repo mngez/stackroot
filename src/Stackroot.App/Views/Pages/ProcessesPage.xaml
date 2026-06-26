@@ -15,22 +15,22 @@
 
         <DockPanel Grid.Row="0" LastChildFill="False">
             <StackPanel>
-                <TextBlock Text="Processes"
+                <TextBlock Text="{DynamicResource Loc.Processes.Title}"
                            FontSize="28"
                            FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
-                           Text="Unified supervisor for app-wide and site-linked background commands" />
+                           Text="{DynamicResource Loc.Processes.Subtitle}" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
                 <Button MinWidth="100"
                         Margin="0,0,10,0"
-                        Content="+ Add"
+                        Content="{DynamicResource Loc.Common.Add}"
                         Style="{StaticResource StackrootPrimaryButtonStyle}"
                         Command="{Binding AddCommand}" />
                 <Button MinWidth="100"
-                        Content="Refresh"
+                        Content="{DynamicResource Loc.Common.Refresh}"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
         </DockPanel>
@@ -41,18 +41,18 @@
             <TextBlock VerticalAlignment="Center"
                        Foreground="{StaticResource StackrootTextMutedBrush}"
                        Margin="0,0,8,0"
-                       Text="Site filter:" />
+                       Text="{DynamicResource Loc.Processes.SiteFilter}" />
             <ComboBox Width="280"
                       DisplayMemberPath="Label"
                       SelectedValuePath="Id"
                       SelectedValue="{Binding SiteFilter}"
                       ItemsSource="{Binding SiteFilterOptions}" />
-            <Button Content="Start all enabled"
+            <Button Content="{DynamicResource Loc.Processes.StartAllEnabled}"
                     Margin="12,0,0,0"
                     Padding="12,4"
                     Style="{StaticResource StackrootPrimaryButtonStyle}"
                     Command="{Binding StartAllCommand}" />
-            <Button Content="Stop all"
+            <Button Content="{DynamicResource Loc.Common.StopAll}"
                     Margin="8,0,0,0"
                     Padding="12,4"
                     Style="{StaticResource StackrootStopButtonStyle}"
@@ -87,12 +87,12 @@
                     CornerRadius="10"
                     Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
-                    <TextBlock Text="No processes match the current filters."
+                    <TextBlock Text="{DynamicResource Loc.Processes.NoMatch}"
                                Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <Button Margin="0,10,0,0"
                             Width="140"
                             HorizontalAlignment="Left"
-                            Content="+ Add process"
+                            Content="{DynamicResource Loc.Processes.AddProcess}"
                             Style="{StaticResource StackrootPrimaryButtonStyle}"
                             Command="{Binding AddCommand}" />
                 </StackPanel>
@@ -124,7 +124,7 @@
                                         Margin="0,0,8,0"
                                         Padding="0"
                                         Style="{StaticResource StackrootIconButtonStyle}"
-                                        ToolTip="Pin to featured"
+                                        ToolTip="{DynamicResource Loc.Processes.PinTooltip}"
                                         Command="{Binding DataContext.ToggleFeaturedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}">
                                     <TextBlock FontFamily="{StaticResource StackrootIconFont}"
@@ -178,7 +178,7 @@
                                     <TextBlock FontSize="11"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource StackrootAccentTextBrush}"
-                                               Text="LIVE" />
+                                               Text="{DynamicResource Loc.Status.LiveBadge}" />
                                 </Border>
 
                                 <StackPanel Grid.Column="4"
@@ -187,7 +187,7 @@
                                             VerticalAlignment="Center">
                                     <TextBlock FontWeight="SemiBold"
                                                Foreground="{Binding StatusBrush}"
-                                               Text="{Binding StatusText}" />
+                                               Text="{Binding StatusText, Converter={StaticResource StatusTextConverter}}" />
                                     <ProgressBar Margin="0,5,0,0"
                                                  Height="3"
                                                  IsIndeterminate="True"
@@ -197,7 +197,7 @@
                                 <StackPanel Grid.Column="5"
                                             VerticalAlignment="Center"
                                             Orientation="Horizontal">
-                                    <Button Content="Start"
+                                    <Button Content="{DynamicResource Loc.Common.Start}"
                                             Padding="8,3"
                                             Margin="0,0,4,0"
                                             FontSize="12"
@@ -205,34 +205,34 @@
                                             Command="{Binding DataContext.StartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Id}"
                                             IsEnabled="{Binding CanStart}" />
-                                    <Button Content="Stop"
+                                    <Button Content="{DynamicResource Loc.Common.Stop}"
                                             Padding="8,3"
                                             Margin="0,0,4,0"
                                             FontSize="12"
                                             Style="{StaticResource StackrootStopButtonStyle}"
                                             Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Id}" />
-                                    <Button Content="Restart"
+                                    <Button Content="{DynamicResource Loc.Common.Restart}"
                                             Padding="8,3"
                                             Margin="0,0,4,0"
                                             FontSize="12"
                                             Command="{Binding DataContext.RestartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding Id}"
                                             Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
-                                    <Button Content="Log"
+                                    <Button Content="{DynamicResource Loc.Common.Log}"
                                             Padding="8,3"
                                             Margin="0,0,4,0"
                                             FontSize="12"
                                             Command="{Binding DataContext.ViewLogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}" />
-                                    <Button Content="Edit"
+                                    <Button Content="{DynamicResource Loc.Common.Edit}"
                                             Padding="8,3"
                                             Margin="0,0,4,0"
                                             FontSize="12"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}" />
                                     <controls:OverflowMenuButton Margin="0,0,0,0"
-                                                                 DangerLabel="Remove"
+                                                                 DangerLabel="{DynamicResource Loc.Common.Remove}"
                                                                  DangerCommand="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                  DangerCommandParameter="{Binding}"
                                                                  ButtonWidth="30"
