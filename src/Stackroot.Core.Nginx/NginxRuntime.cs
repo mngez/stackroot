@@ -36,10 +36,11 @@ public static class NginxRuntime
         {
             var source = Path.Combine(packageRoot, "conf", file);
             var destination = Path.Combine(confDir, file);
-            if (File.Exists(source))
-            {
-                File.Copy(source, destination, overwrite: true);
-            }
+            if (!File.Exists(source))
+                continue;
+            if (File.Exists(destination) && new FileInfo(source).Length == new FileInfo(destination).Length)
+                continue;
+            File.Copy(source, destination, overwrite: true);
         }
 
         var fastCgiParams = Path.Combine(confDir, "fastcgi_params");
