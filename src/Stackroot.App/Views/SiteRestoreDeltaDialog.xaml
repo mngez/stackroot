@@ -186,19 +186,25 @@
                         BorderBrush="#52E8925E"
                         BorderThickness="1"
                         CornerRadius="6">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   FontFamily="{StaticResource StackrootIconFont}"
                                    FontSize="13"
                                    Margin="0,0,8,0"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource StackrootWarnBrush}"
                                    Text="&#xE7BA;" />
-                        <TextBlock FontSize="12"
+                        <TextBlock Grid.Column="1"
+                                   FontSize="12"
                                    TextWrapping="Wrap"
                                    VerticalAlignment="Center"
                                    Foreground="{StaticResource StackrootWarnBrush}"
                                    Text="{DynamicResource Loc.SiteRestoreDelta.Warning}" />
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!-- Loading / error state -->
@@ -257,6 +263,43 @@
                                        Foreground="{StaticResource StackrootTextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Text="{DynamicResource Loc.SiteRestoreDelta.FilesWillBeReplaced}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Paths that exist now but were excluded from this backup — permanently lost unless kept -->
+                    <Border Margin="0,8,0,0"
+                            Padding="10,8"
+                            Background="#1AE0526B"
+                            BorderBrush="#52E0526B"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Visibility="{Binding ShowPathsAtRiskWarning, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock FontSize="12"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Foreground="#E0526B"
+                                       Text="{DynamicResource Loc.SiteRestoreDelta.PathsAtRiskWarning}" />
+                            <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding PathsAtRisk}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,2" Orientation="Horizontal">
+                                            <CheckBox VerticalAlignment="Center"
+                                                      IsChecked="{Binding Keep}" />
+                                            <TextBlock Margin="8,0,0,0"
+                                                       FontFamily="Consolas"
+                                                       FontSize="12"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding Path}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource StackrootTextMutedBrush}"
+                                       Text="{DynamicResource Loc.SiteRestoreDelta.PathsAtRiskHint}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

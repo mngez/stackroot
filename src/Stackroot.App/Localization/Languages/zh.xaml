@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -121,6 +121,11 @@
     <sys:String x:Key="Loc.BackupSiteDialog.Title">备份站点</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">包含内容：</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">站点文件</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinks">跳过符号链接</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinksWarning">符号链接内的文件（例如 Laravel 的 storage:link）将在备份中重复保存，且该链接本身在还原时不会以链接形式恢复。</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnore">自定义忽略规则</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnoreHint">使用类似 .gitignore 的规则，例如 **/node_modules/</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.AddPattern">添加</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">关联数据库</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">关联进程</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">关联计划任务</sys:String>
@@ -196,6 +201,8 @@
     <sys:String x:Key="Loc.SiteRestoreDelta.Warning">请仔细检查所有更改。备份中不存在的项目将被删除 — 点击「保留」以保存它们。此操作无法撤销。</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">文件</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">站点文件将被备份版本覆盖</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskWarning">这些项目目前存在于站点中，但未包含在此备份中。恢复文件将永久删除它们，除非您勾选保留。</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskHint">勾选的项目在恢复后将保持不变；未勾选的项目将被永久删除。</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">跳过现有文件的安全副本</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">跳过现有数据库的安全副本</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">数据库</sys:String>

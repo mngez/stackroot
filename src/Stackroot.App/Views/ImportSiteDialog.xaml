@@ -67,18 +67,22 @@
                                    Text="{Binding BackupDate}" />
                     </StackPanel>
                     <!-- Additional domains from backup (informational) -->
-                    <StackPanel Margin="0,4,0,0"
-                                Orientation="Horizontal"
-                                Visibility="{Binding HasAliases, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                    <Grid Margin="0,4,0,0"
+                          Visibility="{Binding HasAliases, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
                                    FontSize="12"
-                                   Width="60"
                                    Text="{DynamicResource Loc.ImportSiteDialog.AliasesLabel}" />
-                        <TextBlock FontSize="12"
+                        <TextBlock Grid.Column="1"
+                                   FontSize="12"
                                    Foreground="{StaticResource StackrootTextMutedBrush}"
                                    TextWrapping="Wrap"
                                    Text="{Binding AllAliasesText}" />
-                    </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 

@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -121,6 +121,11 @@
     <sys:String x:Key="Loc.BackupSiteDialog.Title">Backup del sito</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Cosa includere:</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">File del sito</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinks">Ignora i collegamenti simbolici</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinksWarning">I file all'interno dei collegamenti simbolici (come storage:link di Laravel) verranno duplicati nel backup e il collegamento stesso non verrà ripristinato come collegamento.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnore">Pattern di esclusione personalizzati</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnoreHint">Usa pattern in stile .gitignore, ad es. **/node_modules/</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.AddPattern">Aggiungi</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Database collegati</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Processi collegati</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Attività pianificate collegate</sys:String>
@@ -196,6 +201,8 @@
     <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Rivedere attentamente tutte le modifiche. Gli elementi non presenti nel backup verranno rimossi — fare clic su 'Mantieni' per conservarli. Questa operazione non può essere annullata.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">File</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">I file del sito verranno sovrascritti con la versione di backup</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskWarning">Questi elementi esistono attualmente nel sito ma sono stati esclusi da questo backup. Il ripristino dei file li eliminerà permanentemente a meno che non li selezioni per mantenerli.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskHint">Gli elementi selezionati vengono mantenuti così come sono dopo il ripristino; quelli non selezionati vengono eliminati definitivamente.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Salta copia di sicurezza dei file esistenti</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Salta copia di sicurezza dei database esistenti</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Database</sys:String>

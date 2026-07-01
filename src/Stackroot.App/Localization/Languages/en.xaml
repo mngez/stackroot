@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -120,6 +120,11 @@
     <sys:String x:Key="Loc.BackupSiteDialog.Title">Backup site</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">What to include:</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">Site files</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinks">Skip symbolic links</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinksWarning">Files inside symbolic links (such as Laravel's storage:link) will be duplicated in the backup, and the link itself won't be restored as a link.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnore">Custom ignore patterns</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnoreHint">Use .gitignore-style patterns, e.g. **/node_modules/</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.AddPattern">Add</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Linked databases</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Linked processes</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Linked scheduled tasks</sys:String>
@@ -195,6 +200,8 @@
     <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Review all changes carefully. Items not in the backup will be removed — click Keep to preserve them. This cannot be undone.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">Files</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">Site files will be overwritten with the backup version</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskWarning">These items exist in the site now but were excluded from this backup. Restoring files will permanently delete them unless you check them to keep.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskHint">Checked items are kept as-is after restoring; unchecked items are permanently deleted.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Skip safety copy of existing files</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Skip safety copy of existing databases</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Databases</sys:String>

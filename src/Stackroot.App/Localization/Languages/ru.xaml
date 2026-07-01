@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -121,6 +121,11 @@
     <sys:String x:Key="Loc.BackupSiteDialog.Title">Резервное копирование сайта</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Что включить:</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">Файлы сайта</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinks">Пропускать симв. ссылки</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SkipSymbolicLinksWarning">Файлы внутри символических ссылок (например, storage:link в Laravel) будут продублированы в резервной копии, а сама ссылка не будет восстановлена как ссылка.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnore">Пользовательские шаблоны исключения</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.CustomIgnoreHint">Используйте шаблоны в стиле .gitignore, например **/node_modules/</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.AddPattern">Добавить</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Связанные базы данных</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Связанные процессы</sys:String>
     <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Связанные запланированные задачи</sys:String>
@@ -196,6 +201,8 @@
     <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Тщательно проверьте все изменения. Элементы, отсутствующие в резервной копии, будут удалены — нажмите «Сохранить», чтобы их оставить. Это нельзя отменить.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">Файлы</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">Файлы сайта будут перезаписаны версией из резервной копии</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskWarning">Эти элементы сейчас существуют на сайте, но были исключены из этой резервной копии. Восстановление файлов удалит их безвозвратно, если вы не отметите их для сохранения.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.PathsAtRiskHint">Отмеченные элементы остаются без изменений после восстановления; неотмеченные удаляются безвозвратно.</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Пропустить резервную копию существующих файлов</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Пропустить резервную копию существующих баз данных</sys:String>
     <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Базы данных</sys:String>

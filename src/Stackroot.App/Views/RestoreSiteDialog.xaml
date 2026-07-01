@@ -73,19 +73,25 @@
                 BorderBrush="#52E8925E"
                 BorderThickness="1"
                 CornerRadius="6">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           FontFamily="{StaticResource StackrootIconFont}"
                            FontSize="14"
                            Margin="0,0,8,0"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource StackrootWarnBrush}"
                            Text="&#xE7BA;" />
-                <TextBlock FontSize="12"
+                <TextBlock Grid.Column="1"
+                           FontSize="12"
                            TextWrapping="Wrap"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource StackrootWarnBrush}"
                            Text="{DynamicResource Loc.RestoreSiteDialog.Warning}" />
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Options -->

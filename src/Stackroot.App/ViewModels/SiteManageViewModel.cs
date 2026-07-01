@@ -214,6 +214,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
             {
                 IsCriticalOperationInProgress = false;
                 CriticalOperationLabel = string.Empty;
+                if (args.OperationType == Services.SiteOperationType.Backup)
+                    _ = LoadSiteBackupsAsync();
             }
             else
             {
@@ -221,6 +223,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
                 {
                     IsCriticalOperationInProgress = false;
                     CriticalOperationLabel = string.Empty;
+                    if (args.OperationType == Services.SiteOperationType.Backup)
+                        _ = LoadSiteBackupsAsync();
                 });
             }
         };
@@ -2284,10 +2288,6 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
                         RefreshSiteNavigation();
                         await RebuildNginxAsync();
                         _services.GetRequiredService<ShellViewModel>().Navigate("sites");
-                    }
-                    else
-                    {
-                        _ = LoadSiteBackupsAsync();
                     }
                 }
                 else

@@ -129,6 +129,11 @@ public sealed class SiteBackupService
                     hasProcesses = options.IncludeProcesses && hasActualProcesses,
                     hasScheduledTasks = options.IncludeScheduledTasks && hasActualScheduledTasks
                 },
+                fileOptions = new
+                {
+                    skipSymbolicLinks = options.SkipSymbolicLinks,
+                    ignorePatterns = options.IgnorePatterns
+                },
                 databases = dbFiles.Select(db => new { name = db.name, engine = db.engine, file = $"databases/{db.file}" }).ToList()
             };
             var manifestJson = JsonSerializer.Serialize(manifest, JsonOpts);
@@ -157,7 +162,7 @@ public sealed class SiteBackupService
                 if (siteFilesSource is not null)
                 {
                     progress?.Report("Compressing site files…");
-                    foreach (var file in Directory.EnumerateFiles(siteFilesSource, "*", SearchOption.AllDirectories))
+                    foreach (var file in BackupFileWalker.EnumerateFiles(siteFilesSource, options.SkipSymbolicLinks, options.IgnorePatterns))
                     {
                         var relative = "files/" + Path.GetRelativePath(siteFilesSource, file).Replace('\\', '/');
                         var entry = zip.CreateEntry(relative, CompressionLevel.Optimal);
@@ -250,4 +255,6 @@ public sealed record SiteBackupOptions(
     bool IncludeDatabases,
     bool IncludeProcesses,
     bool IncludeScheduledTasks,
-    bool DeleteSiteAfterBackup);
+    bool DeleteSiteAfterBackup,
+    bool SkipSymbolicLinks,
+    IReadOnlyList<string> IgnorePatterns);

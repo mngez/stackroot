@@ -79,6 +79,24 @@ public sealed class RollbackDeltaItemViewModel : ViewModelBase
     public bool WillKeepFinal => IsDelete && WillKeep;
 }
 
+public sealed class PathAtRiskItemViewModel : ViewModelBase
+{
+    public PathAtRiskItemViewModel(string path)
+    {
+        Path = path;
+        _keep = true;
+    }
+
+    public string Path { get; }
+
+    private bool _keep;
+    public bool Keep
+    {
+        get => _keep;
+        set => SetProperty(ref _keep, value);
+    }
+}
+
 public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
 {
     private bool _restoreFiles;
@@ -144,6 +162,10 @@ public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
     public ObservableCollection<RollbackDeltaItemViewModel> DatabaseItems { get; } = [];
     public ObservableCollection<RollbackDeltaItemViewModel> ProcessItems { get; } = [];
     public ObservableCollection<RollbackDeltaItemViewModel> TaskItems { get; } = [];
+    public ObservableCollection<PathAtRiskItemViewModel> PathsAtRisk { get; } = [];
+
+    public bool HasPathsAtRisk => PathsAtRisk.Count > 0;
+    public bool ShowPathsAtRiskWarning => RestoreFiles && HasPathsAtRisk;
 
     public bool HasDatabaseItems => DatabaseItems.Count > 0;
     public bool HasProcessItems => ProcessItems.Count > 0;
@@ -199,7 +221,10 @@ public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _restoreFiles, value))
+            {
                 RaisePropertyChanged(nameof(ShowSkipFileSafetyCopy));
+                RaisePropertyChanged(nameof(ShowPathsAtRiskWarning));
+            }
         }
     }
 
@@ -302,6 +327,9 @@ public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
         foreach (var t in delta.ScheduledTasks)
             TaskItems.Add(new RollbackDeltaItemViewModel(t.TaskId, t.Label, t.Action));
 
+        foreach (var path in delta.PathsAtRiskOfDeletion)
+            PathsAtRisk.Add(new PathAtRiskItemViewModel(path));
+
         IsLoading = false;
 
         RaisePropertyChanged(nameof(HasBackupFiles));
@@ -331,6 +359,8 @@ public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
         RaisePropertyChanged(nameof(ShowSkipDbSafetyCopy));
         RaisePropertyChanged(nameof(DatabaseSummaryItems));
         RaisePropertyChanged(nameof(ShowDatabasesSummary));
+        RaisePropertyChanged(nameof(HasPathsAtRisk));
+        RaisePropertyChanged(nameof(ShowPathsAtRiskWarning));
     }
 
     public void SetLoadError(string message)
@@ -352,7 +382,8 @@ public sealed class SiteRestoreDeltaDialogViewModel : ViewModelBase
             RestoreScheduledTasks: RestoreScheduledTasks && (HasBackupScheduledTasks || TaskItems.Any()),
             SkipFileSafetyCopy: _skipFileSafetyCopy,
             SkipDbSafetyCopy: _skipDbSafetyCopy,
-            DatabaseNamesToRestore: dbNamesToRestore);
+            DatabaseNamesToRestore: dbNamesToRestore,
+            PreservePathsOnFileRestore: PathsAtRisk.Where(p => p.Keep).Select(p => p.Path).ToList());
     }
 
     public SiteRollbackDeletions BuildDeletions() => new(

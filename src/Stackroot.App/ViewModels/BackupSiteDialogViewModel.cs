@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Stackroot.App.Commands;
 using Stackroot.App.Localization;
 using Stackroot.Core.Databases;
@@ -37,9 +38,13 @@ public sealed class BackupSiteDialogViewModel : ViewModelBase
         IncludeProcesses = HasProcesses;
         IncludeScheduledTasks = HasScheduledTasks;
         DeleteSiteAfterBackup = false;
+        SkipSymbolicLinks = true;
+        UseCustomIgnore = false;
 
         StartCommand = new RelayCommand(_ => RequestClose?.Invoke(this, true));
         CancelCommand = new RelayCommand(_ => RequestClose?.Invoke(this, false));
+        AddPatternCommand = new RelayCommand(_ => CustomPatterns.Add(new IgnorePatternEntry(this, string.Empty)));
+        AddPresetCommand = new RelayCommand(parameter => CustomPatterns.Add(new IgnorePatternEntry(this, (string)parameter!)));
     }
 
     public string SiteDomain { get; }
@@ -81,6 +86,29 @@ public sealed class BackupSiteDialogViewModel : ViewModelBase
     public bool ShowDeletePreview => DeleteSiteAfterBackup;
     public bool ShowBackupOnlyPreview => !DeleteSiteAfterBackup;
 
+    private bool _skipSymbolicLinks;
+    public bool SkipSymbolicLinks
+    {
+        get => _skipSymbolicLinks;
+        set
+        {
+            if (SetProperty(ref _skipSymbolicLinks, value))
+            {
+                RaisePropertyChanged(nameof(ShowSymbolicLinksWarning));
+            }
+        }
+    }
+
+    public bool ShowSymbolicLinksWarning => !SkipSymbolicLinks;
+
+    private bool _useCustomIgnore;
+    public bool UseCustomIgnore { get => _useCustomIgnore; set => SetProperty(ref _useCustomIgnore, value); }
+
+    public ObservableCollection<IgnorePatternEntry> CustomPatterns { get; } = [];
+
+    public RelayCommand AddPatternCommand { get; }
+    public RelayCommand AddPresetCommand { get; }
+
     public string StartLabel => DeleteSiteAfterBackup
         ? LocalizationManager.Get("Loc.BackupSiteDialog.StartArchive", "Archive site")
         : LocalizationManager.Get("Loc.BackupSiteDialog.Start", "Backup");
@@ -95,5 +123,26 @@ public sealed class BackupSiteDialogViewModel : ViewModelBase
         IncludeDatabases: IncludeDatabases && HasDatabases,
         IncludeProcesses: IncludeProcesses && HasProcesses,
         IncludeScheduledTasks: IncludeScheduledTasks && HasScheduledTasks,
-        DeleteSiteAfterBackup: DeleteSiteAfterBackup);
+        DeleteSiteAfterBackup: DeleteSiteAfterBackup,
+        SkipSymbolicLinks: SkipSymbolicLinks,
+        IgnorePatterns: UseCustomIgnore
+            ? CustomPatterns.Select(p => p.Text).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            : []);
+}
+
+public sealed class IgnorePatternEntry : ViewModelBase
+{
+    private readonly BackupSiteDialogViewModel _owner;
+
+    public IgnorePatternEntry(BackupSiteDialogViewModel owner, string text)
+    {
+        _owner = owner;
+        _text = text;
+        RemoveCommand = new RelayCommand(_ => _owner.CustomPatterns.Remove(this));
+    }
+
+    private string _text;
+    public string Text { get => _text; set => SetProperty(ref _text, value); }
+
+    public RelayCommand RemoveCommand { get; }
 }

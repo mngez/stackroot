@@ -23,6 +23,7 @@ public sealed record BackupManifest(
     string SiteDomain,
     string SiteId,
     BackupManifestContents Contents,
+    BackupManifestFileOptions FileOptions,
     IReadOnlyList<BackupManifestDatabase> Databases);
 
 public sealed record BackupManifestContents(
@@ -30,6 +31,10 @@ public sealed record BackupManifestContents(
     bool HasDatabases,
     bool HasProcesses,
     bool HasScheduledTasks);
+
+public sealed record BackupManifestFileOptions(
+    bool SkipSymbolicLinks,
+    IReadOnlyList<string> IgnorePatterns);
 
 public sealed record BackupManifestDatabase(
     string Name,
@@ -49,7 +54,8 @@ public sealed record SiteRestoreOptions(
     bool RestoreScheduledTasks,
     bool SkipFileSafetyCopy = false,
     bool SkipDbSafetyCopy = false,
-    IReadOnlyList<string>? DatabaseNamesToRestore = null);
+    IReadOnlyList<string>? DatabaseNamesToRestore = null,
+    IReadOnlyList<string>? PreservePathsOnFileRestore = null);
 
 public sealed record SiteBackupEntry(
     string FilePath,
@@ -75,6 +81,12 @@ public sealed class SiteRestoreDelta
     public IReadOnlyList<DeltaDatabaseItem> Databases { get; init; } = [];
     public IReadOnlyList<DeltaProcessItem> Processes { get; init; } = [];
     public IReadOnlyList<DeltaTaskItem> ScheduledTasks { get; init; } = [];
+
+    /// <summary>
+    /// Paths that exist in the site's current files but were excluded from the backup (via ignore patterns).
+    /// Restoring files will permanently delete these unless the caller opts to preserve them.
+    /// </summary>
+    public IReadOnlyList<string> PathsAtRiskOfDeletion { get; init; } = [];
 }
 
 public sealed record SiteRollbackDeletions(
@@ -325,6 +337,18 @@ public sealed class SiteRestoreService
                 "The archive may be corrupt.", ex);
         }
 
+        var pathsAtRisk = new List<string>();
+        if (manifest.Contents.HasFiles && manifest.FileOptions.IgnorePatterns.Count > 0 && Directory.Exists(site.Path))
+        {
+            try
+            {
+                pathsAtRisk = Core.IO.BackupFileWalker
+                    .EnumerateExcludedPaths(site.Path, manifest.FileOptions.IgnorePatterns)
+                    .ToList();
+            }
+            catch { /* non-critical: warning is best-effort */ }
+        }
+
         return new SiteRestoreDelta
         {
             HasBackupFiles = manifest.Contents.HasFiles,
@@ -333,7 +357,8 @@ public sealed class SiteRestoreService
             HasBackupScheduledTasks = manifest.Contents.HasScheduledTasks,
             Databases = dbItems,
             Processes = processItems,
-            ScheduledTasks = taskItems
+            ScheduledTasks = taskItems,
+            PathsAtRiskOfDeletion = pathsAtRisk
         };
     }
 
@@ -384,6 +409,16 @@ public sealed class SiteRestoreService
                                 if (Directory.Exists(site.Path))
                                     Directory.Move(site.Path, rollbackPath);
                                 CopyDirectory(filesDir, site.Path);
+                                if (options.PreservePathsOnFileRestore is { Count: > 0 } preservePaths && Directory.Exists(rollbackPath))
+                                {
+                                    foreach (var relativePath in preservePaths)
+                                    {
+                                        var nativeRelative = relativePath.Replace('/', Path.DirectorySeparatorChar);
+                                        CopyPath(
+                                            Path.Combine(rollbackPath, nativeRelative),
+                                            Path.Combine(site.Path, nativeRelative));
+                                    }
+                                }
                                 if (Directory.Exists(rollbackPath))
                                     DeleteDirectoryForce(rollbackPath);
                             }
@@ -822,12 +857,20 @@ public sealed class SiteRestoreService
     {
         var contentsNode = node["contents"] as JsonObject;
         var databasesNode = node["databases"] as JsonArray;
+        var fileOptionsNode = node["fileOptions"] as JsonObject;
 
         var contents = new BackupManifestContents(
             HasFiles: contentsNode?["hasFiles"]?.GetValue<bool>() ?? false,
             HasDatabases: contentsNode?["hasDatabases"]?.GetValue<bool>() ?? false,
             HasProcesses: contentsNode?["hasProcesses"]?.GetValue<bool>() ?? false,
             HasScheduledTasks: contentsNode?["hasScheduledTasks"]?.GetValue<bool>() ?? false);
+
+        var fileOptions = new BackupManifestFileOptions(
+            SkipSymbolicLinks: fileOptionsNode?["skipSymbolicLinks"]?.GetValue<bool>() ?? false,
+            IgnorePatterns: (fileOptionsNode?["ignorePatterns"] as JsonArray)?
+                .Select(n => n?.GetValue<string>() ?? string.Empty)
+                .Where(s => s.Length > 0)
+                .ToList() ?? []);
 
         var databases = databasesNode?
             .OfType<JsonObject>()
@@ -850,6 +893,7 @@ public sealed class SiteRestoreService
             SiteDomain: node["siteDomain"]?.GetValue<string>() ?? string.Empty,
             SiteId: node["siteId"]?.GetValue<string>() ?? string.Empty,
             Contents: contents,
+            FileOptions: fileOptions,
             Databases: databases);
     }
 
@@ -865,14 +909,34 @@ public sealed class SiteRestoreService
         }
     }
 
+    private static void CopyPath(string source, string destination)
+    {
+        if (Directory.Exists(source))
+            CopyDirectory(source, destination);
+        else if (File.Exists(source))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, destination, overwrite: true);
+        }
+    }
+
     private static void DeleteDirectoryForce(string path)
     {
+        foreach (var directory in Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories))
+        {
+            var attr = File.GetAttributes(directory);
+            if ((attr & FileAttributes.ReadOnly) != 0)
+                File.SetAttributes(directory, attr & ~FileAttributes.ReadOnly);
+        }
         foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
         {
             var attr = File.GetAttributes(file);
             if ((attr & FileAttributes.ReadOnly) != 0)
                 File.SetAttributes(file, attr & ~FileAttributes.ReadOnly);
         }
+        var rootAttr = File.GetAttributes(path);
+        if ((rootAttr & FileAttributes.ReadOnly) != 0)
+            File.SetAttributes(path, rootAttr & ~FileAttributes.ReadOnly);
         Directory.Delete(path, recursive: true);
     }
 }
