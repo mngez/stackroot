@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <AssemblyName>Stackroot</AssemblyName>
     <Company>mngez</Company>
     <Authors>mngez</Authors>
