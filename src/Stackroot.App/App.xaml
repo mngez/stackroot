@@ -226,6 +226,7 @@
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
+                                <Setter Property="Opacity" Value="0.5" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -240,6 +241,9 @@
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -266,7 +270,7 @@
                     <Setter Property="Background" Value="{StaticResource StackrootCardBrush}" />
                     <Setter Property="BorderBrush" Value="{StaticResource StackrootBorderBrush}" />
                     <Setter Property="Foreground" Value="{StaticResource StackrootTextMutedBrush}" />
-                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="Opacity" Value="0.5" />
                 </Trigger>
             </Style.Triggers>
         </Style>

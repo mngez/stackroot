@@ -48,7 +48,15 @@ public static class StackrootPathResolver
 
     public static string DatabasesRegistryPath(string dataRoot) => Path.Combine(dataRoot, "databases.json");
 
+    public static string DefaultBackupsRoot(string dataRoot) => Path.Combine(dataRoot, "backups");
+
     public static string DatabaseBackupsPath(string dataRoot) => Path.Combine(dataRoot, "backups");
+
+    public static string SiteBackupsPath(string dataRoot) => Path.Combine(dataRoot, "backups", "sites");
+
+    public static string SiteBackupsDir(string backupsRoot) => Path.Combine(backupsRoot, "sites");
+
+    public static string DatabaseBackupsDir(string backupsRoot) => Path.Combine(backupsRoot, "databases");
 
     public static string DownloadsPath(string dataRoot) => Path.Combine(dataRoot, "downloads");
 

@@ -17,10 +17,12 @@ public sealed class SiteRowViewModel : ViewModelBase
     private readonly Action<Site> _deleteSite;
     private readonly Action<SiteRowViewModel, string?> _onPhpChanged;
     private readonly Action<Site> _openCreateDatabase;
+    private readonly Action<Site> _backupSite;
     private readonly Action<Site> _onRuntimeChanged;
     private Site _site;
     private bool _isUpdatingPhp;
     private bool _isToggling;
+    private bool _isBackingUp;
 
     public SiteRowViewModel(
         Site site,
@@ -31,6 +33,7 @@ public sealed class SiteRowViewModel : ViewModelBase
         Action<Site> deleteSite,
         Action<SiteRowViewModel, string?> onPhpChanged,
         Action<Site> openCreateDatabase,
+        Action<Site> backupSite,
         Action<Site> onRuntimeChanged)
     {
         _site = site;
@@ -41,17 +44,19 @@ public sealed class SiteRowViewModel : ViewModelBase
         _deleteSite = deleteSite;
         _onPhpChanged = onPhpChanged;
         _openCreateDatabase = openCreateDatabase;
+        _backupSite = backupSite;
         _onRuntimeChanged = onRuntimeChanged;
 
-        TogglePinCommand = new RelayCommand(_ => TogglePin());
+        TogglePinCommand = new RelayCommand(_ => TogglePin(), _ => !_isBackingUp);
         ManageCommand = new RelayCommand(_ => _openManage(_site));
-        EditCommand = new RelayCommand(_ => _openEdit(_site));
-        DeleteCommand = new RelayCommand(_ => _deleteSite(_site));
-        ToggleEnabledCommand = new RelayCommand(_ => _ = ToggleEnabledAsync(), _ => !_isToggling);
+        EditCommand = new RelayCommand(_ => _openEdit(_site), _ => !_isBackingUp);
+        DeleteCommand = new RelayCommand(_ => _deleteSite(_site), _ => !_isBackingUp);
+        BackupCommand = new RelayCommand(_ => _backupSite(_site), _ => !_isBackingUp);
+        ToggleEnabledCommand = new RelayCommand(_ => _ = ToggleEnabledAsync(), _ => !_isToggling && !_isBackingUp);
         OpenCommand = new RelayCommand(_ => OpenSite(false));
         OpenHttpsCommand = new RelayCommand(_ => OpenSite(true), _ => _site.Enabled && _site.ForceHttps == true);
         OpenFolderCommand = new RelayCommand(_ => OpenFolder());
-        CreateDatabaseCommand = new RelayCommand(_ => _openCreateDatabase(_site), _ => RequiresPhp);
+        CreateDatabaseCommand = new RelayCommand(_ => _openCreateDatabase(_site), _ => RequiresPhp && !_isBackingUp);
     }
 
     public Site Site => _site;
@@ -66,6 +71,27 @@ public sealed class SiteRowViewModel : ViewModelBase
         ? LocalizationManager.Get("Loc.Common.Disable", "Disable")
         : LocalizationManager.Get("Loc.Common.Enable", "Enable");
 
+    public bool IsBackingUp => _isBackingUp;
+    public bool IsNotBackingUp => !_isBackingUp;
+    public bool IsRowActionEnabled => !_isToggling && !_isBackingUp;
+    public bool IsPhpEnabled => RequiresPhp && !_isBackingUp;
+
+    public void SetBackingUp(bool value)
+    {
+        if (_isBackingUp == value) return;
+        _isBackingUp = value;
+        RaisePropertyChanged(nameof(IsBackingUp));
+        RaisePropertyChanged(nameof(IsNotBackingUp));
+        RaisePropertyChanged(nameof(IsRowActionEnabled));
+        RaisePropertyChanged(nameof(IsPhpEnabled));
+        TogglePinCommand.RaiseCanExecuteChanged();
+        ToggleEnabledCommand.RaiseCanExecuteChanged();
+        EditCommand.RaiseCanExecuteChanged();
+        DeleteCommand.RaiseCanExecuteChanged();
+        BackupCommand.RaiseCanExecuteChanged();
+        CreateDatabaseCommand.RaiseCanExecuteChanged();
+    }
+
     public bool IsToggling
     {
         get => _isToggling;
@@ -74,6 +100,7 @@ public sealed class SiteRowViewModel : ViewModelBase
             if (SetProperty(ref _isToggling, value))
             {
                 RaisePropertyChanged(nameof(IsNotToggling));
+                RaisePropertyChanged(nameof(IsRowActionEnabled));
                 RaisePropertyChanged(nameof(ToggleButtonLabel));
                 ToggleEnabledCommand.RaiseCanExecuteChanged();
             }
@@ -92,13 +119,14 @@ public sealed class SiteRowViewModel : ViewModelBase
     public bool ShowDatabaseButton => RequiresPhp;
 
     public RelayCommand CreateDatabaseCommand { get; }
+    public RelayCommand BackupCommand { get; }
 
     public string SelectedPhpVersionId
     {
         get => _site.PhpVersionId ?? "no-php";
         set
         {
-            if (_isUpdatingPhp || string.Equals(value, SelectedPhpVersionId, StringComparison.Ordinal))
+            if (_isUpdatingPhp || _isBackingUp || string.Equals(value, SelectedPhpVersionId, StringComparison.Ordinal))
             {
                 return;
             }
@@ -112,7 +140,7 @@ public sealed class SiteRowViewModel : ViewModelBase
         get => _site.NodeVersionId ?? "none";
         set
         {
-            if (_isUpdatingPhp) return;
+            if (_isUpdatingPhp || _isBackingUp) return;
             if (string.Equals(value, SelectedNodeVersionId, StringComparison.Ordinal)) return;
 
             _site = _siteManager.Update(_site.Id, new UpdateSiteInput { NodeVersionId = value == "none" ? null : value });

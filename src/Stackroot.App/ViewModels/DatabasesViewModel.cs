@@ -29,6 +29,7 @@ public sealed class DatabasesViewModel : ViewModelBase
     private readonly SessionActivityReporter _activity;
     private readonly PackageCatalogStore _catalogStore;
     private readonly PackageInstallCoordinator _packages;
+    private readonly BackgroundAlertService _alertService;
     private string _filterText = string.Empty;
     private DatabaseEngineFilterOption _selectedEngineFilter = new(null, "All engines");
     private string? _lastMessage;
@@ -47,7 +48,8 @@ public sealed class DatabasesViewModel : ViewModelBase
         IDiagnosticsReporter diagnostics,
         SessionActivityReporter activity,
         PackageCatalogStore catalogStore,
-        PackageInstallCoordinator packages)
+        PackageInstallCoordinator packages,
+        BackgroundAlertService alertService)
     {
         _databaseManager = databaseManager;
         _settingsStore = settingsStore;
@@ -59,6 +61,7 @@ public sealed class DatabasesViewModel : ViewModelBase
         _activity = activity;
         _catalogStore = catalogStore;
         _packages = packages;
+        _alertService = alertService;
 
         Databases = [];
         EngineFilters =
@@ -564,6 +567,7 @@ public sealed class DatabasesViewModel : ViewModelBase
         var dialogVm = new DatabaseBackupsDialogViewModel(
             _databaseManager,
             _activity,
+            _alertService,
             databaseName);
         var owner = Application.Current?.MainWindow;
         var dialog = new DatabaseBackupsDialog

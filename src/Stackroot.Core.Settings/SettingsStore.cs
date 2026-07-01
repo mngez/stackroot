@@ -241,7 +241,8 @@ public sealed class SettingsStore
                     TrustSslCaMachineWide = patch.TrustSslCaMachineWide ?? settings.General.TrustSslCaMachineWide,
                     DiagnosticsLogEnabled = patch.DiagnosticsLogEnabled ?? settings.General.DiagnosticsLogEnabled,
                     DownloadCachePath = patch.DownloadCachePath ?? settings.General.DownloadCachePath,
-                    Language = patch.Language ?? settings.General.Language
+                    Language = patch.Language ?? settings.General.Language,
+                    BackupsPath = patch.BackupsPath ?? settings.General.BackupsPath
                 }
             };
 
@@ -529,7 +530,8 @@ public sealed class SettingsStore
                 TrustSslCaMachineWide = stored.General.TrustSslCaMachineWide ?? defaults.General.TrustSslCaMachineWide,
                 DiagnosticsLogEnabled = stored.General.DiagnosticsLogEnabled ?? defaults.General.DiagnosticsLogEnabled,
                 DownloadCachePath = stored.General.DownloadCachePath ?? defaults.General.DownloadCachePath,
-                Language = stored.General.Language ?? defaults.General.Language
+                Language = stored.General.Language ?? defaults.General.Language,
+                BackupsPath = stored.General.BackupsPath ?? defaults.General.BackupsPath
             },
             Php = defaults.Php with
             {

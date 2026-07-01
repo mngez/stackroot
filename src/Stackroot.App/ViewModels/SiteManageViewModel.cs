@@ -29,7 +29,7 @@ using SiteModel = Stackroot.Core.Sites.Models.Site;
 
 namespace Stackroot.App.ViewModels;
 
-public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
+public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, IDisposable
 {
     private readonly SiteManager _siteManager;
     private readonly GlobalProcessManager _processManager;
@@ -38,12 +38,17 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     private readonly IServiceProvider _services;
     private readonly SettingsStore _settingsStore;
     private readonly SessionActivityReporter _activity;
+    private readonly SiteRestoreService _restoreService;
+    private readonly SiteBackupService _backupService;
+    private readonly Services.SiteBackupTracker _backupTracker;
     private readonly SessionActivityCoordinator _activityCoordinator;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly SiteThumbnailService _thumbnailService;
     private readonly StackrootPaths _paths;
     private readonly TaskSchedulerService _taskScheduler;
+    private readonly BackgroundAlertService _alertService;
     private SiteModel? _site;
+    private bool _hasSiteBackups;
     private bool _isCapturing;
     private bool _isInstalling;
     private string _installStatus = string.Empty;
@@ -63,6 +68,12 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     private string? _lastQuickActionId;
     private bool _showCommandLogButton;
     private bool _isTogglingEnabled;
+    private bool _isCriticalOperationInProgress;
+    private string _criticalOperationLabel = string.Empty;
+    private EventHandler<CriticalOperationEventArgs>? _operationStartedHandler;
+    private EventHandler<CriticalOperationEventArgs>? _operationEndedHandler;
+    private CancellationTokenSource? _backupCts;
+    private CancellationTokenSource? _restoreCts;
 
     public SiteManageViewModel(
         SiteManager siteManager,
@@ -76,7 +87,11 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         SettingsStore settingsStore,
         SiteThumbnailService thumbnailService,
         StackrootPaths paths,
-        TaskSchedulerService taskScheduler)
+        TaskSchedulerService taskScheduler,
+        SiteRestoreService restoreService,
+        SiteBackupService backupService,
+        Services.SiteBackupTracker backupTracker,
+        BackgroundAlertService alertService)
     {
         _siteManager = siteManager;
         _processManager = processManager;
@@ -84,12 +99,16 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         _catalogStore = catalogStore;
         _services = services;
         _activity = activity;
+        _restoreService = restoreService;
+        _backupService = backupService;
+        _backupTracker = backupTracker;
         _activityCoordinator = activityCoordinator;
         _diagnostics = diagnostics;
         _settingsStore = settingsStore;
         _thumbnailService = thumbnailService;
         _paths = paths;
         _taskScheduler = taskScheduler;
+        _alertService = alertService;
 
         _taskScheduler.TaskExecuted += (_, _) =>
         {
@@ -120,32 +139,32 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         OpenTerminalCommand = new RelayCommand(_ => OpenTerminal(), _ => Site is not null && !string.IsNullOrWhiteSpace(Site.Path));
         OpenSiteCommand = new RelayCommand(_ => OpenSite(), _ => Site is not null && Site.Enabled);
         OpenFolderCommand = new RelayCommand(_ => OpenFolder(), _ => Site is not null && !string.IsNullOrWhiteSpace(Site.Path));
-        AddProcessCommand = new RelayCommand(_ => OpenAddProcessDialog(), _ => Site is not null && !IsProcessBulkBusy);
-        AddPresetCommand = new RelayCommand(presetId => AddProcessFromPreset(presetId as string), _ => Site is not null && !IsProcessBulkBusy);
+        AddProcessCommand = new RelayCommand(_ => OpenAddProcessDialog(), _ => Site is not null && !IsProcessBulkBusy && !IsCriticalOperationInProgress);
+        AddPresetCommand = new RelayCommand(presetId => AddProcessFromPreset(presetId as string), _ => Site is not null && !IsProcessBulkBusy && !IsCriticalOperationInProgress);
         StartAllProcessesCommand = new RelayCommand(_ => _ = StartAllProcessesAsync(), _ => HasSiteProcesses && !IsProcessBulkBusy);
         StopAllProcessesCommand = new RelayCommand(_ => _ = StopAllProcessesAsync(), _ => HasSiteProcesses && !IsProcessBulkBusy);
         StartProcessCommand = new RelayCommand(id => _ = StartProcessAsync(id as string), id => CanRunProcessAction(id as string));
         StopProcessCommand = new RelayCommand(id => _ = StopProcessAsync(id as string), id => CanRunProcessAction(id as string));
         RestartProcessCommand = new RelayCommand(id => _ = RestartProcessAsync(id as string), id => CanRunProcessAction(id as string));
         ViewProcessLogCommand = new RelayCommand(row => OpenProcessLog(row as SiteProcessRowViewModel));
-        EditProcessCommand = new RelayCommand(row => OpenEditProcess(row as SiteProcessRowViewModel));
-        ToggleProcessEnabledCommand = new RelayCommand(row => ToggleProcessEnabled(row as SiteProcessRowViewModel));
-        RemoveProcessCommand = new RelayCommand(row => RemoveProcess(row as SiteProcessRowViewModel));
+        EditProcessCommand = new RelayCommand(row => OpenEditProcess(row as SiteProcessRowViewModel), _ => !IsCriticalOperationInProgress);
+        ToggleProcessEnabledCommand = new RelayCommand(row => ToggleProcessEnabled(row as SiteProcessRowViewModel), _ => !IsCriticalOperationInProgress);
+        RemoveProcessCommand = new RelayCommand(row => RemoveProcess(row as SiteProcessRowViewModel), _ => !IsCriticalOperationInProgress);
         ViewCommandLogCommand = new RelayCommand(_ => OpenCommandLog(), _ => ShowCommandLogButton);
         CancelCommandStatusCommand = new RelayCommand(_ => _ = CancelRunningCommandAsync(), _ => CanCancelRunningCommand());
         DismissCommandStatusCommand = new RelayCommand(_ => ClearCommandStatus(), _ => ShowDismissCommandStatus);
         DismissProcessStatusCommand = new RelayCommand(_ => ClearProcessStatus());
         DismissDatabaseStatusCommand = new RelayCommand(_ => ClearDatabaseStatus());
-        CreateDatabaseCommand = new RelayCommand(_ => OpenCreateDatabaseDialog(), _ => Site is not null);
-        InstallSiteCommand = new RelayCommand(_ => _ = InstallSiteAsync(), _ => ShowInstallerButton && !_isInstalling);
+        CreateDatabaseCommand = new RelayCommand(_ => OpenCreateDatabaseDialog(), _ => Site is not null && !IsCriticalOperationInProgress);
+        InstallSiteCommand = new RelayCommand(_ => _ = InstallSiteAsync(), _ => ShowInstallerButton && !_isInstalling && !IsCriticalOperationInProgress);
         OpenPostInstallAdminCommand = new RelayCommand(_ => OpenPostInstallAdmin());
         CaptureThumbnailCommand = new RelayCommand(
             _ => _ = CaptureThumbnailAsync(forceRefresh: true),
             _ => Site is not null && Site.Enabled && !IsCapturing);
         CopyPasswordCommand = new RelayCommand(_ => Clipboard.SetText(PostInstallAdminPassword));
         TogglePasswordCommand = new RelayCommand(_ => PasswordVisible = !PasswordVisible);
-        ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync());
-        ManageCustomCommandsCommand = new RelayCommand(_ => OpenCustomCommandsDialog(), _ => Site is not null);
+        ChangePasswordCommand = new RelayCommand(_ => _ = ChangePasswordAsync(), _ => !IsCriticalOperationInProgress);
+        ManageCustomCommandsCommand = new RelayCommand(_ => OpenCustomCommandsDialog(), _ => Site is not null && !IsCriticalOperationInProgress);
         DismissCustomStatusCommand = new RelayCommand(item =>
         {
             if (item is SiteCustomCommandViewModel vm)
@@ -156,14 +175,63 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
             }
         }, item => item is SiteCustomCommandViewModel { IsRunning: false });
         OpenSslPathsCommand = new RelayCommand(_ => OpenSslPathsDialog(), _ => HasDevSslPaths);
-        EditSiteCommand = new RelayCommand(_ => OpenEditSiteDialog(), _ => Site is not null);
+        EditSiteCommand = new RelayCommand(_ => OpenEditSiteDialog(), _ => Site is not null && !IsCriticalOperationInProgress);
         ToggleFeaturedCommand = new RelayCommand(_ => ToggleFeatured(), _ => Site is not null);
-        ToggleEnabledCommand = new RelayCommand(_ => _ = ToggleEnabledAsync(), _ => Site is not null && !_isTogglingEnabled);
-        AddScheduledTaskCommand = new RelayCommand(_ => OpenScheduledTaskDialog(), _ => Site is not null);
-        EditScheduledTaskCommand = new RelayCommand(row => OpenScheduledTaskDialog(row as ScheduledTaskRowViewModel));
+        ToggleEnabledCommand = new RelayCommand(_ => _ = ToggleEnabledAsync(), _ => Site is not null && !_isTogglingEnabled && !IsCriticalOperationInProgress);
+        AddScheduledTaskCommand = new RelayCommand(_ => OpenScheduledTaskDialog(), _ => Site is not null && !IsCriticalOperationInProgress);
+        EditScheduledTaskCommand = new RelayCommand(row => OpenScheduledTaskDialog(row as ScheduledTaskRowViewModel), _ => !IsCriticalOperationInProgress);
         RefreshScheduledTasksCommand = new RelayCommand(_ => LoadScheduledTasks());
         OpenAllScheduledTasksCommand = new RelayCommand(_ => _services.GetRequiredService<ShellViewModel>().Navigate("scheduled"));
         BackCommand = new RelayCommand(_ => _services.GetRequiredService<ShellViewModel>().Navigate("sites"));
+        RestoreFromBackupCommand = new RelayCommand(_ => RestoreFromBackup(), _ => Site is not null && !IsCriticalOperationInProgress);
+        CreateBackupCommand = new RelayCommand(_ => CreateBackup(), _ => Site is not null && !IsCriticalOperationInProgress);
+        CancelBackupCommand = new RelayCommand(_ => _backupCts?.Cancel(), _ => _backupCts is not null);
+        CancelRestoreCommand = new RelayCommand(_ => _restoreCts?.Cancel(), _ => _restoreCts is not null);
+
+        _operationStartedHandler = (_, args) =>
+        {
+            if (!string.Equals(args.SiteId, SiteId, StringComparison.OrdinalIgnoreCase)) return;
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                IsCriticalOperationInProgress = true;
+                CriticalOperationLabel = FormatOperationLabel(args.OperationType);
+            }
+            else
+            {
+                dispatcher.InvokeAsync(() =>
+                {
+                    IsCriticalOperationInProgress = true;
+                    CriticalOperationLabel = FormatOperationLabel(args.OperationType);
+                });
+            }
+        };
+        _operationEndedHandler = (_, args) =>
+        {
+            if (!string.Equals(args.SiteId, SiteId, StringComparison.OrdinalIgnoreCase)) return;
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                IsCriticalOperationInProgress = false;
+                CriticalOperationLabel = string.Empty;
+            }
+            else
+            {
+                dispatcher.InvokeAsync(() =>
+                {
+                    IsCriticalOperationInProgress = false;
+                    CriticalOperationLabel = string.Empty;
+                });
+            }
+        };
+        _backupTracker.OperationStarted += _operationStartedHandler;
+        _backupTracker.OperationEnded += _operationEndedHandler;
+    }
+
+    public void Dispose()
+    {
+        _backupTracker.OperationStarted -= _operationStartedHandler;
+        _backupTracker.OperationEnded -= _operationEndedHandler;
     }
 
     public bool HasDevSslPaths => DevSslCertificateManager.TryGetExisting(_paths) is not null;
@@ -233,7 +301,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         get => Site?.PhpVersionId ?? "no-php";
         set
         {
-            if (Site is null || string.Equals(value, SelectedPhpVersionId, StringComparison.Ordinal)) return;
+            if (Site is null || IsCriticalOperationInProgress || string.Equals(value, SelectedPhpVersionId, StringComparison.Ordinal)) return;
             _siteManager.Update(Site.Id, new UpdateSiteInput { PhpVersionId = value == "no-php" ? null : value });
             RefreshSite();
         }
@@ -244,7 +312,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         get => Site?.NodeVersionId ?? "none";
         set
         {
-            if (Site is null || string.Equals(value, SelectedNodeVersionId, StringComparison.Ordinal)) return;
+            if (Site is null || IsCriticalOperationInProgress || string.Equals(value, SelectedNodeVersionId, StringComparison.Ordinal)) return;
             _siteManager.Update(Site.Id, new UpdateSiteInput { NodeVersionId = value == "none" ? null : value });
             RefreshSite();
         }
@@ -274,6 +342,28 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     }
 
     public bool IsNotTogglingEnabled => !IsTogglingEnabled;
+
+    public bool IsCriticalOperationInProgress
+    {
+        get => _isCriticalOperationInProgress;
+        private set
+        {
+            if (SetProperty(ref _isCriticalOperationInProgress, value))
+            {
+                RaisePropertyChanged(nameof(IsNotCriticalOperationInProgress));
+                RaiseCriticalOperationCanExecute();
+            }
+        }
+    }
+
+    public bool IsNotCriticalOperationInProgress => !_isCriticalOperationInProgress;
+
+    public string CriticalOperationLabel
+    {
+        get => _criticalOperationLabel;
+        private set => SetProperty(ref _criticalOperationLabel, value);
+    }
+
     public string ToggleEnabledButtonLabel => IsTogglingEnabled
         ? (SiteEnabled ? LocalizationManager.Get("Loc.Common.Disabling", "Disabling…") : LocalizationManager.Get("Loc.Common.Enabling", "Enabling…"))
         : EnableDisableLabel;
@@ -749,10 +839,41 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
     public RelayCommand RefreshScheduledTasksCommand { get; }
     public RelayCommand OpenAllScheduledTasksCommand { get; }
     public RelayCommand BackCommand { get; }
+    public RelayCommand RestoreFromBackupCommand { get; }
+    public RelayCommand CreateBackupCommand { get; }
+    public RelayCommand CancelBackupCommand { get; }
+    public RelayCommand CancelRestoreCommand { get; }
+
+    public bool IsBackupCancellable => _backupCts is not null;
+    public bool IsRestoreCancellable => _restoreCts is not null;
+
+    public ObservableCollection<SiteBackupEntryViewModel> SiteBackups { get; } = [];
+
+    public bool HasSiteBackups
+    {
+        get => _hasSiteBackups;
+        private set
+        {
+            if (SetProperty(ref _hasSiteBackups, value))
+                RaisePropertyChanged(nameof(ShowNoSiteBackups));
+        }
+    }
+
+    public bool ShowNoSiteBackups => !_hasSiteBackups;
 
     public void Load(string siteId)
     {
         SiteId = siteId.Trim();
+
+        // Restore state from tracker when navigating to a site that has an active operation.
+        var activeOp = _backupTracker.GetActiveOperations()
+            .FirstOrDefault(op => string.Equals(op.SiteId, SiteId, StringComparison.OrdinalIgnoreCase));
+        if (activeOp is not null)
+        {
+            IsCriticalOperationInProgress = true;
+            CriticalOperationLabel = FormatOperationLabel(activeOp.Type);
+        }
+
         RefreshSite();
         RefreshCommand.RaiseCanExecuteChanged();
         AddProcessCommand.RaiseCanExecuteChanged();
@@ -780,6 +901,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         LoadCustomCommands();
         LoadCustomCommandItems();
         LoadScheduledTasks();
+        _ = LoadSiteBackupsAsync();
         RaiseSiteActionChromeChanged();
 
         await RefreshProcessesAsync();
@@ -1687,6 +1809,26 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         }
     }
 
+    private void RaiseCriticalOperationCanExecute()
+    {
+        RaiseQuickActionCanExecute();
+        AddProcessCommand.RaiseCanExecuteChanged();
+        AddPresetCommand.RaiseCanExecuteChanged();
+        RemoveProcessCommand.RaiseCanExecuteChanged();
+        EditProcessCommand.RaiseCanExecuteChanged();
+        ToggleProcessEnabledCommand.RaiseCanExecuteChanged();
+        CreateDatabaseCommand.RaiseCanExecuteChanged();
+        InstallSiteCommand.RaiseCanExecuteChanged();
+        ManageCustomCommandsCommand.RaiseCanExecuteChanged();
+        EditSiteCommand.RaiseCanExecuteChanged();
+        ToggleEnabledCommand.RaiseCanExecuteChanged();
+        AddScheduledTaskCommand.RaiseCanExecuteChanged();
+        EditScheduledTaskCommand.RaiseCanExecuteChanged();
+        RestoreFromBackupCommand.RaiseCanExecuteChanged();
+        CreateBackupCommand.RaiseCanExecuteChanged();
+        ChangePasswordCommand.RaiseCanExecuteChanged();
+    }
+
     private void RaiseSiteActionChromeChanged()
     {
         RaisePropertyChanged(nameof(SiteEnabled));
@@ -2069,7 +2211,272 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
         dialog.Show();
     }
 
-    private bool CanRunQuickAction() => Site is not null && !IsRunningAction;
+    private async Task LoadSiteBackupsAsync()
+    {
+        SiteBackups.Clear();
+        HasSiteBackups = false;
+        if (Site is null) return;
+
+        var siteId = Site.Id;
+        var settings = _settingsStore.Load();
+        var backupsRoot = !string.IsNullOrWhiteSpace(settings.General.BackupsPath)
+            ? settings.General.BackupsPath
+            : StackrootPathResolver.DefaultBackupsRoot(_paths.DataRoot);
+        var backupDir = StackrootPathResolver.SiteBackupsDir(backupsRoot);
+
+        var entries = await Task.Run(() => _restoreService.ListSiteBackups(siteId, backupDir));
+
+        SiteBackups.Clear();
+        foreach (var entry in entries)
+            SiteBackups.Add(new SiteBackupEntryViewModel(
+                entry,
+                RestoreFromEntry,
+                DeleteBackupEntry,
+                () => !IsCriticalOperationInProgress));
+        HasSiteBackups = SiteBackups.Count > 0;
+    }
+
+    private void CreateBackup()
+    {
+        if (Site is null) return;
+        var site = Site;
+
+        var dialogVm = new BackupSiteDialogViewModel(site, _databaseManager, _processManager, _taskScheduler);
+        var owner = Application.Current?.MainWindow;
+        var dialog = new Views.BackupSiteDialog { DataContext = dialogVm, Owner = owner };
+        bool confirmed = false;
+        dialogVm.RequestClose += (_, result) => { confirmed = result; dialog.Close(); };
+        dialog.ShowDialog();
+        if (!confirmed) return;
+
+        var options = dialogVm.BuildOptions();
+
+        _backupCts = new CancellationTokenSource();
+        CancelBackupCommand.RaiseCanExecuteChanged();
+        RaisePropertyChanged(nameof(IsBackupCancellable));
+        var cts = _backupCts;
+
+        _ = Task.Run(async () =>
+        {
+            var result = await SiteBackupHelper.RunBackupAsync(
+                site, options,
+                _backupService, _backupTracker, _activity,
+                _siteManager, _processManager, _taskScheduler,
+                _settingsStore, _paths, cts.Token);
+
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null) return;
+
+            await dispatcher.InvokeAsync(async () =>
+            {
+                cts.Dispose();
+                if (ReferenceEquals(_backupCts, cts)) { _backupCts = null; CancelBackupCommand.RaiseCanExecuteChanged(); RaisePropertyChanged(nameof(IsBackupCancellable)); }
+
+                if (result.Success)
+                {
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Success,
+                        LocalizationManager.Get("Loc.BackgroundAlert.BackupComplete", "Backup Complete"),
+                        string.Format(LocalizationManager.Get("Loc.BackgroundAlert.BackupComplete.Body", "{0} backed up successfully."), site.Domain)));
+
+                    if (result.SiteDeleted)
+                    {
+                        RefreshSiteNavigation();
+                        await RebuildNginxAsync();
+                        _services.GetRequiredService<ShellViewModel>().Navigate("sites");
+                    }
+                    else
+                    {
+                        _ = LoadSiteBackupsAsync();
+                    }
+                }
+                else
+                {
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Error,
+                        LocalizationManager.Get("Loc.BackgroundAlert.BackupFailed", "Backup Failed"),
+                        string.Format(LocalizationManager.Get("Loc.BackgroundAlert.BackupFailed.Body", "Could not back up {0}."), site.Domain),
+                        result.Exception));
+                }
+            });
+        });
+    }
+
+    private void RestoreFromEntry(SiteBackupEntry entry)
+    {
+        if (Site is null) return;
+        var site = Site;
+
+        BackupManifest manifest;
+        try { manifest = _restoreService.ReadManifest(entry.FilePath); }
+        catch (Exception ex) { _activity.LogError("Restore", $"Failed to read backup: {ex.Message}", ex); return; }
+
+        if (!string.Equals(manifest.SiteId, site.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            Helpers.StackrootDialogs.ShowError(
+                Application.Current?.MainWindow,
+                LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Title", "Wrong site backup"),
+                string.Format(LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Body", "This backup belongs to '{0}' ({1}), not to '{2}'."), manifest.SiteName, manifest.SiteDomain, site.Domain)
+                    + "\n\n"
+                    + LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Hint", "To bring in a backup from a different site, use Import from the sites toolbar — it creates a new site and checks for conflicts before proceeding."));
+            return;
+        }
+
+        RunRestoreWithDeltaDialog(site, manifest, entry.FilePath);
+    }
+
+    private void DeleteBackupEntry(SiteBackupEntry entry)
+    {
+        var confirmed = ConfirmDialog.Show(
+            Application.Current?.MainWindow,
+            LocalizationManager.Get("Loc.SiteManage.DeleteBackup.Title", "Delete backup"),
+            string.Format(LocalizationManager.Get("Loc.SiteManage.DeleteBackup.Confirm", "Delete '{0}'? This cannot be undone."), entry.FileName),
+            LocalizationManager.Get("Loc.Common.Delete", "Delete"),
+            isDanger: true);
+        if (!confirmed) return;
+
+        try
+        {
+            File.Delete(entry.FilePath);
+            _ = LoadSiteBackupsAsync();
+        }
+        catch (Exception ex)
+        {
+            _activity.LogError("Backup", $"Failed to delete backup file: {ex.Message}", ex);
+        }
+    }
+
+    private void RestoreFromBackup()
+    {
+        if (Site is null) return;
+        var site = Site;
+
+        var picker = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select site backup",
+            Filter = "Site backups (*.zip)|*.zip",
+            CheckFileExists = true
+        };
+        if (picker.ShowDialog() != true) return;
+
+        BackupManifest manifest;
+        try { manifest = _restoreService.ReadManifest(picker.FileName); }
+        catch (Exception ex) { _activity.LogError("Sites", $"Failed to read backup: {ex.Message}", ex); return; }
+
+        if (!string.Equals(manifest.SiteId, site.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            Helpers.StackrootDialogs.ShowError(
+                Application.Current?.MainWindow,
+                LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Title", "Wrong site backup"),
+                string.Format(LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Body", "This backup belongs to '{0}' ({1}), not to '{2}'."), manifest.SiteName, manifest.SiteDomain, site.Domain)
+                    + "\n\n"
+                    + LocalizationManager.Get("Loc.SiteManage.WrongSiteBackup.Hint", "To bring in a backup from a different site, use Import from the sites toolbar — it creates a new site and checks for conflicts before proceeding."));
+            return;
+        }
+
+        RunRestoreWithDeltaDialog(site, manifest, picker.FileName);
+    }
+
+    private void RunRestoreWithDeltaDialog(SiteModel site, BackupManifest manifest, string zipPath)
+    {
+        var dialogVm = new SiteRestoreDeltaDialogViewModel(site, manifest);
+        var owner = Application.Current?.MainWindow;
+        var confirmDialog = new Views.SiteRestoreDeltaDialog { DataContext = dialogVm, Owner = owner };
+        bool confirmed = false;
+        dialogVm.RequestClose += (_, result) => { confirmed = result; confirmDialog.Close(); };
+
+        confirmDialog.ContentRendered += async (_, _) =>
+        {
+            try
+            {
+                var (delta, extractedBytes, dbRollbackBytes) = await Task.Run(() =>
+                {
+                    var d = _restoreService.ComputeRestoreDelta(zipPath, site);
+                    (long ex, long db) space = default;
+                    try { space = _restoreService.EstimateRestoreSpace(zipPath); } catch { /* non-critical */ }
+                    return (d, space.ex, space.db);
+                });
+                dialogVm.ApplyDelta(delta, extractedBytes, dbRollbackBytes);
+            }
+            catch (Exception ex)
+            {
+                _activity.LogError("Restore", $"Failed to compute restore delta: {ex.Message}", ex);
+                dialogVm.SetLoadError(ex.Message);
+            }
+        };
+
+        confirmDialog.ShowDialog();
+        if (!confirmed) return;
+
+        var options = dialogVm.BuildRestoreOptions();
+        var deletions = dialogVm.BuildDeletions();
+
+        _backupTracker.Begin(site.Id, site.Domain, SiteOperationType.Restore);
+        var progressId = _activity.Begin("Restore", $"Restoring {site.Domain}…");
+
+        _restoreCts = new CancellationTokenSource();
+        CancelRestoreCommand.RaiseCanExecuteChanged();
+        RaisePropertyChanged(nameof(IsRestoreCancellable));
+        var cts = _restoreCts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var progress = new Progress<string>(msg => _activity.UpdateProgress(progressId, "Restore", msg));
+                await _restoreService.RestoreToSiteAsync(zipPath, site, options, deletions, progress, cts.Token);
+                var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                if (dispatcher is not null)
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        cts.Dispose();
+                        if (ReferenceEquals(_restoreCts, cts)) { _restoreCts = null; CancelRestoreCommand.RaiseCanExecuteChanged(); RaisePropertyChanged(nameof(IsRestoreCancellable)); }
+                        _backupTracker.End(site.Id, SiteOperationType.Restore);
+                        _activity.Complete(progressId, "Restore", $"{site.Domain} restored successfully");
+                        RefreshSite();
+                        _ = RebuildNginxAsync();
+                        var siteId = site.Id;
+                        _alertService.Raise(new BackgroundAlert(
+                            BackgroundAlertKind.Success,
+                            LocalizationManager.Get("Loc.BackgroundAlert.RestoreComplete", "Restore Complete"),
+                            string.Format(LocalizationManager.Get("Loc.BackgroundAlert.RestoreComplete.Body", "{0} restored successfully."), site.Domain),
+                            Actions: [new BackgroundAlertAction(
+                                LocalizationManager.Get("Loc.BackgroundAlert.RestoreComplete.Dashboard", "Go to Dashboard"),
+                                () => _services.GetRequiredService<ShellViewModel>().NavigateToSiteManage(siteId))]));
+                    });
+                else
+                {
+                    cts.Dispose();
+                    _backupTracker.End(site.Id, SiteOperationType.Restore);
+                }
+            }
+            catch (Exception ex)
+            {
+                var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                if (dispatcher is not null)
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        cts.Dispose();
+                        if (ReferenceEquals(_restoreCts, cts)) { _restoreCts = null; CancelRestoreCommand.RaiseCanExecuteChanged(); RaisePropertyChanged(nameof(IsRestoreCancellable)); }
+                        _backupTracker.End(site.Id, SiteOperationType.Restore);
+                        _activity.Fail(progressId, "Restore", $"Restore failed for {site.Domain}: {ex.Message}", ex);
+                        if (ex is not OperationCanceledException)
+                            _alertService.Raise(new BackgroundAlert(
+                                BackgroundAlertKind.Error,
+                                LocalizationManager.Get("Loc.BackgroundAlert.RestoreFailed", "Restore Failed"),
+                                string.Format(LocalizationManager.Get("Loc.BackgroundAlert.RestoreFailed.Body", "Could not restore {0}."), site.Domain),
+                                ex));
+                    });
+                else
+                {
+                    cts.Dispose();
+                    _backupTracker.End(site.Id, SiteOperationType.Restore);
+                }
+            }
+        });
+    }
+
+    private bool CanRunQuickAction() => Site is not null && !IsRunningAction && !IsCriticalOperationInProgress;
 
     private void RaiseQuickActionCanExecute()
     {
@@ -2176,7 +2583,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost
                 return;
             }
 
-            if (!IsDatabasePortOpen(svc))
+            if (!await IsDatabasePortOpenAsync(svc).ConfigureAwait(false))
             {
                 StackrootDialogs.ShowWarning(
                     System.Windows.Application.Current?.MainWindow,
@@ -2384,14 +2791,15 @@ die('Admin user not found.');
         catch { }
     }
 
-    private bool IsDatabasePortOpen(ServicePortSettings svc)
+    private static async Task<bool> IsDatabasePortOpenAsync(ServicePortSettings svc)
     {
         var host = string.IsNullOrWhiteSpace(svc.Host) ? "127.0.0.1" : svc.Host;
         var port = svc.Port > 0 ? svc.Port : 3306;
+        using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(2));
         try
         {
             using var client = new System.Net.Sockets.TcpClient();
-            client.ConnectAsync(host, port).Wait(TimeSpan.FromSeconds(2));
+            await client.ConnectAsync(host, port, cts.Token).ConfigureAwait(false);
             return true;
         }
         catch { return false; }
@@ -2458,6 +2866,14 @@ die('Admin user not found.');
         }
         return null;
     }
+
+    private static string FormatOperationLabel(SiteOperationType type) => type switch
+    {
+        SiteOperationType.Backup => "Backup in progress…",
+        SiteOperationType.Restore => "Restore in progress…",
+        SiteOperationType.Import => "Import in progress…",
+        _ => "Operation in progress…"
+    };
 }
 
 public sealed class SiteProcessRowViewModel

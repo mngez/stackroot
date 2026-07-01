@@ -1,0 +1,229 @@
+<Window x:Class="Stackroot.App.Views.ImportSiteDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:windows="clr-namespace:Stackroot.App.Windows"
+        Title="{DynamicResource Loc.ImportSiteDialog.Title}"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
+        Width="480"
+        MinWidth="380"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False"
+        windows:WindowsTheme.EnableDarkTitleBar="True">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="680">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0">
+                <TextBlock FontSize="18"
+                           FontWeight="SemiBold"
+                           Text="{DynamicResource Loc.ImportSiteDialog.Title}" />
+            </StackPanel>
+
+            <!-- Backup info -->
+            <Border Grid.Row="1"
+                    Margin="0,14,0,0"
+                    Padding="10,8"
+                    Background="{StaticResource StackrootCardBrush}"
+                    BorderBrush="{StaticResource StackrootBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontSize="12"
+                                   Width="60"
+                                   Text="{DynamicResource Loc.RestoreSiteDialog.BackupInfoLabel}" />
+                        <TextBlock FontSize="12" Text="{Binding SiteName}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontSize="12"
+                                   Width="60"
+                                   Text="{DynamicResource Loc.ImportSiteDialog.DomainLabel}" />
+                        <TextBlock FontSize="12" Text="{Binding OriginalDomain}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontSize="12"
+                                   Width="60"
+                                   Text="{DynamicResource Loc.RestoreSiteDialog.DateLabel}" />
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   Text="{Binding BackupDate}" />
+                    </StackPanel>
+                    <!-- Additional domains from backup (informational) -->
+                    <StackPanel Margin="0,4,0,0"
+                                Orientation="Horizontal"
+                                Visibility="{Binding HasAliases, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontSize="12"
+                                   Width="60"
+                                   Text="{DynamicResource Loc.ImportSiteDialog.AliasesLabel}" />
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding AllAliasesText}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Blocking conflict warnings -->
+            <StackPanel Grid.Row="2" Margin="0,10,0,0">
+
+                <!-- Domain conflict -->
+                <Border Margin="0,0,0,8"
+                        Padding="10,8"
+                        Background="#1AE05070"
+                        BorderBrush="#52E05070"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Visibility="{Binding DomainConflict, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                       FontSize="13"
+                                       Margin="0,0,6,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="&#xE7BA;" />
+                            <TextBlock FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="{DynamicResource Loc.ImportSiteDialog.DomainConflict}" />
+                        </StackPanel>
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding OriginalDomain}" />
+                        <TextBlock Margin="0,4,0,0"
+                                   FontSize="11"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{DynamicResource Loc.ImportSiteDialog.DomainConflictHint}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Alias conflicts -->
+                <Border Margin="0,0,0,8"
+                        Padding="10,8"
+                        Background="#1AE05070"
+                        BorderBrush="#52E05070"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Visibility="{Binding HasAliasConflicts, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                       FontSize="13"
+                                       Margin="0,0,6,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="&#xE7BA;" />
+                            <TextBlock FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="{DynamicResource Loc.ImportSiteDialog.AliasConflictLabel}" />
+                        </StackPanel>
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding ConflictingAliasesText}" />
+                        <TextBlock Margin="0,4,0,0"
+                                   FontSize="11"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{DynamicResource Loc.ImportSiteDialog.AliasConflictHint}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Database conflicts -->
+                <Border Padding="10,8"
+                        Background="#1AE05070"
+                        BorderBrush="#52E05070"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Visibility="{Binding HasDatabaseConflicts, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                       FontSize="13"
+                                       Margin="0,0,6,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="&#xE7BA;" />
+                            <TextBlock FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource StackrootDangerTextBrush}"
+                                       Text="{DynamicResource Loc.ImportSiteDialog.DatabaseConflictLabel}" />
+                        </StackPanel>
+                        <TextBlock FontSize="12"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding ConflictingDatabasesText}" />
+                        <TextBlock Margin="0,4,0,0"
+                                   FontSize="11"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{DynamicResource Loc.ImportSiteDialog.DatabaseConflictHint}" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+
+            <!-- Options -->
+            <StackPanel Grid.Row="3" Margin="0,16,0,0">
+                <TextBlock Foreground="{StaticResource StackrootTextMutedBrush}"
+                           FontSize="12"
+                           Margin="0,0,0,10"
+                           Text="{DynamicResource Loc.ImportSiteDialog.ContentLabel}" />
+
+                <CheckBox Margin="0,0,0,8"
+                          IsChecked="{Binding RestoreFiles}"
+                          Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}"
+                          Content="{DynamicResource Loc.ImportSiteDialog.RestoreFiles}" />
+                <CheckBox Margin="0,0,0,8"
+                          IsChecked="{Binding RestoreDatabases}"
+                          Visibility="{Binding HasDatabases, Converter={StaticResource BoolToVis}}"
+                          Content="{DynamicResource Loc.ImportSiteDialog.RestoreDatabases}" />
+                <CheckBox Margin="0,0,0,8"
+                          IsChecked="{Binding RestoreProcesses}"
+                          Visibility="{Binding HasProcesses, Converter={StaticResource BoolToVis}}"
+                          Content="{DynamicResource Loc.ImportSiteDialog.RestoreProcesses}" />
+                <CheckBox Margin="0,0,0,0"
+                          IsChecked="{Binding RestoreScheduledTasks}"
+                          Visibility="{Binding HasScheduledTasks, Converter={StaticResource BoolToVis}}"
+                          Content="{DynamicResource Loc.ImportSiteDialog.RestoreScheduledTasks}" />
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="4"
+                        Margin="0,20,0,0"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <Button Width="88"
+                        Margin="0,0,8,0"
+                        Content="{DynamicResource Loc.Common.Cancel}"
+                        Command="{Binding CancelCommand}" />
+                <Button Width="100"
+                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                        Content="{DynamicResource Loc.ImportSiteDialog.Import}"
+                        Command="{Binding ImportCommand}" />
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Window>

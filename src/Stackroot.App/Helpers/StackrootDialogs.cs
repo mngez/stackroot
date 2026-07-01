@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using Stackroot.App.Services;
 using Stackroot.App.ViewModels;
 using Stackroot.App.Views;
 
@@ -40,6 +41,31 @@ public static class StackrootDialogs
                 StackrootDialogKind.Warning,
                 StackrootDialogButtons.YesNo,
                 yesText: yesText) == StackrootDialogResult.Yes);
+    }
+
+    public static bool AskCloseWithActiveOperations(Window? owner, IReadOnlyList<ActiveSiteOperation> operations)
+    {
+        var opLines = string.Join("\n", operations.Select(op =>
+        {
+            var label = op.Type switch
+            {
+                SiteOperationType.Backup => "Backing up",
+                SiteOperationType.Restore => "Restoring",
+                SiteOperationType.Import => "Importing",
+                _ => op.Type.ToString()
+            };
+            return $"  • {label}: {op.SiteDomain}";
+        }));
+
+        return ShowOnUiThread(owner, () =>
+            MessageDialog.Show(
+                owner,
+                "Operations in progress",
+                $"The following operations are still running:\n\n{opLines}\n\nQuitting now may result in incomplete or corrupted data.",
+                StackrootDialogKind.Warning,
+                StackrootDialogButtons.YesNo,
+                yesText: "Quit anyway",
+                noText: "Cancel") == StackrootDialogResult.Yes);
     }
 
     public static StackrootDialogResult AskCloseBehavior(Window? owner)

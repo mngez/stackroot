@@ -19,7 +19,7 @@ public sealed class JsonFileStore : IJsonFileStore
             return default;
         }
 
-        var json = File.ReadAllText(path);
+        var json = ReadWithRetry(path);
         if (string.IsNullOrWhiteSpace(json))
         {
             return default;
@@ -37,7 +37,7 @@ public sealed class JsonFileStore : IJsonFileStore
 
         try
         {
-            var json = File.ReadAllText(path);
+            var json = ReadWithRetry(path);
             return JsonSerializer.Deserialize<T>(json, _options) ?? fallbackFactory();
         }
         catch (Exception ex)
@@ -48,6 +48,27 @@ public sealed class JsonFileStore : IJsonFileStore
                 : $" A backup was saved to '{backupPath}'.";
             throw new InvalidDataException($"Could not read JSON file '{path}'.{backupMessage}", ex);
         }
+    }
+
+    // File.Replace briefly holds an exclusive lock; retry a few times before giving up.
+    private static string ReadWithRetry(string path)
+    {
+        const int maxAttempts = 4;
+        IOException? lastException = null;
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            if (attempt > 0)
+                Thread.Sleep(25 * attempt);
+            try
+            {
+                return File.ReadAllText(path);
+            }
+            catch (IOException ex)
+            {
+                lastException = ex;
+            }
+        }
+        throw lastException!;
     }
 
     public void Save<T>(string path, T value) => WriteAtomic(path, value);

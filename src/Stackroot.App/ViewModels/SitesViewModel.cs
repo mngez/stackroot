@@ -11,7 +11,13 @@ using Stackroot.App.Commands;
 
 using Stackroot.App.Helpers;
 
+using Stackroot.App.Localization;
+
+using Stackroot.App.Scheduling;
+
 using Stackroot.App.Services;
+
+using StackrootPaths = Stackroot.Core.Abstractions.StackrootPaths;
 
 using Stackroot.App.Views;
 
@@ -35,6 +41,8 @@ using Stackroot.Core.Sites.Models;
 
 using Stackroot.Core.Supervisor;
 
+using Stackroot.Core.IO;
+
 using Stackroot.Core.Windows;
 
 using PackageType = Stackroot.Core.Abstractions.PackageType;
@@ -45,7 +53,7 @@ namespace Stackroot.App.ViewModels;
 
 
 
-public sealed class SitesViewModel : ViewModelBase
+public sealed class SitesViewModel : ViewModelBase, IDisposable
 
 {
 
@@ -69,12 +77,26 @@ public sealed class SitesViewModel : ViewModelBase
 
     private readonly GlobalProcessManager _processManager;
 
+    private readonly TaskSchedulerService _scheduler;
+
+    private readonly SiteBackupService _backupService;
+
+    private readonly SiteRestoreService _restoreService;
+
+    private readonly Services.SiteBackupTracker _backupTracker;
+
+    private readonly StackrootPaths _paths;
+
     private readonly IDiagnosticsReporter _diagnostics;
 
     private readonly SessionActivityReporter _activity;
 
+    private readonly BackgroundAlertService _alertService;
+
     private bool _isRebuildingNginx;
     private int _reloadVersion;
+    private EventHandler<CriticalOperationEventArgs>? _operationStartedHandler;
+    private EventHandler<CriticalOperationEventArgs>? _operationEndedHandler;
 
     private string _wwwPath = string.Empty;
 
@@ -106,9 +128,21 @@ public sealed class SitesViewModel : ViewModelBase
 
         GlobalProcessManager processManager,
 
+        TaskSchedulerService scheduler,
+
+        SiteBackupService backupService,
+
+        SiteRestoreService restoreService,
+
+        Services.SiteBackupTracker backupTracker,
+
+        StackrootPaths paths,
+
         IDiagnosticsReporter diagnostics,
 
-        SessionActivityReporter activity)
+        SessionActivityReporter activity,
+
+        BackgroundAlertService alertService)
 
     {
 
@@ -132,8 +166,19 @@ public sealed class SitesViewModel : ViewModelBase
 
         _processManager = processManager;
 
+        _scheduler = scheduler;
+
+        _backupService = backupService;
+
+        _restoreService = restoreService;
+
+        _backupTracker = backupTracker;
+
+        _paths = paths;
+
         _diagnostics = diagnostics;
         _activity = activity;
+        _alertService = alertService;
 
 
 
@@ -145,6 +190,8 @@ public sealed class SitesViewModel : ViewModelBase
 
 
         OpenAddSiteCommand = new RelayCommand(_ => OpenAddSiteDialog());
+
+        ImportSiteCommand = new RelayCommand(_ => ImportSite());
 
         OpenSettingsCommand = new RelayCommand(_ => OpenSitesSettingsDialog());
 
@@ -158,6 +205,27 @@ public sealed class SitesViewModel : ViewModelBase
 
         DismissWarningCommand = new RelayCommand(_ => WarningMessage = string.Empty);
 
+        _operationStartedHandler = (_, args) =>
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+                FindRow(args.SiteId)?.SetBackingUp(true);
+            else
+                dispatcher.BeginInvoke(() => FindRow(args.SiteId)?.SetBackingUp(true));
+        };
+
+        _operationEndedHandler = (_, args) =>
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+                FindRow(args.SiteId)?.SetBackingUp(false);
+            else
+                dispatcher.BeginInvoke(() => FindRow(args.SiteId)?.SetBackingUp(false));
+        };
+
+        _backupTracker.OperationStarted += _operationStartedHandler;
+        _backupTracker.OperationEnded += _operationEndedHandler;
+
 
 
         LoadPhpVersions();
@@ -167,6 +235,11 @@ public sealed class SitesViewModel : ViewModelBase
 
     }
 
+    public void Dispose()
+    {
+        _backupTracker.OperationStarted -= _operationStartedHandler;
+        _backupTracker.OperationEnded -= _operationEndedHandler;
+    }
 
 
     public ObservableCollection<PhpVersionOptionViewModel> PhpVersions { get; }
@@ -177,6 +250,8 @@ public sealed class SitesViewModel : ViewModelBase
 
 
     public ICommand OpenAddSiteCommand { get; }
+
+    public ICommand ImportSiteCommand { get; }
 
     public ICommand OpenSettingsCommand { get; }
 
@@ -421,6 +496,10 @@ public sealed class SitesViewModel : ViewModelBase
 
 
 
+    private SiteRowViewModel? FindRow(string siteId) =>
+        Groups.SelectMany(g => g.Sites)
+            .FirstOrDefault(r => string.Equals(r.Site.Id, siteId, StringComparison.OrdinalIgnoreCase));
+
     private List<SiteRowViewModel> BuildRows(IReadOnlyList<Site> sites)
 
     {
@@ -429,25 +508,35 @@ public sealed class SitesViewModel : ViewModelBase
 
             .OrderBy(site => site.Domain, StringComparer.OrdinalIgnoreCase)
 
-            .Select(site => new SiteRowViewModel(
+            .Select(site =>
+            {
+                var row = new SiteRowViewModel(
 
-                site,
+                    site,
 
-                _siteManager,
+                    _siteManager,
 
-                Reload,
+                    Reload,
 
-                OpenManage,
+                    OpenManage,
 
-                OpenEditDialog,
+                    OpenEditDialog,
 
-                DeleteSite,
+                    DeleteSite,
 
-                UpdateSitePhpVersion,
+                    UpdateSitePhpVersion,
 
-                OpenCreateDatabaseDialog,
+                    OpenCreateDatabaseDialog,
 
-                site => OnSiteRuntimeChanged(site)))
+                    BackupSite,
+
+                    site => OnSiteRuntimeChanged(site));
+
+                if (_backupTracker.IsActiveAny(site.Id))
+                    row.SetBackingUp(true);
+
+                return row;
+            })
 
             .ToList();
 
@@ -703,17 +792,20 @@ public sealed class SitesViewModel : ViewModelBase
             return;
         }
 
-        var title = "Remove domain?";
+        var hasDatabases = _databaseManager.List().Any(db => string.Equals(db.SiteId, site.Id, StringComparison.OrdinalIgnoreCase));
+        var hasScheduledTasks = _scheduler.List().Any(t => string.Equals(t.SiteId, site.Id, StringComparison.OrdinalIgnoreCase));
+        var hasProcesses = _processManager.List(site.Id).Count > 0;
 
+        var title = "Remove domain?";
         var message = $"Remove {site.Domain} from Stackroot? The nginx config and hosts entry will be removed.";
 
-        var confirmText = "Remove";
-
-
-
-        var result = ConfirmDialog.ShowWithCheckbox(
-            Application.Current?.MainWindow, title, message, confirmText,
-            isDanger: true, checkboxLabel: "Also delete site files");
+        var result = DeleteSiteDialog.Show(
+            Application.Current?.MainWindow,
+            title,
+            message,
+            hasDatabases,
+            hasScheduledTasks,
+            hasProcesses);
 
         if (!result.Confirmed)
 
@@ -731,9 +823,17 @@ public sealed class SitesViewModel : ViewModelBase
 
             ErrorMessage = string.Empty;
 
-            RemoveSiteProcesses(site.Id);
+            if (result.DeleteProcesses)
+            {
+                RemoveSiteProcesses(site.Id);
+            }
 
-            _siteManager.Delete(site.Id, forceDeleteFiles: result.IsChecked);
+            if (result.DeleteScheduledTasks)
+            {
+                _scheduler.DeleteBySiteId(site.Id);
+            }
+
+            _siteManager.Delete(site.Id, forceDeleteFiles: result.DeleteFiles, deleteDatabases: result.DeleteDatabases);
 
             _activity.LogSuccess("Sites", SessionActivityMessages.SiteDeleted(site.Domain));
 
@@ -767,7 +867,155 @@ public sealed class SitesViewModel : ViewModelBase
 
     }
 
+    private void BackupSite(Site site)
+    {
+        var dialogVm = new BackupSiteDialogViewModel(
+            site,
+            _databaseManager,
+            _processManager,
+            _scheduler);
 
+        var owner = Application.Current?.MainWindow;
+        var dialog = new Views.BackupSiteDialog { DataContext = dialogVm, Owner = owner };
+
+        bool confirmed = false;
+        dialogVm.RequestClose += (_, result) => { confirmed = result; dialog.Close(); };
+        dialog.ShowDialog();
+
+        if (!confirmed) return;
+
+        var options = dialogVm.BuildOptions();
+
+        _ = Task.Run(async () =>
+        {
+            var result = await SiteBackupHelper.RunBackupAsync(
+                site, options,
+                _backupService, _backupTracker, _activity,
+                _siteManager, _processManager, _scheduler,
+                _settingsStore, _paths);
+
+            await RunOnUiAsync(() =>
+            {
+                if (result.Success)
+                {
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Success,
+                        LocalizationManager.Get("Loc.BackgroundAlert.BackupComplete", "Backup Complete"),
+                        string.Format(LocalizationManager.Get("Loc.BackgroundAlert.BackupComplete.Body", "{0} backed up successfully."), site.Domain),
+                        Detail: result.ResultPath,
+                        Actions: [new BackgroundAlertAction(
+                            LocalizationManager.Get("Loc.BackgroundAlert.RestoreComplete.OpenFolder", "Open Folder"),
+                            () => OpenBackupFolder(result.ResultPath!))]));
+
+                    if (result.SiteDeleted)
+                    {
+                        Reload();
+                        _ = RebuildNginxAsync();
+                    }
+                }
+                else
+                {
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Error,
+                        LocalizationManager.Get("Loc.BackgroundAlert.BackupFailed", "Backup Failed"),
+                        string.Format(LocalizationManager.Get("Loc.BackgroundAlert.BackupFailed.Body", "Could not back up {0}."), site.Domain),
+                        result.Exception));
+                }
+            });
+        });
+
+        BackupStartedDialog.Show(Application.Current?.MainWindow, site.Domain);
+    }
+
+    private static void OpenBackupFolder(string filePath)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(filePath);
+            if (dir is not null && Directory.Exists(dir))
+                System.Diagnostics.Process.Start("explorer.exe", dir);
+        }
+        catch { /* best effort */ }
+    }
+
+    private void ImportSite()
+    {
+        var picker = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select site backup",
+            Filter = "Site backups (*.zip)|*.zip",
+            CheckFileExists = true
+        };
+        if (picker.ShowDialog() != true) return;
+
+        BackupManifest manifest;
+        try
+        {
+            manifest = _restoreService.ReadManifest(picker.FileName);
+        }
+        catch (Exception ex)
+        {
+            _activity.LogError("Sites", $"Failed to read backup: {ex.Message}", ex);
+            return;
+        }
+
+        var conflict = _restoreService.CheckConflicts(manifest, picker.FileName);
+        // Provide all domain names (primary + aliases) so the live domain-conflict check in the ViewModel is accurate
+        var allExistingDomains = _siteManager.List()
+            .SelectMany(s => new[] { s.Domain }.Concat(s.DomainAliases ?? []));
+        var dialogVm = new ImportSiteDialogViewModel(manifest, conflict, allExistingDomains);
+        var owner = Application.Current?.MainWindow;
+        var dialog = new Views.ImportSiteDialog { DataContext = dialogVm, Owner = owner };
+        bool confirmed = false;
+        dialogVm.RequestClose += (_, result) => { confirmed = result; dialog.Close(); };
+        dialog.ShowDialog();
+        if (!confirmed) return;
+
+        var options = dialogVm.BuildOptions();
+        var newDomain = dialogVm.NewDomain;
+        var zipPath = picker.FileName;
+        var importDisplayDomain = !string.IsNullOrWhiteSpace(newDomain) ? newDomain : manifest.SiteDomain;
+        var importTrackingId = Guid.NewGuid().ToString("N");
+        _backupTracker.Begin(importTrackingId, importDisplayDomain, SiteOperationType.Import);
+        var progressId = _activity.Begin("Import", "Importing site…");
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var progress = new Progress<string>(msg => _activity.UpdateProgress(progressId, "Import", msg));
+                var newSite = await _restoreService.ImportSiteAsync(zipPath, newDomain, options, progress);
+                await RunOnUiAsync(() =>
+                {
+                    _backupTracker.End(importTrackingId, SiteOperationType.Import);
+                    _activity.Complete(progressId, "Import", $"Site imported as {newSite.Domain}");
+                    Reload();
+                    _ = RebuildNginxAsync();
+                    var importedId = newSite.Id;
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Success,
+                        LocalizationManager.Get("Loc.BackgroundAlert.ImportComplete", "Import Complete"),
+                        string.Format(LocalizationManager.Get("Loc.BackgroundAlert.ImportComplete.Body", "{0} imported successfully."), newSite.Domain),
+                        Actions: [new BackgroundAlertAction(
+                            LocalizationManager.Get("Loc.BackgroundAlert.ImportComplete.ManageSite", "Manage Site"),
+                            () => _services.GetRequiredService<ShellViewModel>().NavigateToSiteManage(importedId))]));
+                });
+            }
+            catch (Exception ex)
+            {
+                await RunOnUiAsync(() =>
+                {
+                    _backupTracker.End(importTrackingId, SiteOperationType.Import);
+                    _activity.Fail(progressId, "Import", $"Import failed: {ex.Message}", ex);
+                    _alertService.Raise(new BackgroundAlert(
+                        BackgroundAlertKind.Error,
+                        LocalizationManager.Get("Loc.BackgroundAlert.ImportFailed", "Import Failed"),
+                        LocalizationManager.Get("Loc.BackgroundAlert.ImportFailed.Body", "Could not import the site backup."),
+                        ex));
+                });
+            }
+        });
+    }
 
     private void OpenSitesSettingsDialog()
 

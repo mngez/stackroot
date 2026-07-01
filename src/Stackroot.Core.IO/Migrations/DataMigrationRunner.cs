@@ -56,7 +56,83 @@ public static class DataMigrationRunner
             migrator.MigrateAll(paths, context, report);
         }
 
+        MigrateBackupFiles(paths);
+
         return report;
+    }
+
+    private static void MigrateBackupFiles(StackrootPaths paths)
+    {
+        // 0.2.9 → 0.3.0: move flat *.sql / *.archive files from {dataRoot}/backups/
+        // into {backupsRoot}/databases/ subfolder.
+        var oldDir = Path.Combine(paths.DataRoot, "backups");
+        if (!Directory.Exists(oldDir))
+        {
+            return;
+        }
+
+        var backupsRoot = ResolveBackupsRoot(paths);
+        var newDir = Path.Combine(backupsRoot, "databases");
+
+        var filesToMove = Directory
+            .EnumerateFiles(oldDir, "*.sql", SearchOption.TopDirectoryOnly)
+            .Concat(Directory.EnumerateFiles(oldDir, "*.archive", SearchOption.TopDirectoryOnly))
+            .ToList();
+
+        if (filesToMove.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(newDir);
+            foreach (var file in filesToMove)
+            {
+                var dest = Path.Combine(newDir, Path.GetFileName(file));
+                if (!File.Exists(dest))
+                {
+                    File.Move(file, dest);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-fatal — existing backups stay in place and ListBackups will still find them
+            try
+            {
+                var logPath = Path.Combine(paths.DataRoot, "logs", "app-error.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                File.AppendAllText(logPath,
+                    $"[{DateTimeOffset.UtcNow:O}] [WARN] MigrateBackupFiles failed: {ex}\n");
+            }
+            catch { }
+        }
+    }
+
+    private static string ResolveBackupsRoot(StackrootPaths paths)
+    {
+        var settingsPath = StackrootPathResolver.SettingsPath(paths.DataRoot);
+        if (File.Exists(settingsPath))
+        {
+            try
+            {
+                var root = JsonMigrationHelper.ParseOrNull(settingsPath);
+                if (root is JsonObject obj
+                    && obj["general"] is JsonObject general
+                    && general["backupsPath"] is JsonValue value
+                    && value.TryGetValue<string>(out var configured)
+                    && !string.IsNullOrWhiteSpace(configured))
+                {
+                    return Path.GetFullPath(configured);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return Path.Combine(paths.DataRoot, "backups");
     }
 
     private static string ResolveDownloadCacheRoot(StackrootPaths paths)

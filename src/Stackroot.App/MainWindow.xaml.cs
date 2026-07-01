@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly DashboardViewModel _dashboardViewModel;
     private readonly SettingsStore _settingsStore;
     private readonly StackrootShutdownCoordinator _shutdown;
+    private readonly SiteBackupTracker _backupTracker;
     private Forms.NotifyIcon? _trayIcon;
     private Forms.ContextMenuStrip? _trayMenu;
     private System.Drawing.Icon? _trayManagedIcon;
@@ -34,12 +35,14 @@ public partial class MainWindow : Window
         ShellViewModel viewModel,
         DashboardViewModel dashboardViewModel,
         SettingsStore settingsStore,
-        StackrootShutdownCoordinator shutdown)
+        StackrootShutdownCoordinator shutdown,
+        SiteBackupTracker backupTracker)
     {
         _viewModel = viewModel;
         _dashboardViewModel = dashboardViewModel;
         _settingsStore = settingsStore;
         _shutdown = shutdown;
+        _backupTracker = backupTracker;
         DataContext = _viewModel;
         InitializeComponent();
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -120,7 +123,8 @@ public partial class MainWindow : Window
         {
             case CloseBehavior.Quit:
                 e.Cancel = true;
-                _ = ShutdownAndQuitAsync();
+                if (ConfirmQuitWithActiveOperations())
+                    _ = ShutdownAndQuitAsync();
                 return;
 
             case CloseBehavior.Background:
@@ -134,7 +138,8 @@ public partial class MainWindow : Window
 
                 if (choice == StackrootDialogResult.Yes)
                 {
-                    _ = ShutdownAndQuitAsync();
+                    if (ConfirmQuitWithActiveOperations())
+                        _ = ShutdownAndQuitAsync();
                 }
                 else if (choice == StackrootDialogResult.No)
                 {
@@ -166,7 +171,7 @@ public partial class MainWindow : Window
         var startOrRestartAllItem = _trayMenu.Items.Add("Start all", null, (_, _) => RunTrayCommand(_dashboardViewModel.StartOrRestartAllCommand));
         var stopAllItem = _trayMenu.Items.Add("Stop all", null, (_, _) => RunTrayCommand(_dashboardViewModel.StopAllCommand));
         _trayMenu.Items.Add(new Forms.ToolStripSeparator());
-        _trayMenu.Items.Add("Quit", null, (_, _) => _ = ShutdownAndQuitAsync());
+        _trayMenu.Items.Add("Quit", null, (_, _) => { if (ConfirmQuitWithActiveOperations()) _ = ShutdownAndQuitAsync(); });
         _trayMenu.Opening += (_, _) =>
         {
             startOrRestartAllItem.Text = _dashboardViewModel.StartOrRestartAllLabel;
@@ -200,6 +205,14 @@ public partial class MainWindow : Window
                 command.Execute(null);
             }
         });
+    }
+
+    private bool ConfirmQuitWithActiveOperations()
+    {
+        if (!_backupTracker.HasActiveOperations)
+            return true;
+
+        return StackrootDialogs.AskCloseWithActiveOperations(this, _backupTracker.GetActiveOperations());
     }
 
     private void BeginQuit()

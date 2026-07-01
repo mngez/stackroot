@@ -165,7 +165,7 @@ public sealed class SiteManager
         return site;
     }
 
-    public SiteModel? Delete(string id, bool forceDeleteFiles = false)
+    public SiteModel? Delete(string id, bool forceDeleteFiles = false, bool deleteDatabases = false)
     {
         var removed = _store.Remove(id);
         if (removed is not null)
@@ -176,12 +176,28 @@ public sealed class SiteManager
                 SyncManagedHosts();
             }
 
-            _databaseManager?.UnlinkSite(id);
+            if (deleteDatabases && _databaseManager is not null)
+            {
+                foreach (var db in _databaseManager.List().Where(db => string.Equals(db.SiteId, id, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _databaseManager.Delete(db.Name, dropFromServer: true);
+                }
+            }
+            else
+            {
+                _databaseManager?.UnlinkSite(id);
+            }
 
             var shouldDelete = forceDeleteFiles || !IsCustomPathSite(removed);
             if (shouldDelete && Directory.Exists(removed.Path))
             {
                 TryDeleteDirectory(removed.Path);
+            }
+
+            var siteDataDir = Path.Combine(_paths.SitesRoot, id);
+            if (Directory.Exists(siteDataDir))
+            {
+                TryDeleteDirectory(siteDataDir);
             }
         }
 
@@ -234,6 +250,12 @@ public sealed class SiteManager
         else
         {
             _diagnostics?.LogActivity("Hosts", "AutoHosts is disabled — skipping hosts sync");
+        }
+
+        // Write/refresh nginx vhost configs for all enabled sites
+        foreach (var site in sites.Where(static s => s.Enabled))
+        {
+            WriteSiteVhost(site);
         }
 
         // Clean up stale nginx vhosts

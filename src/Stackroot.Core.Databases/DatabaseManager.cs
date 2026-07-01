@@ -176,7 +176,7 @@ public sealed class DatabaseManager
         var settings = _settingsStore.Load();
 
         var backupsDirectory = string.IsNullOrWhiteSpace(destinationDirectory)
-            ? StackrootPathResolver.DatabaseBackupsPath(_dataRoot)
+            ? ResolveDatabaseBackupsDir()
             : destinationDirectory;
         Directory.CreateDirectory(backupsDirectory);
 
@@ -198,16 +198,18 @@ public sealed class DatabaseManager
         return backupPath;
     }
 
+    private string ResolveDatabaseBackupsDir()
+    {
+        var settings = _settingsStore.Load();
+        var backupsRoot = !string.IsNullOrWhiteSpace(settings.General.BackupsPath)
+            ? settings.General.BackupsPath
+            : StackrootPathResolver.DefaultBackupsRoot(_dataRoot);
+        return StackrootPathResolver.DatabaseBackupsDir(backupsRoot);
+    }
+
     public IReadOnlyList<DatabaseBackupInfo> ListBackups(string? databaseName = null)
     {
-        var backupsDirectory = StackrootPathResolver.DatabaseBackupsPath(_dataRoot);
-        var diagPath = Path.Combine(_dataRoot, "logs", "backups-diag.log");
-        void Diag(string msg)
-        {
-            try { File.AppendAllText(diagPath, $"[{DateTimeOffset.UtcNow:O}] {msg}\n"); } catch { }
-        }
-
-        Diag($"ListBackups called: dir={backupsDirectory}, filter={databaseName ?? "(null)"}, exists={Directory.Exists(backupsDirectory)}");
+        var backupsDirectory = ResolveDatabaseBackupsDir();
 
         if (!Directory.Exists(backupsDirectory))
         {
@@ -220,16 +222,25 @@ public sealed class DatabaseManager
 
         var sqlFiles = Directory.EnumerateFiles(backupsDirectory, "*.sql", SearchOption.TopDirectoryOnly);
         var archiveFiles = Directory.EnumerateFiles(backupsDirectory, "*.archive", SearchOption.TopDirectoryOnly);
-        var allFiles = sqlFiles.Concat(archiveFiles).ToList();
-        Diag($"Found {allFiles.Count} backup file(s) in directory (.sql + .archive)");
 
-        var results = allFiles
+        // Also scan the legacy flat backups root (0.2.9 and earlier) in case migration hasn't run yet
+        var legacyDir = StackrootPathResolver.DatabaseBackupsPath(_dataRoot);
+        IEnumerable<string> legacySql = [];
+        IEnumerable<string> legacyArchive = [];
+        if (!string.Equals(legacyDir, backupsDirectory, StringComparison.OrdinalIgnoreCase)
+            && Directory.Exists(legacyDir))
+        {
+            legacySql = Directory.EnumerateFiles(legacyDir, "*.sql", SearchOption.TopDirectoryOnly);
+            legacyArchive = Directory.EnumerateFiles(legacyDir, "*.archive", SearchOption.TopDirectoryOnly);
+        }
+
+        return sqlFiles.Concat(archiveFiles).Concat(legacySql).Concat(legacyArchive)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(path =>
             {
                 var fileName = Path.GetFileName(path);
                 var info = new FileInfo(path);
                 ParseBackupFileName(fileName, out var dbName, out var engine);
-                Diag($"  File: {fileName} -> dbName='{dbName}' engine={engine}");
                 return new DatabaseBackupInfo(
                     fileName,
                     path,
@@ -242,9 +253,6 @@ public sealed class DatabaseManager
                              string.Equals(backup.DatabaseName, filter, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(backup => backup.CreatedAt)
             .ToList();
-
-        Diag($"After filter (filter='{filter}'): {results.Count} result(s)");
-        return results;
     }
 
     public string RestoreBackup(
@@ -440,7 +448,6 @@ public sealed class DatabaseManager
         switch (engine)
         {
             case SqlEngine.Mysql or SqlEngine.Mariadb:
-                MysqlDatabaseClient.EnsureRootPassword(_installRegistry, settings, engine);
                 MysqlDatabaseClient.ExportSqlFile(_installRegistry, settings, engine, name, backupPath);
                 break;
             case SqlEngine.Postgresql:
@@ -459,7 +466,6 @@ public sealed class DatabaseManager
         switch (engine)
         {
             case SqlEngine.Mysql or SqlEngine.Mariadb:
-                MysqlDatabaseClient.EnsureRootPassword(_installRegistry, settings, engine);
                 MysqlDatabaseClient.ImportSqlFile(_installRegistry, settings, engine, name, backupPath);
                 break;
             case SqlEngine.Postgresql:

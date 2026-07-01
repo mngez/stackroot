@@ -8,5 +8,6 @@ public partial class SitesPage : System.Windows.Controls.UserControl
     {
         DataContext = viewModel;
         InitializeComponent();
+        Unloaded += (_, _) => viewModel.Dispose();
     }
 }

@@ -240,6 +240,7 @@ public record class GeneralSettings
     public bool? TrustSslCaMachineWide { get; set; }
     public string? DownloadCachePath { get; set; }
     public string? Language { get; set; }
+    public string? BackupsPath { get; set; }
 }
 
 public record class DownloadCacheEntry

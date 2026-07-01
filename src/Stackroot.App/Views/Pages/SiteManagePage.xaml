@@ -1151,6 +1151,113 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Site Backups -->
+                <Border Margin="0,14,0,0"
+                        Padding="14"
+                        Background="{StaticResource StackrootCardBrush}"
+                        BorderBrush="{StaticResource StackrootBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False">
+                            <StackPanel>
+                                <TextBlock FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Text="{DynamicResource Loc.SiteManage.BackupsTitle}" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                                           FontSize="12"
+                                           Text="{DynamicResource Loc.SiteManage.BackupsHint}" />
+                            </StackPanel>
+                            <StackPanel DockPanel.Dock="Right"
+                                        Orientation="Horizontal">
+                                <Button Margin="0,0,6,0"
+                                        Padding="8,4"
+                                        FontSize="12"
+                                        Content="{DynamicResource Loc.SiteManage.CancelRestore}"
+                                        Style="{StaticResource StackrootStopButtonStyle}"
+                                        Command="{Binding CancelRestoreCommand}"
+                                        Visibility="{Binding IsRestoreCancellable, Converter={StaticResource BoolToVis}}" />
+                                <Button Margin="0,0,6,0"
+                                        Padding="8,4"
+                                        FontSize="12"
+                                        Content="{DynamicResource Loc.SiteManage.CancelBackup}"
+                                        Style="{StaticResource StackrootStopButtonStyle}"
+                                        Command="{Binding CancelBackupCommand}"
+                                        Visibility="{Binding IsBackupCancellable, Converter={StaticResource BoolToVis}}" />
+                                <Button Margin="0,0,6,0"
+                                        Padding="8,4"
+                                        FontSize="12"
+                                        Content="{DynamicResource Loc.SiteManage.RestoreFromFile}"
+                                        ToolTip="{DynamicResource Loc.SiteManage.RestoreTooltip}"
+                                        Command="{Binding RestoreFromBackupCommand}" />
+                                <Button Padding="8,4"
+                                        FontSize="12"
+                                        Content="{DynamicResource Loc.SiteManage.CreateBackup}"
+                                        Style="{StaticResource StackrootPrimaryButtonStyle}"
+                                        Command="{Binding CreateBackupCommand}" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <TextBlock Margin="0,12,0,0"
+                                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                                   FontSize="12"
+                                   Text="{DynamicResource Loc.SiteManage.NoBackups}"
+                                   Visibility="{Binding ShowNoSiteBackups, Converter={StaticResource BoolToVis}}" />
+
+                        <ItemsControl Margin="0,12,0,0"
+                                      ItemsSource="{Binding SiteBackups}"
+                                      Visibility="{Binding HasSiteBackups, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,6"
+                                            Padding="10,8"
+                                            Background="#121A26"
+                                            BorderBrush="{StaticResource StackrootBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <TextBlock FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           Text="{Binding FileName}" />
+                                                <StackPanel Margin="0,3,0,0" Orientation="Horizontal">
+                                                    <TextBlock FontSize="11"
+                                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                               Text="{Binding DateDisplay}" />
+                                                    <TextBlock Margin="10,0,0,0"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                               Text="{Binding SizeDisplay}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1"
+                                                        Margin="8,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Orientation="Horizontal">
+                                                <Button Padding="8,4"
+                                                        FontSize="12"
+                                                        Margin="0,0,6,0"
+                                                        Content="{DynamicResource Loc.SiteManage.RestoreFromBackup}"
+                                                        Command="{Binding RestoreCommand}" />
+                                                <Button Padding="8,4"
+                                                        FontSize="12"
+                                                        Style="{StaticResource StackrootStopButtonStyle}"
+                                                        Content="{DynamicResource Loc.Common.Delete}"
+                                                        Command="{Binding DeleteCommand}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
     </Grid>
 </UserControl>

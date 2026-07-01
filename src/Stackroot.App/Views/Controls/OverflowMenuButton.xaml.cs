@@ -7,6 +7,20 @@ namespace Stackroot.App.Views.Controls;
 
 public partial class OverflowMenuButton : UserControl
 {
+    public static readonly DependencyProperty SecondaryCommandProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryCommand),
+            typeof(ICommand),
+            typeof(OverflowMenuButton),
+            new PropertyMetadata(null, OnSecondaryCommandChanged));
+
+    public static readonly DependencyProperty SecondaryLabelProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryLabel),
+            typeof(string),
+            typeof(OverflowMenuButton),
+            new PropertyMetadata(string.Empty, OnSecondaryActionChanged));
+
     public static readonly DependencyProperty DangerCommandProperty =
         DependencyProperty.Register(
             nameof(DangerCommand),
@@ -56,6 +70,18 @@ public partial class OverflowMenuButton : UserControl
         IsVisibleChanged += (_, _) => RefreshState();
     }
 
+    public ICommand? SecondaryCommand
+    {
+        get => (ICommand?)GetValue(SecondaryCommandProperty);
+        set => SetValue(SecondaryCommandProperty, value);
+    }
+
+    public string SecondaryLabel
+    {
+        get => (string)GetValue(SecondaryLabelProperty);
+        set => SetValue(SecondaryLabelProperty, value);
+    }
+
     public ICommand? DangerCommand
     {
         get => (ICommand?)GetValue(DangerCommandProperty);
@@ -92,56 +118,98 @@ public partial class OverflowMenuButton : UserControl
         set => SetValue(ToolTipTextProperty, value);
     }
 
+    private static void OnSecondaryCommandChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not OverflowMenuButton button) return;
+
+        if (e.OldValue is ICommand oldCommand)
+            oldCommand.CanExecuteChanged -= button.OnSecondaryCanExecuteChanged;
+        if (e.NewValue is ICommand newCommand)
+            newCommand.CanExecuteChanged += button.OnSecondaryCanExecuteChanged;
+
+        button.RefreshState();
+    }
+
+    private static void OnSecondaryActionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is OverflowMenuButton button) button.RefreshState();
+    }
+
     private static void OnDangerActionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not OverflowMenuButton button)
-        {
-            return;
-        }
+        if (d is not OverflowMenuButton button) return;
 
         if (e.Property == DangerCommandProperty)
         {
             if (e.OldValue is ICommand oldCommand)
-            {
                 oldCommand.CanExecuteChanged -= button.OnDangerCanExecuteChanged;
-            }
-
             if (e.NewValue is ICommand newCommand)
-            {
                 newCommand.CanExecuteChanged += button.OnDangerCanExecuteChanged;
-            }
         }
 
         button.RefreshState();
     }
 
+    private void OnSecondaryCanExecuteChanged(object? sender, EventArgs e) => RefreshState();
     private void OnDangerCanExecuteChanged(object? sender, EventArgs e) => RefreshState();
 
     private void RefreshState()
     {
-        var canRun = DangerCommand is not null && DangerCommand.CanExecute(DangerCommandParameter);
-        Visibility = DangerCommand is null ? Visibility.Collapsed : Visibility.Visible;
-        TriggerButton.IsEnabled = canRun;
+        var hasSecondary = SecondaryCommand is not null;
+        var hasDanger = DangerCommand is not null;
+        var secondaryCanExecute = SecondaryCommand?.CanExecute(null) == true;
+        var dangerCanExecute = DangerCommand?.CanExecute(DangerCommandParameter) == true;
+        Visibility = (hasSecondary || hasDanger) ? Visibility.Visible : Visibility.Collapsed;
+        TriggerButton.IsEnabled = secondaryCanExecute || dangerCanExecute;
+
+        if (SecondaryActionButton is not null)
+        {
+            SecondaryActionButton.Visibility = hasSecondary ? Visibility.Visible : Visibility.Collapsed;
+            SecondaryActionButton.IsEnabled = secondaryCanExecute;
+        }
+        if (DangerActionButton is not null)
+        {
+            DangerActionButton.Visibility = hasDanger ? Visibility.Visible : Visibility.Collapsed;
+            DangerActionButton.IsEnabled = dangerCanExecute;
+        }
     }
 
     private void OnOpenMenuClick(object sender, RoutedEventArgs e)
     {
-        if (DangerCommand is null || !DangerCommand.CanExecute(DangerCommandParameter))
+        if (TriggerButton.ContextMenu is not ContextMenu menu) return;
+
+        if (SecondaryActionButton is not null)
+        {
+            SecondaryActionButton.Content = SecondaryLabel;
+            SecondaryActionButton.IsEnabled = SecondaryCommand?.CanExecute(null) == true;
+        }
+        if (DangerActionButton is not null)
+        {
+            DangerActionButton.Content = DangerLabel;
+            DangerActionButton.IsEnabled = DangerCommand?.CanExecute(DangerCommandParameter) == true;
+        }
+
+        // Re-check trigger button state so a disabled trigger doesn't open a useless menu.
+        if (SecondaryActionButton?.IsEnabled != true && DangerActionButton?.IsEnabled != true)
         {
             return;
         }
 
-        if (TriggerButton.ContextMenu is not ContextMenu menu)
-        {
-            return;
-        }
-
-        DangerActionButton.Content = DangerLabel;
-        DangerActionButton.IsEnabled = true;
         menu.Tag = this;
         menu.PlacementTarget = TriggerButton;
         menu.Placement = PlacementMode.Bottom;
         menu.IsOpen = true;
+        e.Handled = true;
+    }
+
+    private void OnSecondaryMenuClick(object sender, RoutedEventArgs e)
+    {
+        if (TriggerButton.ContextMenu?.Tag is OverflowMenuButton owner
+            && owner.SecondaryCommand?.CanExecute(null) == true)
+        {
+            owner.SecondaryCommand.Execute(null);
+        }
+        if (TriggerButton.ContextMenu is { } menu) menu.IsOpen = false;
         e.Handled = true;
     }
 
@@ -152,12 +220,7 @@ public partial class OverflowMenuButton : UserControl
         {
             owner.DangerCommand.Execute(owner.DangerCommandParameter);
         }
-
-        if (TriggerButton.ContextMenu is { } menu)
-        {
-            menu.IsOpen = false;
-        }
-
+        if (TriggerButton.ContextMenu is { } menu) menu.IsOpen = false;
         e.Handled = true;
     }
 }

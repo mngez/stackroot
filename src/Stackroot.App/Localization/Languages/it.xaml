@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,6 +116,118 @@
     <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Impostazioni siti</sys:String>
     <sys:String x:Key="Loc.Sites.NoMatch">Nessun dominio corrisponde ai filtri attuali.</sys:String>
 
+
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">Backup del sito</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Cosa includere:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">File del sito</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Database collegati</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Processi collegati</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Attività pianificate collegate</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">Archivia sito (backup e rimozione da Stackroot)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">Salva in:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">Avvia backup</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">Apri cartella</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">Archivia sito</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">Cosa accadrà</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">Solo backup</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">Il sito rimane in Stackroot dopo il backup. Nessun file, database o configurazione verrà rimosso.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">Dopo il backup, il sito verrà rimosso definitivamente da Stackroot.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">File del sito eliminati dal disco</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">Database collegati eliminati dal server</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">Processi collegati rimossi</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">Attività pianificate collegate rimosse</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Sito rimosso da Stackroot</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">Backup del sito</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">Importa sito</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">Importa sito da backup</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">Backup completato</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">Backup completato</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">{0} è stato salvato con successo.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">Backup non riuscito</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">Impossibile eseguire il backup di {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">Ripristino completato</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">{0} è stato ripristinato con successo.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">Vai alla dashboard</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">Apri cartella</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">Ripristino non riuscito</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">Impossibile ripristinare {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">Ripristino completato</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">Database &quot;{0}&quot; ripristinato da {1}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">Ripristino non riuscito</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">Impossibile ripristinare il database &quot;{0}&quot;.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">Importazione completata</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">{0} è stato importato con successo.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">Gestisci sito</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">Importazione non riuscita</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">Impossibile importare il backup del sito.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">Ripristina sito</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">Il ripristino sostituirà il contenuto attuale del sito. Questa operazione non può essere annullata.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">Sito:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">Data:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">Cosa ripristinare:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">File del sito</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">Database collegati</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">Processi collegati</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">Attività pianificate</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">Ripristina</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">Importa sito</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">Dominio:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">Conflitto di dominio — importazione bloccata:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">Questo dominio è già in uso da un altro sito. Rimuovi o rinomina quel sito prima.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">Alias:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">Conflitti di domini aggiuntivi — importazione bloccata:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">Questi domini sono già in uso da altri siti. Rimuoverli prima da quei siti.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">Conflitti di database — importazione bloccata:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">Questi database esistono già. Eliminarli o rinominarli prima per consentire l'importazione.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">Cosa importare:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">File del sito</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">Database</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">Processi</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">Attività pianificate</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">Importa</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">Report di rollback</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Rivedere attentamente tutte le modifiche. Gli elementi non presenti nel backup verranno rimossi — fare clic su 'Mantieni' per conservarli. Questa operazione non può essere annullata.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">File</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">I file del sito verranno sovrascritti con la versione di backup</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Salta copia di sicurezza dei file esistenti</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Salta copia di sicurezza dei database esistenti</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Database</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">Processi</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">Attività pianificate</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">Sostituisci</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">Ripristina</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">Elimina</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">non nel backup</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">Mantieni</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ mantenuto</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">Seleziona per eliminare questo elemento</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">Analisi del backup in corso…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">Questo backup non contiene contenuto ripristinabile.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">Ripristina</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">Cosa succederà</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">verrà eliminato</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">verrà sostituito</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">verrà aggiunto</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">verrà mantenuto</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">I file del sito verranno sostituiti</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">Spazio su disco libero</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">Estrazione</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">Copie di sicurezza</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">Totale</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">Elimina anche i file del sito dal disco</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">Elimina anche i database collegati</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">Elimina anche le attività pianificate collegate</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">Elimina anche i processi collegati</sys:String>
+
     <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">Dashboard del sito</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">Percorsi SSL</sys:String>
@@ -137,6 +249,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">Tutte le attività</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Apri la pagina completa delle attività pianificate</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">Copia password</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">Ripristina</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">Ripristina da file…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">Ripristina il sito da un file di backup non elencato di seguito</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ Crea backup</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">Backup</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">Backup del sito archiviati nella cartella di backup configurata</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">Nessun backup trovato per questo sito.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">Annulla backup</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">Annulla ripristino</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">Backup del sito errato</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">Questo backup appartiene a &#39;{0}&#39; ({1}), non a &#39;{2}&#39;.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">Per importare un backup da un altro sito, usa Importa nella barra degli strumenti dei siti — crea un nuovo sito e controlla i conflitti prima di procedere.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">Elimina backup</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">Eliminare &#39;{0}&#39;? Questa azione non può essere annullata.</sys:String>
     <!-- ── PHP ── -->
     <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
     <sys:String x:Key="Loc.Php.Subtitle">Gestisci le versioni di PHP installate e l'ambiente di runtime FastCGI</sys:String>
@@ -255,6 +381,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Ripristina da backup</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">Dominio app</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">Percorso WWW</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">Cartella backup</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Editor preferito</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Percorso editor personalizzato</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Comportamento alla chiusura</sys:String>

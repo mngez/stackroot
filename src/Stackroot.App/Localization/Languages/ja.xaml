@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,7 +116,119 @@
         <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">サイト設定</sys:String>
         <sys:String x:Key="Loc.Sites.NoMatch">現在のフィルターに一致するドメインはありません。</sys:String>
     
-            <!-- ── Site Manage ── -->
+        
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">サイトのバックアップ</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">含めるもの：</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">サイトファイル</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">リンクされたデータベース</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">リンクされたプロセス</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">リンクされたスケジュールタスク</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">サイトをアーカイブ（バックアップしてStackrootから削除）</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">保存先：</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">バックアップ開始</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">フォルダを開く</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">サイトをアーカイブ</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">実行される内容</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">バックアップのみ</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">バックアップ後もサイトはStackrootに残ります。ファイル、データベース、設定は削除されません。</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">バックアップ後、サイトはStackrootから完全に削除されます。</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">サイトファイルをディスクから削除</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">リンクされたデータベースをサーバーから削除</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">リンクされたプロセスを削除</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">リンクされたスケジュールタスクを削除</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Stackrootからサイトを削除</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">サイトのバックアップ</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">サイトのインポート</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">バックアップからサイトをインポート</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">バックアップ完了</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">バックアップ完了</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">{0} のバックアップが完了しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">バックアップ失敗</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">{0} のバックアップに失敗しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">復元完了</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">{0} の復元が完了しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">ダッシュボードへ</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">フォルダを開く</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">復元失敗</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">{0} の復元に失敗しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">復元完了</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">データベース &quot;{0}&quot; を {1} から復元しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">復元失敗</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">データベース &quot;{0}&quot; の復元に失敗しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">インポート完了</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">{0} のインポートが完了しました。</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">サイトを管理</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">インポート失敗</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">サイトのバックアップをインポートできませんでした。</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">サイトを復元</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">復元すると現在のサイトコンテンツが置き換えられます。この操作は元に戻せません。</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">サイト：</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">日付：</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">復元する項目：</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">サイトファイル</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">リンクされたデータベース</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">リンクされたプロセス</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">スケジュールされたタスク</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">復元</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">サイトのインポート</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">ドメイン：</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">ドメインの競合 — インポートがブロックされています:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">このドメインは別のサイトで使用中です。まずそのサイトを削除または名前変更してください。</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">エイリアス:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">追加ドメインの競合 — インポートがブロックされています:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">これらのドメインはすでに他のサイトで使用されています。先にそれらのサイトから削除してください。</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">データベースの競合 — インポートがブロックされています:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">これらのデータベースはすでに存在します。インポートを許可するには、先に削除または名前を変更してください。</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">インポートする項目：</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">サイトファイル</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">データベース</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">プロセス</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">スケジュールされたタスク</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">インポート</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">ロールバックレポート</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">すべての変更を注意深く確認してください。バックアップにないアイテムは削除されます — 保持するには「保持」をクリックしてください。この操作は元に戻せません。</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">ファイル</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">サイトファイルはバックアップバージョンで上書きされます</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">既存ファイルの安全コピーをスキップ</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">既存データベースの安全コピーをスキップ</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">データベース</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">プロセス</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">スケジュールタスク</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">置換</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">復元</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">削除</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">バックアップにありません</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">保持</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ 保持済み</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">このアイテムを削除するにはチェックしてください</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">バックアップを分析中…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">このバックアップには復元可能なコンテンツが含まれていません。</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">復元</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">処理の内容</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">削除されます</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">置き換えられます</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">追加されます</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">保持されます</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">サイトファイルが置き換えられます</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">必要な空きディスク容量</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">展開</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">安全コピー</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">合計</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">サイトファイルをディスクから削除する</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">リンクされたデータベースも削除する</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">リンクされたスケジュールタスクも削除する</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">リンクされたプロセスも削除する</sys:String>
+
+    <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">サイトダッシュボード</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">SSLパス</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslTooltip">ローカルの dev.crt および dev.key のパス</sys:String>
@@ -137,6 +249,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">すべてのタスク</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">スケジュール済みタスクの完全なページを開く</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">パスワードをコピー</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">復元</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">ファイルから復元…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">以下にリストされていないバックアップファイルからサイトを復元</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ バックアップを作成</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">バックアップ</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">設定されたバックアップフォルダに保存されたサイトバックアップ</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">このサイトのバックアップが見つかりません。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">バックアップをキャンセル</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">復元をキャンセル</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">サイトが異なるバックアップ</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">このバックアップは &#39;{0}&#39; ({1}) のものであり、&#39;{2}&#39; のものではありません。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">別のサイトのバックアップを取り込むには、サイトツールバーの「インポート」を使用してください — 新しいサイトが作成され、処理前に競合が確認されます。</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">バックアップを削除</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">&#39;{0}&#39; を削除しますか？この操作は元に戻せません。</sys:String>
 
         <!-- ── PHP ── -->
         <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -257,6 +383,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">バックアップから復元</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">アプリドメイン</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW パス</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">バックアップフォルダー</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">推奨エディタ</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">カスタムエディタのパス</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">閉じる時の動作</sys:String>

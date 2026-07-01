@@ -5,6 +5,7 @@ namespace Stackroot.App.ViewModels;
 public sealed class SessionActivityEntryViewModel : ViewModelBase
 {
     private string _message = string.Empty;
+    private string? _progressDetail;
     private SessionActivityTone _tone;
 
     public required Guid Id { get; init; }
@@ -17,6 +18,18 @@ public sealed class SessionActivityEntryViewModel : ViewModelBase
         set => SetProperty(ref _message, value);
     }
 
+    public string? ProgressDetail
+    {
+        get => _progressDetail;
+        set
+        {
+            if (SetProperty(ref _progressDetail, value))
+            {
+                RaisePropertyChanged(nameof(HasProgressDetail));
+            }
+        }
+    }
+
     public SessionActivityTone Tone
     {
         get => _tone;
@@ -26,6 +39,7 @@ public sealed class SessionActivityEntryViewModel : ViewModelBase
             {
                 RaisePropertyChanged(nameof(ToneColor));
                 RaisePropertyChanged(nameof(IsProgress));
+                RaisePropertyChanged(nameof(HasProgressDetail));
             }
         }
     }
@@ -33,6 +47,8 @@ public sealed class SessionActivityEntryViewModel : ViewModelBase
     public string TimeLabel => Timestamp.LocalDateTime.ToString("HH:mm");
 
     public bool IsProgress => Tone == SessionActivityTone.Progress;
+
+    public bool HasProgressDetail => IsProgress && !string.IsNullOrEmpty(_progressDetail);
 
     public string ToneColor => Tone switch
     {

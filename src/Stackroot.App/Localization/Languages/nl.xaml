@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,7 +116,119 @@
         <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Site-instellingen</sys:String>
         <sys:String x:Key="Loc.Sites.NoMatch">Geen domeinen komen overeen met de huidige filters.</sys:String>
     
-            <!-- ── Site Manage ── -->
+        
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">Site back-uppen</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Wat opnemen:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">Sitebestanden</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Gekoppelde databases</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Gekoppelde processen</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Gekoppelde geplande taken</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">Site archiveren (back-up maken en verwijderen uit Stackroot)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">Opslaan in:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">Back-up maken</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">Map openen</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">Site archiveren</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">Wat er gebeurt</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">Alleen back-up</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">De site blijft in Stackroot na de back-up. Er worden geen bestanden, databases of configuraties verwijderd.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">Na de back-up wordt de site definitief verwijderd uit Stackroot.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">Sitebestanden verwijderd van schijf</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">Gekoppelde databases verwijderd van server</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">Gekoppelde processen verwijderd</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">Gekoppelde geplande taken verwijderd</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Site verwijderd uit Stackroot</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">Site back-uppen</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">Site importeren</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">Site importeren vanuit back-up</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">Back-up voltooid</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">Back-up voltooid</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">Back-up van {0} geslaagd.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">Back-up mislukt</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">Kan geen back-up maken van {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">Herstel voltooid</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">{0} is succesvol hersteld.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">Naar dashboard</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">Map openen</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">Herstel mislukt</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">Kan {0} niet herstellen.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">Herstel voltooid</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">Database &quot;{0}&quot; hersteld van {1}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">Herstel mislukt</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">Kan database &quot;{0}&quot; niet herstellen.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">Importeren voltooid</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">{0} is succesvol geïmporteerd.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">Site beheren</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">Importeren mislukt</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">Kan de back-up van de site niet importeren.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">Site herstellen</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">Herstellen vervangt de huidige site-inhoud. Dit kan niet ongedaan worden gemaakt.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">Site:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">Datum:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">Wat herstellen:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">Sitebestanden</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">Gekoppelde databases</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">Gekoppelde processen</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">Geplande taken</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">Herstellen</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">Site importeren</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">Domein:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">Domeinconflict — import geblokkeerd:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">Dit domein is al in gebruik door een andere site. Verwijder of hernoem die site eerst.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">Aliassen:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">Conflicten met extra domeinen — importeren geblokkeerd:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">Deze domeinen worden al gebruikt door andere sites. Verwijder ze eerst van die sites.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">Databaseconflicten — importeren geblokkeerd:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">Deze databases bestaan al. Verwijder of hernoem ze eerst om het importeren mogelijk te maken.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">Wat importeren:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">Sitebestanden</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">Databases</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">Processen</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">Geplande taken</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">Importeren</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">Terugrolrapport</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Controleer alle wijzigingen zorgvuldig. Items die niet in de back-up staan, worden verwijderd — klik op 'Bewaren' om ze te behouden. Dit kan niet ongedaan worden gemaakt.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">Bestanden</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">Sitebestanden worden overschreven met de back-upversie</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Veiligheidskopie van bestaande bestanden overslaan</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Veiligheidskopie van bestaande databases overslaan</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Databases</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">Processen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">Geplande taken</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">Vervangen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">Herstellen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">Verwijderen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">niet in back-up</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">Bewaren</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ bewaard</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">Aanvinken om dit item te verwijderen</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">Back-up wordt geanalyseerd…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">Deze back-up bevat geen herstelbare inhoud.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">Herstellen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">Wat er gaat gebeuren</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">wordt verwijderd</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">wordt vervangen</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">wordt toegevoegd</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">wordt bewaard</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">Sitebestanden worden vervangen</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">Vrije schijfruimte</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">Uitpakken</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">Veiligheidskopieën</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">Totaal</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">Verwijder ook sitebestanden van schijf</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">Verwijder ook gekoppelde databases</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">Verwijder ook gekoppelde geplande taken</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">Verwijder ook gekoppelde processen</sys:String>
+
+    <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">Site dashboard</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">SSL-paden</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslTooltip">Lokale dev.crt- en dev.key-paden</sys:String>
@@ -137,6 +249,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">Alle taken</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Open de volledige pagina met geplande taken</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">Wachtwoord kopiëren</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">Herstellen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">Herstellen uit bestand…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">Site herstellen vanuit een back-upbestand dat hieronder niet vermeld staat</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ Back-up maken</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">Back-ups</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">Sitebackups opgeslagen in de geconfigureerde back-upmap</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">Geen back-ups gevonden voor deze site.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">Back-up annuleren</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">Herstel annuleren</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">Verkeerde sitebackup</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">Deze backup behoort toe aan &#39;{0}&#39; ({1}), niet aan &#39;{2}&#39;.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">Om een backup van een andere site te importeren, gebruik Importeren in de sitewerkbalk — het maakt een nieuwe site aan en controleert op conflicten.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">Backup verwijderen</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">&#39;{0}&#39; verwijderen? Deze actie kan niet ongedaan worden gemaakt.</sys:String>
 
         <!-- ── PHP ── -->
         <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -257,6 +383,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Herstellen van backup</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">App domein</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW-pad</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">Back-upmap</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Voorkeurseditor</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Aangepast editorpad</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Sluitgedrag</sys:String>

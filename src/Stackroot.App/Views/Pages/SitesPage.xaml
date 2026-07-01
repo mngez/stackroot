@@ -112,6 +112,11 @@
                     Padding="16,8"
                     Content="{DynamicResource Loc.Sites.AddDomain}"
                     Command="{Binding OpenAddSiteCommand}" />
+            <Button Margin="8,0,0,0"
+                    Padding="14,8"
+                    ToolTip="{DynamicResource Loc.Sites.ImportTooltip}"
+                    Content="{DynamicResource Loc.Sites.ImportSite}"
+                    Command="{Binding ImportSiteCommand}" />
 
             <Border DockPanel.Dock="Right"
                     Style="{StaticResource SitesMetaBadgeStyle}">
@@ -394,7 +399,7 @@
                                                               DisplayMemberPath="Label"
                                                               SelectedValuePath="Id"
                                                               SelectedValue="{Binding SelectedPhpVersionId}"
-                                                              IsEnabled="{Binding RequiresPhp}" />
+                                                              IsEnabled="{Binding IsPhpEnabled}" />
 
                                                     <ComboBox Width="118"
                                                               Margin="0,0,6,0"
@@ -402,7 +407,8 @@
                                                               ItemsSource="{Binding DataContext.NodeVersions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                               DisplayMemberPath="Label"
                                                               SelectedValuePath="Id"
-                                                              SelectedValue="{Binding SelectedNodeVersionId}" />
+                                                              SelectedValue="{Binding SelectedNodeVersionId}"
+                                                              IsEnabled="{Binding IsNotBackingUp}" />
 
                                                     <Button Margin="0,0,6,0"
                                                             Style="{StaticResource StackrootInlineButtonStyle}"
@@ -423,13 +429,13 @@
                                                     <Button Style="{StaticResource StackrootInlineStopButtonStyle}"
                                                             Content="{Binding ToggleButtonLabel}"
                                                             Command="{Binding ToggleEnabledCommand}"
-                                                            IsEnabled="{Binding IsNotToggling}"
+                                                            IsEnabled="{Binding IsRowActionEnabled}"
                                                             Visibility="{Binding SiteIsEnabled, Converter={StaticResource BoolToVis}}" />
 
                                                     <Button Margin="0,0,6,0"
                                                             Content="{Binding ToggleButtonLabel}"
                                                             Command="{Binding ToggleEnabledCommand}"
-                                                            IsEnabled="{Binding IsNotToggling}">
+                                                            IsEnabled="{Binding IsRowActionEnabled}">
                                                         <Button.Style>
                                                             <Style TargetType="Button"
                                                                    BasedOn="{StaticResource StackrootInlinePrimaryButtonStyle}">
@@ -443,11 +449,12 @@
                                                         </Button.Style>
                                                     </Button>
 
-                                                    <controls:OverflowMenuButton DangerLabel="{DynamicResource Loc.Common.Delete}"
+                                                    <controls:OverflowMenuButton SecondaryLabel="{DynamicResource Loc.Sites.BackupTooltip}"
+                                                                                 SecondaryCommand="{Binding BackupCommand}"
+                                                                                 DangerLabel="{DynamicResource Loc.Common.Delete}"
                                                                                  DangerCommand="{Binding DeleteCommand}"
                                                                                  ButtonWidth="30"
-                                                                                 ButtonHeight="26"
-                                                                                 Visibility="{Binding SiteIsDisabled, Converter={StaticResource BoolToVis}}" />
+                                                                                 ButtonHeight="26" />
                                                 </StackPanel>
                                             </Grid>
                                         </Border>

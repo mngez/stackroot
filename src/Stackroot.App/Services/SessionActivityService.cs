@@ -85,8 +85,15 @@ public sealed class SessionActivityService : ViewModelBase
 
     public void Fail(Guid id, string message) => Complete(id, message, SessionActivityTone.Error);
 
-    public void UpdateProgress(Guid id, string message) =>
-        RunOnUi(() => UpdateEntry(id, message, SessionActivityTone.Progress));
+    public void UpdateProgress(Guid id, string detail) =>
+        RunOnUi(() =>
+        {
+            var entry = Items.FirstOrDefault(item => item.Id == id);
+            if (entry is not null && entry.Tone == SessionActivityTone.Progress)
+            {
+                entry.ProgressDetail = detail;
+            }
+        });
 
     public void Log(string message, SessionActivityTone tone = SessionActivityTone.Info)
     {
@@ -162,6 +169,10 @@ public sealed class SessionActivityService : ViewModelBase
 
         entry.Message = message;
         entry.Tone = tone;
+        if (tone != SessionActivityTone.Progress)
+        {
+            entry.ProgressDetail = null;
+        }
     }
 
     private void BumpUnread()

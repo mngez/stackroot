@@ -14,6 +14,9 @@
             Click="OnOpenMenuClick">
         <Button.ContextMenu>
             <ContextMenu>
+                <Button x:Name="SecondaryActionButton"
+                        Style="{StaticResource StackrootContextMenuButtonStyle}"
+                        Click="OnSecondaryMenuClick" />
                 <Button x:Name="DangerActionButton"
                         Style="{StaticResource StackrootDangerContextMenuButtonStyle}"
                         Click="OnDangerMenuClick" />

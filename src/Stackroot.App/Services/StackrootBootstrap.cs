@@ -198,6 +198,17 @@ public static class StackrootBootstrap
         services.AddTransient<ScheduledTaskViewModel>();
         services.AddTransient<ScheduledTasksPage>();
         services.AddTransient<CronTaskDialog>();
+        services.AddSingleton<BackgroundAlertService>();
+        services.AddSingleton<SiteBackupTracker>();
+        services.AddSingleton<SiteBackupService>(provider => new SiteBackupService(
+            provider.GetRequiredService<DatabaseManager>(),
+            provider.GetRequiredService<StackrootPaths>()));
+        services.AddSingleton<SiteRestoreService>(provider => new SiteRestoreService(
+            provider.GetRequiredService<DatabaseManager>(),
+            provider.GetRequiredService<GlobalProcessManager>(),
+            provider.GetRequiredService<TaskSchedulerService>(),
+            provider.GetRequiredService<SiteManager>(),
+            provider.GetRequiredService<StackrootPaths>()));
 
         services.AddSingleton<SiteManager>(provider => new SiteManager(
             provider.GetRequiredService<SiteStore>(),

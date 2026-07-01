@@ -128,7 +128,8 @@ public static class PseudoConsoleCapture
             outputStream = new FileStream(outputRead, FileAccess.Read);
             outputReader = new StreamReader(outputStream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
 
-            readTask = Task.Run(() => PumpOutput(outputReader, logWriter, outputBuilder));
+            var capturedReader = outputReader;
+            readTask = Task.Run(() => PumpOutput(capturedReader, logWriter, outputBuilder));
 
             var (exitCode, error) = WaitForProcessExit(processHandle, cancelToken, process);
             var cancelled = cancelToken.IsCancellationRequested;

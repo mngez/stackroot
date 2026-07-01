@@ -10,6 +10,7 @@ public partial class SiteManagePage : System.Windows.Controls.UserControl
         viewModel.Load(siteId);
         DataContext = viewModel;
         InitializeComponent();
+        Unloaded += (_, _) => viewModel.Dispose();
     }
 
     private void OnQuickActionViewLogClick(object sender, MouseButtonEventArgs e)

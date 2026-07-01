@@ -168,6 +168,12 @@
                                                 <TextBlock Foreground="{Binding ToneColor}"
                                                            Text="{Binding Message}"
                                                            TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,3,0,0"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource StackrootTextMutedBrush}"
+                                                           Text="{Binding ProgressDetail}"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{Binding HasProgressDetail, Converter={StaticResource BoolToVis}}" />
                                                 <ProgressBar Margin="0,8,0,0"
                                                              Height="3"
                                                              IsIndeterminate="True"

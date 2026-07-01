@@ -140,7 +140,6 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
             var settings = _settingsStore.Load();
             var engine = laravelConfig?.DatabaseEngine ?? settings.Databases.ActiveSqlEngine ?? SqlEngine.Mysql;
 
-            MysqlDatabaseClient.CreateDatabase(_registry, settings, engine, dbName);
             _databaseManager.Create(dbName, engine, site.Id);
 
             onMessage(new InstallerMessage { Kind = InstallerMessageKind.Success, Text = $"Database '{dbName}' created." });

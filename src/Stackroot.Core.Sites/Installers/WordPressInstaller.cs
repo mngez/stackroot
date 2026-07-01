@@ -103,7 +103,6 @@ public sealed class WordPressSiteInstaller : ISiteInstaller
         var creds = engine == SqlEngine.Mariadb ? settings.Databases.Mariadb : settings.Databases.Mysql;
 
         onMessage(new InstallerMessage { Kind = InstallerMessageKind.Info, Text = "Creating database '" + dbName + "'…" });
-        MysqlDatabaseClient.CreateDatabase(_registry, settings, engine, dbName);
         try
         {
             _databaseManager.Create(dbName, engine, site.Id);

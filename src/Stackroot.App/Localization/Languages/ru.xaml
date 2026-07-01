@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,7 +116,119 @@
         <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Настройки сайтов</sys:String>
         <sys:String x:Key="Loc.Sites.NoMatch">Нет доменов, соответствующих текущим фильтрам.</sys:String>
 
-        <!-- ── Site Manage ── -->
+    
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">Резервное копирование сайта</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Что включить:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">Файлы сайта</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Связанные базы данных</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Связанные процессы</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Связанные запланированные задачи</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">Архивировать сайт (создать резервную копию и удалить из Stackroot)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">Сохранить в:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">Создать резервную копию</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">Открыть папку</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">Архивировать сайт</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">Что произойдёт</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">Только резервная копия</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">Сайт останется в Stackroot после создания резервной копии. Файлы, базы данных и конфигурация не будут удалены.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">После создания резервной копии сайт будет навсегда удалён из Stackroot.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">Файлы сайта удалены с диска</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">Связанные базы данных удалены с сервера</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">Связанные процессы удалены</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">Связанные запланированные задачи удалены</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Сайт удалён из Stackroot</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">Резервное копирование сайта</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">Импортировать сайт</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">Импортировать сайт из резервной копии</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">Резервное копирование завершено</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">Резервное копирование завершено</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">Резервная копия {0} создана успешно.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">Ошибка резервного копирования</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">Не удалось создать резервную копию {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">Восстановление завершено</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">{0} успешно восстановлен.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">Перейти на панель управления</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">Открыть папку</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">Ошибка восстановления</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">Не удалось восстановить {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">Восстановление завершено</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">База данных &quot;{0}&quot; восстановлена из {1}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">Ошибка восстановления</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">Не удалось восстановить базу данных &quot;{0}&quot;.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">Импорт завершён</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">{0} успешно импортирован.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">Управление сайтом</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">Ошибка импорта</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">Не удалось импортировать резервную копию сайта.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">Восстановить сайт</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">Восстановление заменит текущее содержимое сайта. Это действие нельзя отменить.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">Сайт:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">Дата:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">Что восстановить:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">Файлы сайта</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">Связанные базы данных</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">Связанные процессы</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">Запланированные задачи</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">Восстановить</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">Импортировать сайт</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">Домен:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">Конфликт домена — импорт заблокирован:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">Этот домен уже используется другим сайтом. Сначала удалите или переименуйте этот сайт.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">Псевдонимы:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">Конфликты дополнительных доменов — импорт заблокирован:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">Эти домены уже используются другими сайтами. Сначала удалите их из этих сайтов.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">Конфликты баз данных — импорт заблокирован:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">Эти базы данных уже существуют. Сначала удалите их или переименуйте, чтобы разрешить импорт.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">Что импортировать:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">Файлы сайта</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">Базы данных</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">Процессы</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">Запланированные задачи</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">Импортировать</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">Отчёт о восстановлении</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Тщательно проверьте все изменения. Элементы, отсутствующие в резервной копии, будут удалены — нажмите «Сохранить», чтобы их оставить. Это нельзя отменить.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">Файлы</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">Файлы сайта будут перезаписаны версией из резервной копии</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Пропустить резервную копию существующих файлов</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Пропустить резервную копию существующих баз данных</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Базы данных</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">Процессы</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">Запланированные задачи</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">Заменить</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">Восстановить</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">Удалить</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">отсутствует в резервной копии</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">Сохранить</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ сохранён</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">Отметьте, чтобы удалить этот элемент</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">Анализ резервной копии…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">Эта резервная копия не содержит восстанавливаемого содержимого.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">Восстановить</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">Что произойдёт</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">будет удалено</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">будет заменено</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">будет добавлено</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">будет сохранён</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">Файлы сайта будут заменены</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">Свободное место на диске</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">Распаковка</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">Резервные копии</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">Итого</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">Также удалить файлы сайта с диска</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">Также удалить связанные базы данных</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">Также удалить связанные запланированные задачи</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">Также удалить связанные процессы</sys:String>
+
+    <!-- ── Site Manage ── -->
         <sys:String x:Key="Loc.SiteManage.Title">Панель сайта</sys:String>
         <sys:String x:Key="Loc.SiteManage.SslPaths">Пути SSL</sys:String>
         <sys:String x:Key="Loc.SiteManage.SslTooltip">Локальные пути к dev.crt и dev.key</sys:String>
@@ -137,6 +249,20 @@
         <sys:String x:Key="Loc.SiteManage.AllTasks">Все задачи</sys:String>
         <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Открыть полную страницу запланированных задач</sys:String>
         <sys:String x:Key="Loc.SiteManage.CopyPassword">Копировать пароль</sys:String>
+        <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">Восстановить</sys:String>
+        <sys:String x:Key="Loc.SiteManage.RestoreFromFile">Восстановить из файла…</sys:String>
+        <sys:String x:Key="Loc.SiteManage.RestoreTooltip">Восстановить сайт из файла резервной копии, которого нет в списке ниже</sys:String>
+        <sys:String x:Key="Loc.SiteManage.CreateBackup">+ Создать резервную копию</sys:String>
+        <sys:String x:Key="Loc.SiteManage.BackupsTitle">Резервные копии</sys:String>
+        <sys:String x:Key="Loc.SiteManage.BackupsHint">Резервные копии сайта в настроенной папке резервных копий</sys:String>
+        <sys:String x:Key="Loc.SiteManage.NoBackups">Резервные копии для этого сайта не найдены.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">Отменить резервное копирование</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">Отменить восстановление</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">Неверная резервная копия сайта</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">Эта резервная копия принадлежит &#39;{0}&#39; ({1}), а не &#39;{2}&#39;.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">Чтобы импортировать резервную копию с другого сайта, используйте «Импорт» на панели сайтов — создаётся новый сайт с проверкой конфликтов.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">Удалить резервную копию</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">Удалить &#39;{0}&#39;? Это действие нельзя отменить.</sys:String>
     
             <!-- ── PHP ── -->
     <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -256,6 +382,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Восстановить из бэкапа</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">Домен приложения</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">Путь WWW</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">Папка резервных копий</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Предпочитаемый редактор</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Путь к кастомному редактору</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Поведение при закрытии</sys:String>

@@ -95,6 +95,44 @@
                             Content="{DynamicResource Loc.Common.UseDefault}"
                             Command="{Binding UseDefaultWwwCommand}" />
 
+                    <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.BackupsPath}" Foreground="{StaticResource StackrootTextMutedBrush}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Margin="0,0,8,0"
+                                 Padding="10,6"
+                                 Text="{Binding BackupsPath, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="1"
+                                Width="90"
+                                Command="{Binding BrowseBackupsPathCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="14"
+                                       Height="14"
+                                       Margin="0,0,4,0"
+                                       VerticalAlignment="Center"
+                                       Source="{x:Static helpers:StackrootImages.FolderIcon}"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{DynamicResource Loc.Common.Browse}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                               FontSize="12"
+                               Text="{Binding DefaultBackupsPath, StringFormat=Default: {0}}" />
+                    <Button Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="{StaticResource StackrootAccentTextBrush}"
+                            Content="{DynamicResource Loc.Common.UseDefault}"
+                            Command="{Binding UseDefaultBackupsPathCommand}" />
+
                     <TextBlock Margin="0,16,0,0" Text="{DynamicResource Loc.GeneralSettings.PreferredEditor}" Foreground="{StaticResource StackrootTextMutedBrush}" />
                     <ComboBox Margin="0,6,0,0"
                               Padding="8,4"

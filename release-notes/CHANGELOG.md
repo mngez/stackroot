@@ -1,4 +1,242 @@
-﻿# Stackroot release history
+﻿## Stackroot 0.3.0
+
+Download and run `Stackroot-Setup-0.3.0.exe` on **Windows 10/11 (64-bit)**. Update over **0.2.9** — sites, databases, and settings are kept.
+
+### Site backup
+
+Back up any site with a single action — from the secondary action button on the site row or the **Backup** button on the site Manage page.
+
+- Choose what to include: **site files**, **databases**, **processes**, and **scheduled tasks**
+- **Archive site** mode — back up then delete the site in one step (files, databases, processes, and tasks are all removed after a successful backup)
+- Progress is tracked in the activity tray; the UI stays responsive while large sites compress
+- Backup is saved as a `.zip` file to the configured backups folder (default: `{DataRoot}/backups/sites/`)
+- A **"Backup in progress"** banner locks site actions while the backup runs to avoid inconsistent state
+
+The **Manage** page lists all backups found for the current site, sorted by date, with file size and timestamp.
+
+### Site restore
+
+From within the site's **Manage** page you can roll a site back to any of its own backups. Two entry points, same flow:
+
+- **From the backup list** — click Restore on any entry; the backup is already tied to this site, no conflict check needed
+- **Restore from backup** — browse to any `.zip` file; if the backup belongs to a different site, a warning is shown before proceeding
+
+Before the restore runs, Stackroot shows a **delta preview** — a per-item diff across site files, databases, processes, and scheduled tasks:
+
+- **Restore** — item is in the backup but not currently present; will be written back
+- **Replace** — item exists and will be overwritten with the backup version
+- **Delete** — item exists now but is not in the backup; will be removed
+
+Every item can be toggled individually. Uncheck a **Delete** item to keep it; uncheck a **Restore** or **Replace** item to skip it.
+
+After confirming, the site is overwritten in place — files replaced, databases restored, processes and tasks reset to the backup state. nginx is reloaded automatically.
+
+### Site import
+
+Import a backup as a **new site** — from the sites toolbar, pick a `.zip` file to import.
+
+The dialog shows what the backup contains and checks for conflicts before allowing the import. All conflicts must be resolved manually before the import can proceed:
+
+- **Domain conflict** — the site's domain already exists; the conflicting site must be removed or renamed first
+- **Alias conflicts** — one or more domain aliases from the backup already exist on another site; they must be removed from that site first
+- **Database conflicts** — one or more database names are already in use; they must be renamed or dropped first
+
+Once all conflicts are cleared, the import creates the new site and restores its files, databases, processes, and scheduled tasks.
+
+### Enhanced site deletion
+
+The **Remove site** dialog now offers fine-grained control over what gets deleted alongside the site entry:
+
+- **Also delete site files** — removes the site folder on disk
+- **Also delete databases** — drops linked databases from the server
+- **Also delete processes** — removes linked supervisor processes
+- **Also delete scheduled tasks** — removes linked cron tasks
+
+All options default to off; previously only "delete files" was available.
+
+### Custom backups directory
+
+Set a custom folder for all backups under **General Settings → Backups folder**.
+
+- Applies to both site backups and database backups
+- Leave empty to use the default path (`{DataRoot}/backups`)
+- **Migration**: on first launch, existing database backup files in `{DataRoot}/backups/` are automatically moved into `{DataRoot}/backups/databases/` to match the new layout
+
+### Data reliability
+
+- **File read retry** — settings and registry reads now retry up to 4 times (25 ms apart) when a concurrent write briefly holds an exclusive lock, preventing spurious read errors under parallel I/O
+
+### Upgrading from 0.2.9
+
+Your sites, databases, and settings are preserved. On first launch, database backup files are migrated to the new subfolder layout automatically. No manual steps required.
+
+---
+
+## Stackroot 0.2.9
+
+Download and run `Stackroot-Setup-0.2.9.exe` on **Windows 10/11 (64-bit)**. Update over **0.2.8** — sites, databases, and settings are kept.
+
+### Multi-language UI
+
+Stackroot now ships in **14 languages**. Switch language from **General Settings → Language** — the entire interface updates instantly without restarting.
+
+Available languages: English, Arabic , Deutsch, Español, Français, Italiano, 日本語, 한국어, Nederlands, Polski, Português, Русский, Türkçe, 简体中文.
+
+
+
+### Nginx stability fix
+
+Nginx no longer crashes with "Nginx did not start listening" on restart or recovery. 
+
+### Antivirus compatibility
+
+- **Bin shims are no longer recreated unnecessarily** — previously, every app launch deleted and rewrote all command shims in the `runtime\bin` folder (`php80.cmd`, `git.cmd`, etc.), which caused antivirus software to treat them as new files and clear any exceptions you had added. Shims are now updated only when their content actually changes (e.g. after installing or updating a package). Antivirus exceptions survive normal restarts and stay in place until the underlying tool changes.
+
+
+
+## Stackroot 0.2.8
+
+Download and run `Stackroot-Setup-0.2.8.exe` on **Windows 10/11 (64-bit)**. Update over **0.2.7** — sites, databases, and settings are kept.
+
+### PHP worker pool
+
+- **Multiple workers per PHP version** — each PHP version now runs a pool of workers (default: 2) instead of a single process. nginx load-balances requests across the pool, so a worker recycling after its request limit causes no visible downtime.
+- **Instant failover on recycle** — when a worker exits (normal php-cgi recycling after 10 000 requests), nginx immediately routes to its siblings and the exited slot is respawned. No dropped requests, no restart notification.
+- **Configurable pool size** — in **PHP → Runtime settings**, set the number of workers per version (1–8). Increase for high request-concurrency workloads; leave at 2 for typical dev use.
+- **Surviving a crash** — if a worker exits unexpectedly, the pool self-heals: the supervisor detects the exit and starts a replacement.
+
+### HTTPS certificates
+
+- **No repeated administrator prompts when adding sites** — previously, adding a site triggered two UAC prompts (clean old CA, install new CA) when **machine-wide SSL trust** was enabled. Stackroot now re-signs the server certificate using the existing trusted CA instead of generating a new one, so no trust changes are needed and no prompts appear.
+- Administrator approval is still required the first time you trust the CA, and once a year when the CA renews — both of which are expected.
+
+### Stability and reliability
+
+- **"1 operation running" no longer gets stuck** — the activity row for a service start is now reliably closed when the service stops or fails to start, instead of remaining open indefinitely.
+- **No spurious "Starting…" notifications** — a short port-probe timeout no longer incorrectly marks a healthy running service as starting again.
+- **PHP memory reporting includes all workers** — the Performance page now reports combined memory for the whole worker pool instead of only the first process.
+
+### Upgrading from 0.2.7
+
+Your sites, databases, and settings are preserved. On first launch after upgrading, each PHP version starts with a pool of 2 workers. If you changed the **PHP port** in Runtime settings, the pool occupies a contiguous block of ports starting from that base (e.g. base 9000 with 2 workers uses 9000 and 9001 per version). Adjust **Runtime settings → Workers per version** if needed.
+
+
+
+
+## Stackroot 0.2.7
+
+Download and run `Stackroot-Setup-0.2.7.exe` on **Windows 10/11 (64-bit)**. Update over **0.2.6** — sites, databases, and settings are kept.
+
+### Test DNS
+
+- **Resolve to IP** — choose which address local site names resolve to (default `127.0.0.1`, e.g. your LAN IP). NRPT still sends queries to `127.0.0.1:53` on this PC; the hosts file uses the same IP.
+- **Configurable suffixes** — under **Suffixes and recovery**, choose which suffixes route to Stackroot DNS (default `.test`).
+- **Safe vs public suffixes** — reserved suffixes like `.test` resolve any matching name to your resolve IP. Real public suffixes only resolve **your Stackroot site names** locally; other names keep using normal internet DNS.
+- **Stackroot DNS Helper service** — Test DNS runs in a Windows background service (`StackrootDnsHelper`). NRPT and the 127.0.0.1:53 listener stay active when you quit the app; turn Test DNS off in settings to clean routing through the helper.
+- **Starts with Windows** — when Test DNS is enabled, the helper starts immediately at boot (not on Windows’ delayed-start schedule), so dev DNS is ready as soon as the PC comes up instead of leaving a gap with no listener after reboot.
+- **Administrator approval** — Windows may ask once when you first enable Test DNS, to register or repair the helper service. Day-to-day site changes and quitting the app do not repeat that prompt.
+- **DNS stays in sync with sites** — saving or editing a site updates the helper config; the service reloads it automatically.
+- **Log DNS queries (optional)** — enable **Log DNS queries to file** to append queries to `Logs\test-dns-queries.jsonl` (off by default).
+- **Recovery command** — if routing breaks, **Suffixes and recovery** includes a one-click copy of a PowerShell cleanup command (stop/remove the helper service and Stackroot NRPT rules). Run it in an elevated PowerShell window.
+
+### Startup and dashboard
+
+- **Smoother first launch after upgrade** — less UI churn and scroll jank while services start; Test DNS and service rows no longer flicker through false “stopped” states during startup.
+- **Lighter background polling** — dashboard status refreshes read cached Test DNS state instead of running slow Windows probes every few seconds.
+- **Scheduled tasks wait for startup** — cron tasks do not run until enabled services have finished starting.
+- **Faster page navigation** — Node and PHP pages warm up in the background after startup finishes, so the first visit feels instant without blocking the dashboard.
+
+### Services page
+
+- **Loads when you open it** — the Services page no longer runs a heavy refresh at app launch; it warms up after startup or on first visit.
+
+### Edit site & HTTPS
+
+- **Dev proxy directives** — under **Edit site → Dev proxies**, set `proxy_pass` and add optional nginx directives per proxy; your changes are saved with the site and survive restarts.
+- **Safer site saves** — Stackroot runs `nginx -t` before writing a site; a bad proxy or vhost config is rejected and the previous nginx file is restored.
+- **SSL trust scope** — in **Settings**, choose whether **Trust SSL** installs the local CA for your Windows user only (default, no administrator prompt) or for all users on the PC (requires administrator approval once).
+
+### App shell
+
+- **Version beside the app name** — the sidebar shows the installed version (e.g. `0.2.7`) in small muted text next to **Stackroot**.
+
+### Stability and reliability
+
+- **SSL certificates work correctly when multiple sites start together** — when several HTTPS sites initialize at the same time, certificates are now generated one at a time rather than all at once, preventing corrupted cert files or failed trust on first launch.
+- **Dev DNS errors are no longer silent** — if the DNS helper fails to apply a new configuration, Stackroot now reports the error instead of continuing as if nothing went wrong.
+- **Cleaner app shutdown** — closing Stackroot while services are still starting or restarting no longer risks hanging the shutdown screen.
+- **Service keep-alive counts restarts accurately** — the automatic restart tracker no longer records a failed attempt when the service was not actually in a position to restart, avoiding premature cooldown periods or missed restart alerts.
+- **Service restarts during app shutdown complete gracefully** — if a keep-alive restart is mid-flight when you close Stackroot, it now exits cleanly instead of surfacing an internal error.
+- **Process cleanup on exit** — internal background processes now release their OS handles reliably when the app closes, reducing leftover resource usage.
+
+### Development (`./sr dev`)
+
+- **More reliable dev launch** — avoids a broken Windows apphost blocking `dotnet` runs; warns if Stackroot is already running.
+
+Download `Stackroot-Setup-0.2.7.exe` below and run the installer. **Close any running Stackroot instance** (tray → Quit) before upgrading.
+
+### Upgrading from 0.2.6
+
+Your sites, databases, and settings are preserved. The installer updates the DNS helper files under `%LOCALAPPDATA%\Programs\Stackroot\dns-helper` and clears stale helper status during setup. If you already enabled Test DNS on an older build, saving settings once may ask for administrator approval to repair the Windows service registration.
+
+
+
+
+## Stackroot 0.2.6
+
+Download and run `Stackroot-Setup-0.2.6.exe` on **Windows 10/11 (64-bit)**. Update over **0.2.5** — sites, databases, and settings are kept.
+
+### Site dashboard
+
+- **Edit, pin, and enable/disable** — manage the site from the dashboard header without going back to the sites list.
+- **Scheduled tasks** — view, add, run, and edit cron tasks for this site at the bottom of the dashboard; link to the full Scheduled Tasks page when needed. The add/edit dialog shows **Capture output to log file** without clipping.
+
+### Quick actions & logs
+
+- **Cancel running commands** — stop a long quick action from the log viewer or the **Cancel** button on the status banner; cancellation is faster and the button stays visible with **Cancelling…** until the process stops.
+- **Run again** — when a command finishes, rerun it from the same log window and stream the new output without closing the dialog.
+- **Status banner** — dismiss (×) is hidden while a command runs; it returns when the command finishes or is cancelled.
+- **No automatic timeout** — quick actions run until they finish or you cancel them.
+- **Terminal-style logs** — colored output and line layout match a real console (Pest, PHPUnit, npm, Composer).
+- **Log window size** — the in-app log viewer reopens at the size you last used.
+- **Smarter log updates** — live refresh stops when a command finishes; **Refresh** appears only when live updates are off.
+- **Cleaner log output** — command logs no longer show a `[stderr]` prefix; `#` comment lines use muted coloring.
+
+### Custom commands
+
+- **On every site template** — custom commands live inside each template’s dashboard card (WordPress, Laravel, Empty), alongside **Open site** and related actions.
+- **Manage commands window** — add, edit, delete, and style site commands from one resizable dialog (gear icon on the card).
+- **Import and export** — copy command buttons between sites via a portable file (labels, commands, colors, and icons).
+- **Button styling** — optional text/background colors (with a color picker) and a custom icon (saved per site); custom colors stay on hover.
+- **Safer delete** — a running command must be stopped before it can be removed.
+
+### Edit site
+
+- **No default Vite proxy** — new Laravel sites start with an empty proxy list; add dev proxies only when you need them.
+- **Dev proxy rows** — collapsed proxy blocks have a taller header and a clearer expand control.
+
+### Nginx
+
+- **HTTP performance settings** — under **Services → Nginx → Settings**, tune gzip, workers, upload limits, logging, and PHP/proxy timeouts with sensible defaults.
+- **Help on every option** — hover the **!** icon beside a setting for a short explanation.
+- **Manage nginx.conf manually** — optional mode stops Stackroot from rewriting the main `nginx.conf`; open the file from the dialog and edit it yourself (site vhosts in `sites-enabled` are still updated).
+- **Stronger defaults** — gzip, larger upload limits, and hash tuning in the main nginx config unless you change them.
+
+### PHP
+
+- **Performance settings per version** — from **PHP → Settings** for each installed version, tune limits, OPcache, path cache, and error display with fast dev defaults.
+- **Help on every option** — hover the **!** icon for a plain-language explanation.
+- **Manage php.ini manually** — optional full control over the generated ini; Stackroot stops patching it until you turn automatic mode back on.
+- **Faster defaults** — unlimited memory/time for dev, 512M uploads (matches nginx), and OPcache enabled for quicker page loads.
+- **PHP logs in logs folder** — `php-8.x.log` for script errors and `php-cgi-php-8.x.stderr.log` for the FastCGI process.
+
+Download `Stackroot-Setup-0.2.6.exe` below and run the installer. **Close any running Stackroot instance** (tray → Quit) before upgrading.
+
+### Upgrading from 0.2.5
+
+Your sites, databases, and settings are preserved. Existing Laravel sites may still have an old Vite proxy entry — remove it in **Edit** if you do not use it.
+
+
 
 ## Stackroot 0.2.5
 

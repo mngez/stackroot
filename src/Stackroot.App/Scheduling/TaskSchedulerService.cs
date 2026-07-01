@@ -83,6 +83,12 @@ public sealed class TaskSchedulerService : IDisposable
         Save();
     }
 
+    public void DeleteBySiteId(string siteId)
+    {
+        lock (_lock) _tasks.RemoveAll(t => string.Equals(t.SiteId, siteId, StringComparison.OrdinalIgnoreCase));
+        Save();
+    }
+
     public Task RunNowAsync(string id)
     {
         return Task.Run(async () =>

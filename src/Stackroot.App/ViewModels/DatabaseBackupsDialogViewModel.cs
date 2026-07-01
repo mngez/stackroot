@@ -8,6 +8,8 @@ using Stackroot.App.Commands;
 
 using Stackroot.App.Helpers;
 
+using Stackroot.App.Localization;
+
 using Stackroot.App.Services;
 
 using Stackroot.App.Views;
@@ -98,6 +100,8 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
 
     private readonly SessionActivityReporter _activity;
 
+    private readonly BackgroundAlertService _alertService;
+
     private readonly string? _databaseNameFilter;
 
     private string _statusMessage = string.Empty;
@@ -116,6 +120,8 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
 
         SessionActivityReporter activity,
 
+        BackgroundAlertService alertService,
+
         string? databaseNameFilter = null)
 
     {
@@ -123,6 +129,8 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
         _databaseManager = databaseManager;
 
         _activity = activity;
+
+        _alertService = alertService;
 
         _databaseNameFilter = databaseNameFilter;
 
@@ -393,6 +401,17 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
 
             Reload();
             StatusMessage = $"Restored \"{targetName}\" from {backup.FileName}.";
+            _alertService.Raise(new BackgroundAlert(
+                BackgroundAlertKind.Success,
+                LocalizationManager.Get("Loc.BackgroundAlert.DbRestoreComplete", "Restore Complete"),
+                string.Format(LocalizationManager.Get("Loc.BackgroundAlert.DbRestoreComplete.Body", "Database \"{0}\" restored from {1}."), targetName, backup.FileName)));
+        }
+        else
+        {
+            _alertService.Raise(new BackgroundAlert(
+                BackgroundAlertKind.Error,
+                LocalizationManager.Get("Loc.BackgroundAlert.DbRestoreFailed", "Restore Failed"),
+                string.Format(LocalizationManager.Get("Loc.BackgroundAlert.DbRestoreFailed.Body", "Could not restore database \"{0}\"."), targetName)));
         }
 
     }

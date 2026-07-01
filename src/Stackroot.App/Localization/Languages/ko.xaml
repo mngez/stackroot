@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,6 +116,118 @@
     <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">사이트 설정</sys:String>
     <sys:String x:Key="Loc.Sites.NoMatch">현재 필터와 일치하는 도메인이 없습니다.</sys:String>
 
+
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">사이트 백업</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">포함할 항목:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">사이트 파일</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">연결된 데이터베이스</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">연결된 프로세스</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">연결된 예약 작업</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">사이트 보관 (백업 후 Stackroot에서 제거)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">저장 위치:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">백업 시작</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">폴더 열기</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">사이트 보관</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">수행될 작업</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">백업만</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">백업 후 사이트는 Stackroot에 유지됩니다. 파일, 데이터베이스 또는 구성이 제거되지 않습니다.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">백업 후 사이트가 Stackroot에서 영구적으로 제거됩니다.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">디스크에서 사이트 파일 삭제</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">서버에서 연결된 데이터베이스 삭제</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">연결된 프로세스 제거</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">연결된 예약 작업 제거</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Stackroot에서 사이트 제거</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">사이트 백업</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">사이트 가져오기</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">백업에서 사이트 가져오기</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">백업 완료</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">백업 완료</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">{0}이(가) 성공적으로 백업되었습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">백업 실패</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">{0}을(를) 백업할 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">복원 완료</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">{0}이(가) 성공적으로 복원되었습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">대시보드로 이동</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">폴더 열기</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">복원 실패</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">{0}을(를) 복원할 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">복원 완료</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">데이터베이스 &quot;{0}&quot;이(가) {1}에서 복원되었습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">복원 실패</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">데이터베이스 &quot;{0}&quot;을(를) 복원할 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">가져오기 완료</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">{0}을(를) 성공적으로 가져왔습니다.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">사이트 관리</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">가져오기 실패</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">사이트 백업을 가져올 수 없습니다.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">사이트 복원</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">복원하면 현재 사이트 내용이 교체됩니다. 이 작업은 취소할 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">사이트:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">날짜:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">복원할 항목:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">사이트 파일</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">연결된 데이터베이스</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">연결된 프로세스</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">예약된 작업</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">복원</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">사이트 가져오기</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">도메인:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">도메인 충돌 — 가져오기 차단됨:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">이 도메인은 이미 다른 사이트에서 사용 중입니다. 먼저 해당 사이트를 제거하거나 이름을 변경하세요.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">별칭:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">추가 도메인 충돌 — 가져오기 차단됨:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">이 도메인들은 이미 다른 사이트에서 사용 중입니다. 먼저 해당 사이트에서 제거하십시오.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">데이터베이스 충돌 — 가져오기 차단됨:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">이 데이터베이스들이 이미 존재합니다. 가져오기를 허용하려면 먼저 삭제하거나 이름을 변경하십시오.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">가져올 항목:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">사이트 파일</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">데이터베이스</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">프로세스</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">예약된 작업</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">가져오기</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">롤백 보고서</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">모든 변경 사항을 주의 깊게 검토하십시오. 백업에 없는 항목은 제거됩니다 — 보존하려면 '유지'를 클릭하십시오. 이 작업은 취소할 수 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">파일</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">사이트 파일이 백업 버전으로 덮어씁니다</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">기존 파일의 안전 복사본 건너뛰기</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">기존 데이터베이스의 안전 복사본 건너뛰기</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">데이터베이스</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">프로세스</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">예약된 작업</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">교체</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">복원</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">삭제</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">백업에 없음</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">유지</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ 유지됨</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">이 항목을 삭제하려면 선택</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">백업 분석 중…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">이 백업에는 복원 가능한 콘텐츠가 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">복원</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">발생할 작업</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">삭제됩니다</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">교체됩니다</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">추가됩니다</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">유지됩니다</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">사이트 파일이 교체됩니다</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">필요한 여유 디스크 공간</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">압축 해제</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">안전 복사본</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">합계</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">디스크에서 사이트 파일도 삭제</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">연결된 데이터베이스도 삭제</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">연결된 예약 작업도 삭제</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">연결된 프로세스도 삭제</sys:String>
+
     <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">사이트 대시보드</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">SSL 경로</sys:String>
@@ -137,6 +249,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">모든 작업</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">전체 예약된 작업 페이지 열기</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">비밀번호 복사</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">복원</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">파일에서 복원…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">아래 목록에 없는 백업 파일에서 사이트 복원</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ 백업 만들기</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">백업</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">구성된 백업 폴더에 저장된 사이트 백업</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">이 사이트에 대한 백업이 없습니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">백업 취소</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">복원 취소</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">잘못된 사이트 백업</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">이 백업은 &#39;{2}&#39;이 아닌 &#39;{0}&#39; ({1})의 것입니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">다른 사이트의 백업을 가져오려면 사이트 도구 모음에서 가져오기를 사용하세요 — 새 사이트가 생성되고 충돌이 확인된 후 진행됩니다.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">백업 삭제</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">&#39;{0}&#39;을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</sys:String>
 
         <!-- ── PHP ── -->
         <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -257,6 +383,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">백업에서 복구</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">앱 도메인</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">WWW 경로</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">백업 위치</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">선호하는 에디터</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">사용자 지정 에디터 경로</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">종료 시 동작</sys:String>

@@ -42,6 +42,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private int _shellMetricsCpuRefreshSeconds = ShellMetricsDefaults.CpuRefreshSeconds;
     private bool _launchAtStartup;
     private bool _trustSslCaMachineWide;
+    private string _backupsPath = string.Empty;
     private string _language = "en";
     private string _statusMessage = string.Empty;
     private bool _showCorruptedSettingsBanner;
@@ -89,6 +90,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         TrustSslCommand = new RelayCommand(_ => _ = TrustSslAsync(), _ => !IsTrustingSsl);
         CleanupSslTrustCommand = new RelayCommand(_ => _ = CleanupSslTrustAsync(), _ => !IsTrustingSsl);
         BrowseWwwCommand = new RelayCommand(_ => BrowseWww());
+        BrowseBackupsPathCommand = new RelayCommand(_ => BrowseBackupsPath());
+        UseDefaultBackupsPathCommand = new RelayCommand(_ => BackupsPath = string.Empty);
         BrowseEditorCommand = new RelayCommand(_ => BrowseEditor(), _ => PreferredEditor == PreferredEditor.Custom);
         UseDefaultWwwCommand = new RelayCommand(_ => WwwPath = string.Empty);
         RestoreFromBackupCommand = new RelayCommand(_ => _ = RestoreFromBackupAsync(), _ => ShowRestoreBackupButton);
@@ -106,6 +109,8 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     public RelayCommand TrustSslCommand { get; }
     public RelayCommand CleanupSslTrustCommand { get; }
     public RelayCommand BrowseWwwCommand { get; }
+    public RelayCommand BrowseBackupsPathCommand { get; }
+    public RelayCommand UseDefaultBackupsPathCommand { get; }
     public RelayCommand BrowseEditorCommand { get; }
     public RelayCommand UseDefaultWwwCommand { get; }
     public RelayCommand RestoreFromBackupCommand { get; }
@@ -138,6 +143,21 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         get => _defaultWwwPath;
         private set => SetProperty(ref _defaultWwwPath, value);
     }
+
+    public string BackupsPath
+    {
+        get => _backupsPath;
+        set
+        {
+            if (SetProperty(ref _backupsPath, value))
+            {
+                ScheduleAutoSave();
+            }
+        }
+    }
+
+    public string DefaultBackupsPath =>
+        StackrootPathResolver.DefaultBackupsRoot(StackrootPathResolver.Resolve(ensureDirectories: false).DataRoot);
 
     public string AppDomain
     {
@@ -325,6 +345,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
             var settings = _settingsStore.Load();
             WwwPath = settings.General.WwwPath ?? string.Empty;
             DefaultWwwPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "www");
+            BackupsPath = settings.General.BackupsPath ?? string.Empty;
             AppDomain = settings.General.AppDomain ?? "stackroot.test";
             PreferredEditor = settings.General.PreferredEditor ?? PreferredEditor.System;
             CustomEditorPath = settings.General.CustomEditorPath ?? string.Empty;
@@ -373,6 +394,7 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
     private GeneralSettings BuildGeneralSettingsSnapshot() => new()
     {
         WwwPath = string.IsNullOrWhiteSpace(WwwPath) ? null : WwwPath.Trim(),
+        BackupsPath = string.IsNullOrWhiteSpace(BackupsPath) ? null : BackupsPath.Trim(),
         AppDomain = string.IsNullOrWhiteSpace(AppDomain) ? "stackroot.test" : AppDomain.Trim(),
         PreferredEditor = PreferredEditor,
         CustomEditorPath = PreferredEditor == PreferredEditor.Custom && !string.IsNullOrWhiteSpace(CustomEditorPath)
@@ -482,6 +504,21 @@ public sealed class GeneralSettingsViewModel : ViewModelBase, IDisposable
         if (dialog.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
             WwwPath = dialog.SelectedPath;
+        }
+    }
+
+    private void BrowseBackupsPath()
+    {
+        using var dialog = new FolderBrowserDialog
+        {
+            Description = "Select site backups folder",
+            UseDescriptionForTitle = true,
+            SelectedPath = string.IsNullOrWhiteSpace(BackupsPath) ? DefaultBackupsPath : BackupsPath
+        };
+
+        if (dialog.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        {
+            BackupsPath = dialog.SelectedPath;
         }
     }
 

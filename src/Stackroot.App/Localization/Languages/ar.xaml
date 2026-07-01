@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,6 +116,117 @@
     <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">إعدادات المواقع</sys:String>
     <sys:String x:Key="Loc.Sites.NoMatch">لا توجد نطاقات تطابق المرشحات الحالية.</sys:String>
 
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">نسخ احتياطي للموقع</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">ما الذي تريد تضمينه:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">ملفات الموقع</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">قواعد البيانات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">العمليات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">المهام المجدولة المرتبطة</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">أرشفة الموقع (نسخ احتياطي ثم إزالته من Stackroot)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">حفظ في:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">بدء</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">فتح المجلد</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">أرشفة الموقع</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">ما الذي سيحدث</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">نسخ احتياطي فقط</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">سيبقى الموقع في Stackroot بعد النسخ الاحتياطي. لن يتم حذف أي ملفات أو قواعد بيانات أو إعدادات.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">بعد النسخ الاحتياطي، سيُزال الموقع نهائياً من Stackroot.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">حذف ملفات الموقع من القرص</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">حذف قواعد البيانات المرتبطة من الخادم</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">إزالة العمليات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">إزالة المهام المجدولة المرتبطة</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">إزالة الموقع من Stackroot</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">نسخ احتياطي للموقع</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">استيراد موقع</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">استيراد موقع من نسخة احتياطية</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">اكتمل النسخ الاحتياطي</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">اكتملت النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">تم النسخ الاحتياطي لـ {0} بنجاح.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">فشلت النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">تعذّر نسخ {0} احتياطياً.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">اكتملت الاستعادة</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">تمت استعادة {0} بنجاح.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">الذهاب إلى لوحة التحكم</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">فتح المجلد</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">فشلت الاستعادة</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">تعذّرت استعادة {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">اكتملت الاستعادة</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">تمت استعادة قاعدة البيانات &quot;{0}&quot; من {1}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">فشلت الاستعادة</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">تعذّرت استعادة قاعدة البيانات &quot;{0}&quot;.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">اكتمل الاستيراد</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">تم استيراد {0} بنجاح.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">إدارة الموقع</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">فشل الاستيراد</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">تعذّر استيراد نسخة الموقع الاحتياطية.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">استعادة الموقع</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">ستؤدي الاستعادة إلى استبدال محتوى الموقع الحالي. لا يمكن التراجع عن هذا الإجراء.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">الموقع:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">التاريخ:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">ما الذي تريد استعادته:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">ملفات الموقع</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">قواعد البيانات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">العمليات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">المهام المجدولة</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">استعادة</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">استيراد موقع</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">النطاق:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">تعارض النطاق — الاستيراد محظور:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">هذا النطاق مستخدم بالفعل من قِبَل موقع آخر. احذف ذلك الموقع أو أعد تسميته أولاً.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">النطاقات البديلة:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">تعارض النطاقات الإضافية — الاستيراد محظور:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">هذه النطاقات مستخدمة بالفعل من قبل مواقع أخرى. أزلها من تلك المواقع أولاً.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">تعارض قواعد البيانات — الاستيراد محظور:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">قواعد البيانات هذه موجودة بالفعل. احذفها أو أعد تسميتها أولاً للسماح بالاستيراد.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">ما الذي تريد استيراده:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">ملفات الموقع</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">قواعد البيانات</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">العمليات</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">المهام المجدولة</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">استيراد</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">تقرير التراجع</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">راجع جميع التغييرات بعناية. العناصر غير الموجودة في النسخة ستُحذف — انقر 'احتفظ به' للإبقاء عليها. لا يمكن التراجع عن هذا.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">الملفات</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">سيتم استبدال ملفات الموقع بإصدار النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">تخطي النسخة الاحتياطية للملفات الحالية</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">تخطي النسخة الاحتياطية لقواعد البيانات الحالية</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">قواعد البيانات</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">العمليات</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">المهام المجدولة</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">استبدال</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">استعادة</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">حذف</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">غير موجود في النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">احتفظ به</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ محفوظ</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">حدّد لحذف هذا العنصر</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">جارٍ تحليل النسخة الاحتياطية…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">لا يحتوي هذا النسخ الاحتياطي على محتوى قابل للاستعادة.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">استعادة</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">ما الذي سيحدث</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">سيتم حذفه</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">سيتم استبداله</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">سيتم إضافته</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">سيُحفظ</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">سيتم استبدال ملفات الموقع</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">المساحة الحرة المطلوبة</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">فك الضغط</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">نسخ احتياطية مؤقتة</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">الإجمالي</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">حذف ملفات الموقع من القرص</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">حذف قواعد البيانات المرتبطة</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">حذف المهام المجدولة المرتبطة</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">حذف العمليات المرتبطة</sys:String>
+
     <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">لوحة تحكم الموقع</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">مسارات SSL</sys:String>
@@ -137,6 +248,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">جميع المهام</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">فتح صفحة المهام المجدولة</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">نسخ كلمة المرور</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">استعادة</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">استعادة من ملف…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">استعادة الموقع من ملف نسخة احتياطية غير موجود في القائمة</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ إنشاء نسخة احتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">النسخ الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">النسخ الاحتياطية للموقع المحفوظة في مجلد النسخ الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">لا توجد نسخ احتياطية لهذا الموقع.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">إلغاء النسخ</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">إلغاء الاستعادة</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">نسخة احتياطية خاطئة</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">هذه النسخة الاحتياطية تخص &#39;{0}&#39; ({1})، وليس &#39;{2}&#39;.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">لاستيراد نسخة احتياطية من موقع مختلف، استخدم خيار “استيراد” من شريط المواقع — سيُنشئ موقعاً جديداً ويتحقق من التعارضات قبل المتابعة.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">حذف النسخة الاحتياطية</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">حذف &#39;{0}&#39;؟ لا يمكن التراجع عن هذا الإجراء.</sys:String>
 
     <!-- ── PHP ── -->
     <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -257,6 +382,7 @@
     <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">استعادة من نسخة احتياطية</sys:String>
     <sys:String x:Key="Loc.GeneralSettings.AppDomain">نطاق التطبيق</sys:String>
     <sys:String x:Key="Loc.GeneralSettings.WwwPath">مسار WWW</sys:String>
+    <sys:String x:Key="Loc.GeneralSettings.BackupsPath">موقع النسخ الاحتياطية</sys:String>
     <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">المحرر المفضل</sys:String>
     <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">مسار المحرر المخصص</sys:String>
     <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">سلوك الإغلاق</sys:String>

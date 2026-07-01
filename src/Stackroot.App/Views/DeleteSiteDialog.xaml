@@ -1,0 +1,80 @@
+<Window x:Class="Stackroot.App.Views.DeleteSiteDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:windows="clr-namespace:Stackroot.App.Windows"
+        Title="Remove site"
+        FlowDirection="{DynamicResource Loc.FlowDirection}"
+        Width="420"
+        MinWidth="360"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource StackrootWindowBrush}"
+        Foreground="{StaticResource StackrootTextBrush}"
+        ShowInTaskbar="False"
+        windows:WindowsTheme.EnableDarkTitleBar="True">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Text="{Binding Title}" />
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,12,0,0"
+                   Foreground="{StaticResource StackrootTextMutedBrush}"
+                   Text="{Binding Message}"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="2" Margin="0,16,0,0">
+            <CheckBox Margin="0,0,0,10"
+                      IsChecked="{Binding DeleteFiles}"
+                      Foreground="{StaticResource StackrootTextMutedBrush}"
+                      Content="{DynamicResource Loc.DeleteSiteDialog.DeleteFiles}" />
+            <CheckBox Margin="0,0,0,10"
+                      IsChecked="{Binding DeleteDatabases}"
+                      Foreground="{StaticResource StackrootTextMutedBrush}"
+                      Visibility="{Binding HasDatabases, Converter={StaticResource BoolToVis}}"
+                      Content="{DynamicResource Loc.DeleteSiteDialog.DeleteDatabases}" />
+            <CheckBox Margin="0,0,0,10"
+                      IsChecked="{Binding DeleteScheduledTasks}"
+                      Foreground="{StaticResource StackrootTextMutedBrush}"
+                      Visibility="{Binding HasScheduledTasks, Converter={StaticResource BoolToVis}}"
+                      Content="{DynamicResource Loc.DeleteSiteDialog.DeleteScheduledTasks}" />
+            <CheckBox IsChecked="{Binding DeleteProcesses}"
+                      Foreground="{StaticResource StackrootTextMutedBrush}"
+                      Visibility="{Binding HasProcesses, Converter={StaticResource BoolToVis}}"
+                      Content="{DynamicResource Loc.DeleteSiteDialog.DeleteProcesses}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3"
+                    Margin="0,18,0,0"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal">
+            <Button Width="88"
+                    Margin="0,0,8,0"
+                    Content="{DynamicResource Loc.Common.Cancel}"
+                    Command="{Binding CancelCommand}" />
+            <Button Width="100"
+                    Content="{DynamicResource Loc.Common.Remove}"
+                    Command="{Binding ConfirmCommand}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource StackrootPrimaryButtonStyle}">
+                        <Setter Property="Background" Value="#1AE88A92" />
+                        <Setter Property="BorderBrush" Value="#52E88A92" />
+                        <Setter Property="Foreground" Value="{StaticResource StackrootDangerTextBrush}" />
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

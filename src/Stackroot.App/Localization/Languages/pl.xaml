@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
@@ -116,6 +116,118 @@
     <sys:String x:Key="Loc.Sites.SiteSettingsTooltip">Ustawienia stron</sys:String>
     <sys:String x:Key="Loc.Sites.NoMatch">Brak domen spełniających aktualne kryteria filtrowania.</sys:String>
 
+
+    <!-- ── Backup Site Dialog ── -->
+    <sys:String x:Key="Loc.BackupSiteDialog.Title">Utwórz kopię zapasową witryny</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeLabel">Co uwzględnić:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeFiles">Pliki witryny</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeDatabases">Połączone bazy danych</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeProcesses">Połączone procesy</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.IncludeScheduledTasks">Połączone zaplanowane zadania</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.DeleteSiteAfterBackup">Archiwizuj witrynę (kopia zapasowa i usunięcie ze Stackroot)</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.SavePathLabel">Zapisz w:</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Start">Utwórz kopię</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.OpenFolder">Otwórz folder</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.StartArchive">Archiwizuj witrynę</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Title">Co się stanie</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Title">Tylko kopia zapasowa</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.BackupOnly.Desc">Witryna pozostanie w Stackroot po wykonaniu kopii zapasowej. Żadne pliki, bazy danych ani konfiguracja nie zostaną usunięte.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Warning">Po wykonaniu kopii zapasowej witryna zostanie trwale usunięta ze Stackroot.</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Files">Pliki witryny usunięte z dysku</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Databases">Powiązane bazy danych usunięte z serwera</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Processes">Powiązane procesy usunięte</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.Tasks">Powiązane zaplanowane zadania usunięte</sys:String>
+    <sys:String x:Key="Loc.BackupSiteDialog.Preview.Archive.SiteRecord">Witryna usunięta ze Stackroot</sys:String>
+    <sys:String x:Key="Loc.Sites.BackupTooltip">Utwórz kopię zapasową witryny</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportSite">Importuj witrynę</sys:String>
+    <sys:String x:Key="Loc.Sites.ImportTooltip">Importuj witrynę z kopii zapasowej</sys:String>
+    <sys:String x:Key="Loc.BackupCompleteDialog.Title">Kopia zapasowa ukończona</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete">Kopia zapasowa zakończona</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupComplete.Body">Kopia zapasowa {0} zakończyła się pomyślnie.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed">Kopia zapasowa nieudana</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.BackupFailed.Body">Nie można wykonać kopii zapasowej {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete">Przywracanie zakończone</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Body">Przywrócono {0} pomyślnie.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.Dashboard">Przejdź do pulpitu</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreComplete.OpenFolder">Otwórz folder</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed">Przywracanie nieudane</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.RestoreFailed.Body">Nie można przywrócić {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete">Przywracanie zakończone</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreComplete.Body">Baza danych &quot;{0}&quot; przywrócona z {1}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed">Przywracanie nie powiodło się</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.DbRestoreFailed.Body">Nie można przywrócić bazy danych &quot;{0}&quot;.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete">Import zakończony</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.Body">Pomyślnie zaimportowano {0}.</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportComplete.ManageSite">Zarządzaj witryną</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed">Import nie powiódł się</sys:String>
+    <sys:String x:Key="Loc.BackgroundAlert.ImportFailed.Body">Nie można zaimportować kopii zapasowej witryny.</sys:String>
+
+    <!-- ── Restore Site Dialog ── -->
+    <sys:String x:Key="Loc.RestoreSiteDialog.Title">Przywróć witrynę</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Warning">Przywrócenie zastąpi bieżącą zawartość witryny. Tej operacji nie można cofnąć.</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.BackupInfoLabel">Witryna:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.DateLabel">Data:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreLabel">Co przywrócić:</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreFiles">Pliki witryny</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreDatabases">Powiązane bazy danych</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreProcesses">Powiązane procesy</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.RestoreScheduledTasks">Zaplanowane zadania</sys:String>
+    <sys:String x:Key="Loc.RestoreSiteDialog.Restore">Przywróć</sys:String>
+
+    <!-- ── Import Site Dialog ── -->
+    <sys:String x:Key="Loc.ImportSiteDialog.Title">Importuj witrynę</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainLabel">Domena:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflict">Konflikt domeny — import zablokowany:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DomainConflictHint">Ta domena jest już używana przez inną witrynę. Najpierw usuń lub zmień jej nazwę.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasesLabel">Aliasy:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictLabel">Konflikty dodatkowych domen — import zablokowany:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.AliasConflictHint">Te domeny są już używane przez inne witryny. Najpierw usuń je z tych witryn.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictLabel">Konflikty baz danych — import zablokowany:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.DatabaseConflictHint">Te bazy danych już istnieją. Najpierw usuń je lub zmień ich nazwę, aby umożliwić import.</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.ContentLabel">Co importować:</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreFiles">Pliki witryny</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreDatabases">Bazy danych</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreProcesses">Procesy</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.RestoreScheduledTasks">Zaplanowane zadania</sys:String>
+    <sys:String x:Key="Loc.ImportSiteDialog.Import">Importuj</sys:String>
+
+    <!-- ── Site Restore Delta ── -->
+    <sys:String x:Key="Loc.SiteRestoreDelta.Title">Raport wycofania</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Warning">Dokładnie przejrzyj wszystkie zmiany. Elementy nieobecne w kopii zapasowej zostaną usunięte — kliknij 'Zachowaj', aby je zachować. Tego nie można cofnąć.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesSection">Pliki</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.FilesWillBeReplaced">Pliki witryny zostaną nadpisane wersją kopii zapasowej</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipFileSafetyCopy">Pomiń kopię bezpieczeństwa istniejących plików</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SkipDbSafetyCopy">Pomiń kopię bezpieczeństwa istniejących baz danych</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.DatabasesSection">Bazy danych</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ProcessesSection">Procesy</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.TasksSection">Zaplanowane zadania</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionReplace">Zastąp</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionRestore">Przywróć</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.ActionDelete">Usuń</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.WillBeDeleted">brak w kopii zapasowej</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeepButton">Zachowaj</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.KeptLabel">✓ zachowany</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.UncheckToKeep">Zaznacz, aby usunąć ten element</sys:String>
+        <sys:String x:Key="Loc.SiteRestoreDelta.Computing">Analizowanie kopii zapasowej…</sys:String>
+<sys:String x:Key="Loc.SiteRestoreDelta.NothingToReport">Ta kopia zapasowa nie zawiera żadnej zawartości do przywrócenia.</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.RestoreButton">Przywróć</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.Title">Co się stanie</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeDeleted">zostanie usunięty</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeReplaced">zostanie zastąpiony</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeRestored">zostanie dodany</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.WillBeKept">zostanie zachowany</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.Summary.FilesLine">Pliki witryny zostaną zastąpione</sys:String>
+
+        <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRequired">Wolne miejsce na dysku</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceExtraction">Wypakowanie</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceRollback">Kopie bezpieczeństwa</sys:String>
+    <sys:String x:Key="Loc.SiteRestoreDelta.SpaceTotal">Łącznie</sys:String>
+<!-- ── Delete Site Dialog ── -->
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteFiles">Usuń również pliki witryny z dysku</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteDatabases">Usuń również połączone bazy danych</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteScheduledTasks">Usuń również połączone zaplanowane zadania</sys:String>
+    <sys:String x:Key="Loc.DeleteSiteDialog.DeleteProcesses">Usuń również połączone procesy</sys:String>
+
     <!-- ── Site Manage ── -->
     <sys:String x:Key="Loc.SiteManage.Title">Panel witryny</sys:String>
     <sys:String x:Key="Loc.SiteManage.SslPaths">Ścieżki SSL</sys:String>
@@ -137,6 +249,20 @@
     <sys:String x:Key="Loc.SiteManage.AllTasks">Wszystkie zadania</sys:String>
     <sys:String x:Key="Loc.SiteManage.AllTasksTooltip">Otwórz pełną stronę zaplanowanych zadań</sys:String>
     <sys:String x:Key="Loc.SiteManage.CopyPassword">Kopiuj hasło</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromBackup">Przywróć</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreFromFile">Przywróć z pliku…</sys:String>
+    <sys:String x:Key="Loc.SiteManage.RestoreTooltip">Przywróć witrynę z pliku kopii zapasowej spoza listy poniżej</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CreateBackup">+ Utwórz kopię zapasową</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsTitle">Kopie zapasowe</sys:String>
+    <sys:String x:Key="Loc.SiteManage.BackupsHint">Kopie zapasowe witryny w skonfigurowanym folderze kopii zapasowych</sys:String>
+    <sys:String x:Key="Loc.SiteManage.NoBackups">Nie znaleziono kopii zapasowych dla tej witryny.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelBackup">Anuluj kopię zapasową</sys:String>
+    <sys:String x:Key="Loc.SiteManage.CancelRestore">Anuluj przywracanie</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Title">Nieprawidłowa kopia zapasowa</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Body">Ta kopia zapasowa należy do &#39;{0}&#39; ({1}), nie do &#39;{2}&#39;.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.WrongSiteBackup.Hint">Aby zaimportować kopię zapasową z innej witryny, użyj opcji Importuj na pasku witryn — tworzy nową witrynę i sprawdza konflikty przed kontynuowaniem.</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Title">Usuń kopię zapasową</sys:String>
+    <sys:String x:Key="Loc.SiteManage.DeleteBackup.Confirm">Usunąć &#39;{0}&#39;? Tej operacji nie można cofnąć.</sys:String>
 
         <!-- ── PHP ── -->
         <sys:String x:Key="Loc.Php.Title">PHP</sys:String>
@@ -257,6 +383,7 @@
         <sys:String x:Key="Loc.GeneralSettings.RestoreFromBackup">Przywróć z kopii zapasowej</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.AppDomain">Domena aplikacji</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.WwwPath">Ścieżka WWW</sys:String>
+        <sys:String x:Key="Loc.GeneralSettings.BackupsPath">Folder kopii zapasowych</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.PreferredEditor">Preferowany edytor</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CustomEditorPath">Ścieżka edytora niestandardowego</sys:String>
         <sys:String x:Key="Loc.GeneralSettings.CloseBehavior">Zachowanie przy zamykaniu</sys:String>
