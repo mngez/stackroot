@@ -152,8 +152,7 @@ try {
 
     $localTag = Get-GitOutput tag -l $Tag
     if ($localTag) {
-        Write-Host "Removing local tag $Tag..."
-        Invoke-GitQuiet tag -d $Tag | Out-Null
+        Write-Host "Updating local tag $Tag..."
     }
 
     $remoteTag = Get-GitOutput ls-remote --tags origin "refs/tags/$Tag"
@@ -162,7 +161,7 @@ try {
         Invoke-Git push origin ":refs/tags/$Tag"
     }
 
-    Invoke-Git tag $Tag
+    Invoke-Git tag -f $Tag
     Invoke-Git push origin $Tag
 
     $repo = "mngez/stackroot"
