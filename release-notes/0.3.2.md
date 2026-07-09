@@ -17,6 +17,7 @@ Download and run `Stackroot-Setup-0.3.2.exe` on **Windows 10/11 (64-bit)**. Upda
 ### Test DNS
 
 - **Restart actually rebinds the listener** — clicking **Restart** on Dashboard or Services now forces the DNS helper to stop and reopen its `127.0.0.1:53` socket. Previously, a wedged listener that still reported "running" could ignore a restart because unchanged settings were republished with no effect.
+- **Restart signal does not linger** — after the helper applies a restart, the one-shot token is cleared from disk so a later helper service reboot does not trigger an extra socket restart.
 
 ### Upgrading from 0.3.1
 

@@ -58,9 +58,14 @@ public sealed class DnsHelperHostedLoop : IAsyncDisposable
                 return;
             }
 
+            var hadRestartToken = config.RestartToken.HasValue;
             try
             {
                 await _engine.ApplyAsync(config, cancellationToken).ConfigureAwait(false);
+                if (hadRestartToken)
+                {
+                    DnsHelperConfigStore.ClearRestartToken(config);
+                }
             }
             catch (Exception ex)
             {

@@ -56,6 +56,22 @@ public static class DnsHelperConfigStore
         }
     }
 
+    /// <summary>
+    /// Clears a one-shot restart token after the helper has consumed it so a later
+    /// service restart does not treat a stale token as a fresh restart request.
+    /// </summary>
+    public static void ClearRestartToken(DnsHelperRuntimeConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        if (!config.RestartToken.HasValue)
+        {
+            return;
+        }
+
+        config.RestartToken = null;
+        Publish(config);
+    }
+
     public static DnsHelperRuntimeConfig? TryRead()
     {
         var path = StackrootDnsHelperConstants.ConfigPath;
