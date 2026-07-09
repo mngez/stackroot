@@ -35,6 +35,15 @@ public sealed class DnsHelperRuntimeConfig
     [JsonPropertyName("resolveAddress")]
     public string ResolveAddress { get; set; } = LocalDnsResolveAddress.Default;
 
+    /// <summary>
+    /// Set to a fresh value to force the helper to fully stop and rebind its
+    /// listener socket, even if it already believes it's running. Config-only
+    /// republishes (suffix/name changes, auto-start) must leave this unchanged
+    /// so a wedged-but-still-"running" listener isn't mistaken for healthy.
+    /// </summary>
+    [JsonPropertyName("restartToken")]
+    public Guid? RestartToken { get; set; }
+
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

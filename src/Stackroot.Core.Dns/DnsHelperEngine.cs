@@ -12,6 +12,7 @@ public sealed class DnsHelperEngine : IAsyncDisposable
     private readonly object _gate = new();
     private TestDnsQueryLogger? _queryLogger;
     private string? _lastError;
+    private Guid? _lastAppliedRestartToken;
 
     public bool IsListenerRunning => _server.IsRunning;
 
@@ -30,6 +31,12 @@ public sealed class DnsHelperEngine : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(config);
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Consumed exactly once per distinct token, regardless of which branch
+        // below handles this apply - a restart request followed immediately by
+        // a disable/stop must not leave a stale "pending restart" around.
+        var forceRestart = config.RestartToken.HasValue && config.RestartToken != _lastAppliedRestartToken;
+        _lastAppliedRestartToken = config.RestartToken;
 
         lock (_gate)
         {
@@ -81,6 +88,16 @@ public sealed class DnsHelperEngine : IAsyncDisposable
 
         try
         {
+            if (forceRestart)
+            {
+                // StartAsync() no-ops when the listener already believes it's
+                // running - which is exactly the state a wedged-but-not-crashed
+                // receive loop leaves it in. An explicit restart request must
+                // force a real stop (cancel + dispose the socket) before the
+                // rebind, or "Restart" would never actually touch a stuck listener.
+                await _server.StopAsync().ConfigureAwait(false);
+            }
+
             await _server.StartAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)

@@ -262,6 +262,10 @@ public sealed class TestDnsCoordinator
     public async Task RestartRuntimeAsync(CancellationToken cancellationToken = default)
     {
         var config = BuildConfig(enabled: true, listen: true);
+        // A fresh token forces the helper to fully stop and rebind its listener
+        // socket, even if it still believes it's running - a plain republish of
+        // unchanged settings would otherwise no-op against a wedged listener.
+        config.RestartToken = Guid.NewGuid();
         await _client.EnsureRunningAsync(config, cancellationToken).ConfigureAwait(false);
         _diagnostics?.LogActivity("Test DNS", "Local dev DNS restarted via helper");
         NotifyStatusChanged();

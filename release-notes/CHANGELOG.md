@@ -14,6 +14,10 @@ Download and run `Stackroot-Setup-0.3.2.exe` on **Windows 10/11 (64-bit)**. Upda
 - **Safer JSON writes** — every settings and registry write is read back and validated before it is allowed to replace the real file on disk.
 - **Smarter backup restore** — automatic restore ignores `.invalid-*.bak` snapshots (copies of content that already failed to parse), so a corrupted file cannot keep restoring a newer broken copy and bury the last good backup.
 
+### Test DNS
+
+- **Restart actually rebinds the listener** — clicking **Restart** on Dashboard or Services now forces the DNS helper to stop and reopen its `127.0.0.1:53` socket. Previously, a wedged listener that still reported "running" could ignore a restart because unchanged settings were republished with no effect.
+
 ### Upgrading from 0.3.1
 
 Your sites, databases, and settings are preserved. No manual steps required.
