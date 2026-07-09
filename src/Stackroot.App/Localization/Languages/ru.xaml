@@ -100,6 +100,7 @@
         <!-- ── Sites ── -->
         <sys:String x:Key="Loc.Sites.Title">Веб-домены</sys:String>
         <sys:String x:Key="Loc.Sites.Subtitle">Локальные домены разработки, сгруппированные по статусу</sys:String>
+        <sys:String x:Key="Loc.Sites.RestoreFromBackup">Восстановить из бэкапа</sys:String>
         <sys:String x:Key="Loc.Sites.AddDomain">Добавить домен</sys:String>
         <sys:String x:Key="Loc.Sites.WwwRoot">Корневая папка WWW</sys:String>
         <sys:String x:Key="Loc.Sites.NoDomains">Доменов пока нет</sys:String>

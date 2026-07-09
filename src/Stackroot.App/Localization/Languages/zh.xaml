@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">Web 域名</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">按状态分组的本地开发域名</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">从备份中恢复</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">添加域名</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">WWW 根目录</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">暂无域名</sys:String>

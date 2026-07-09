@@ -161,6 +161,7 @@ public static class StackrootBootstrap
             var settingsStore = provider.GetRequiredService<SettingsStore>();
             return new SiteStore(paths.DataRoot, settingsStore);
         });
+        services.AddSingleton<SitesLoadState>();
 
         services.AddSingleton<SiteNginxVhostWriter>(provider =>
         {

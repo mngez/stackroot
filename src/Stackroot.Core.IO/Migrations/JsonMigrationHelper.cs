@@ -41,6 +41,25 @@ internal static class JsonMigrationHelper
         File.Copy(path, backupPath, overwrite: false);
     }
 
+    public static string? TryBackupUnreadableFile(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var backupPath = $"{path}.invalid-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.bak";
+            File.Copy(path, backupPath, overwrite: false);
+            return backupPath;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static void WriteJson(string path, JsonNode root)
     {
         var directory = Path.GetDirectoryName(path);

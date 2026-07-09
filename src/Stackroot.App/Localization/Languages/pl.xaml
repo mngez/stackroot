@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">Domeny internetowe</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">Lokalne domeny deweloperskie pogrupowane według statusu</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">Przywróć z kopii zapasowej</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">Dodaj domenę</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">Katalog główny WWW</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">Brak domen</sys:String>

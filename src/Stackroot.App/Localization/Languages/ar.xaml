@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">النطاقات المحلية</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">نطاقات التطوير المحلية مجمّعة حسب الحالة</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">استعادة من نسخة احتياطية</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">إضافة نطاق</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">مجلد WWW</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">لا توجد نطاقات بعد</sys:String>

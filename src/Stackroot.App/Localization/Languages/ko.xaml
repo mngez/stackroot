@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">웹 도메인</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">상태별로 그룹화된 로컬 개발 도메인</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">백업에서 복구</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">도메인 추가</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">WWW 루트</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">아직 도메인이 없습니다</sys:String>

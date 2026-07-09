@@ -85,6 +85,20 @@ public sealed class JsonFileStore : IJsonFileStore
         var payload = JsonSerializer.Serialize(value, _options);
         File.WriteAllText(tempPath, payload);
 
+        // Never let a bad write replace a good file: read back what was just
+        // written and confirm it parses before it's allowed anywhere near the
+        // real path. A write that can't prove itself valid is deleted instead.
+        try
+        {
+            var writtenJson = File.ReadAllText(tempPath);
+            JsonSerializer.Deserialize<T>(writtenJson, _options);
+        }
+        catch (Exception ex)
+        {
+            TryDelete(tempPath);
+            throw new InvalidDataException($"Refusing to write '{path}': the content that was written could not be read back.", ex);
+        }
+
         if (File.Exists(path))
         {
             File.Replace(tempPath, path, null);
@@ -92,6 +106,17 @@ public sealed class JsonFileStore : IJsonFileStore
         }
 
         File.Move(tempPath, path);
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+        }
     }
 
     private static string? TryBackupUnreadableFile(string path)

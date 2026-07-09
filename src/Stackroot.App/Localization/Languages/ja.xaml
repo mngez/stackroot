@@ -100,6 +100,7 @@
         <!-- ── Sites ── -->
         <sys:String x:Key="Loc.Sites.Title">Web ドメイン</sys:String>
         <sys:String x:Key="Loc.Sites.Subtitle">ステータスごとにグループ化されたローカル開発ドメイン</sys:String>
+        <sys:String x:Key="Loc.Sites.RestoreFromBackup">バックアップから復元</sys:String>
         <sys:String x:Key="Loc.Sites.AddDomain">ドメインを追加</sys:String>
         <sys:String x:Key="Loc.Sites.WwwRoot">WWW ルート</sys:String>
         <sys:String x:Key="Loc.Sites.NoDomains">ドメインはまだありません</sys:String>

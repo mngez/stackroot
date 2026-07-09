@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">Web domains</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">Local development domains grouped by status</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">Restore from backup</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">Add domain</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">WWW root</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">No domains yet</sys:String>

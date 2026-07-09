@@ -110,6 +110,28 @@ public static class DataMigrationRunner
         }
     }
 
+    internal static void LogMigrationFailure(
+        StackrootPaths paths,
+        string documentId,
+        string path,
+        string? backupPath,
+        Exception ex)
+    {
+        try
+        {
+            var backupMessage = string.IsNullOrWhiteSpace(backupPath)
+                ? string.Empty
+                : $" A backup was saved to '{backupPath}'.";
+            var logPath = Path.Combine(paths.DataRoot, "logs", "app-error.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+            File.AppendAllText(logPath,
+                $"[{DateTimeOffset.UtcNow:O}] [WARN] Migration skipped for {documentId} '{path}' - file could not be read.{backupMessage} {ex}\n");
+        }
+        catch
+        {
+        }
+    }
+
     private static string ResolveBackupsRoot(StackrootPaths paths)
     {
         var settingsPath = StackrootPathResolver.SettingsPath(paths.DataRoot);
@@ -188,7 +210,18 @@ internal static class JsonDocumentMigratorExtensions
     {
         foreach (var path in migrator.ResolvePaths(paths, context))
         {
-            migrator.MigrateFile(path, report);
+            try
+            {
+                migrator.MigrateFile(path, report);
+            }
+            catch (Exception ex)
+            {
+                // A corrupted file here must not block app startup — the normal load
+                // path (JsonFileStore/SettingsStore/SiteStore) already knows how to
+                // back up an unreadable file and fall back to defaults; let it do that.
+                var backupPath = JsonMigrationHelper.TryBackupUnreadableFile(path);
+                DataMigrationRunner.LogMigrationFailure(paths, migrator.DocumentId, path, backupPath, ex);
+            }
         }
     }
 }

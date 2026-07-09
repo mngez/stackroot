@@ -39,6 +39,8 @@ using Stackroot.Core.Sites.Management;
 
 using Stackroot.Core.Sites.Models;
 
+using Stackroot.Core.Sites.Persistence;
+
 using Stackroot.Core.Supervisor;
 
 using Stackroot.Core.IO;
@@ -93,6 +95,10 @@ public sealed class SitesViewModel : ViewModelBase, IDisposable
 
     private readonly BackgroundAlertService _alertService;
 
+    private readonly SiteStore _siteStore;
+
+    private readonly SitesLoadState _sitesLoadState;
+
     private bool _isRebuildingNginx;
     private int _reloadVersion;
     private EventHandler<CriticalOperationEventArgs>? _operationStartedHandler;
@@ -142,7 +148,11 @@ public sealed class SitesViewModel : ViewModelBase, IDisposable
 
         SessionActivityReporter activity,
 
-        BackgroundAlertService alertService)
+        BackgroundAlertService alertService,
+
+        SiteStore siteStore,
+
+        SitesLoadState sitesLoadState)
 
     {
 
@@ -179,6 +189,13 @@ public sealed class SitesViewModel : ViewModelBase, IDisposable
         _diagnostics = diagnostics;
         _activity = activity;
         _alertService = alertService;
+        _siteStore = siteStore;
+        _sitesLoadState = sitesLoadState;
+
+        ShowCorruptedSitesBanner = sitesLoadState.ShowCorruptedSitesBanner;
+        CorruptedSitesBannerText = sitesLoadState.CorruptedSitesBannerText;
+        ShowRestoreSitesBackupButton = sitesLoadState.ShowRestoreBackupButton;
+        RestoreSitesFromBackupCommand = new RelayCommand(_ => _ = RestoreSitesFromBackupAsync(), _ => ShowRestoreSitesBackupButton);
 
 
 
@@ -264,6 +281,61 @@ public sealed class SitesViewModel : ViewModelBase, IDisposable
     public ICommand DismissErrorCommand { get; }
 
     public ICommand DismissWarningCommand { get; }
+
+    public RelayCommand RestoreSitesFromBackupCommand { get; }
+
+
+
+    public bool ShowCorruptedSitesBanner
+    {
+        get => _showCorruptedSitesBanner;
+        private set => SetProperty(ref _showCorruptedSitesBanner, value);
+    }
+
+    private bool _showCorruptedSitesBanner;
+
+    public string CorruptedSitesBannerText
+    {
+        get => _corruptedSitesBannerText;
+        private set => SetProperty(ref _corruptedSitesBannerText, value);
+    }
+
+    private string _corruptedSitesBannerText = string.Empty;
+
+    public bool ShowRestoreSitesBackupButton
+    {
+        get => _showRestoreSitesBackupButton;
+        private set => SetProperty(ref _showRestoreSitesBackupButton, value);
+    }
+
+    private bool _showRestoreSitesBackupButton;
+
+    private async Task RestoreSitesFromBackupAsync()
+    {
+        if (!ShowRestoreSitesBackupButton)
+        {
+            return;
+        }
+
+        var restoreError = await Task.Run(() =>
+            _siteStore.TryRestoreFromLatestBackup(out var error) ? null : error).ConfigureAwait(false);
+
+        await RunOnUiAsync(() =>
+        {
+            if (restoreError is not null)
+            {
+                ErrorMessage = $"Restore failed: {restoreError}";
+                _activity.LogError("Sites", ErrorMessage);
+                return;
+            }
+
+            _sitesLoadState.MarkRestoredSuccessfully();
+            ShowCorruptedSitesBanner = false;
+            ShowRestoreSitesBackupButton = false;
+            CorruptedSitesBannerText = string.Empty;
+            Reload();
+        }).ConfigureAwait(false);
+    }
 
 
 

@@ -100,6 +100,7 @@
         <!-- ── Sites ── -->
         <sys:String x:Key="Loc.Sites.Title">Webdomeinen</sys:String>
         <sys:String x:Key="Loc.Sites.Subtitle">Lokale ontwikkelingsdomeinen gegroepeerd per status</sys:String>
+        <sys:String x:Key="Loc.Sites.RestoreFromBackup">Herstellen van backup</sys:String>
         <sys:String x:Key="Loc.Sites.AddDomain">Domein toevoegen</sys:String>
         <sys:String x:Key="Loc.Sites.WwwRoot">WWW-root</sys:String>
         <sys:String x:Key="Loc.Sites.NoDomains">Nog geen domeinen</sys:String>

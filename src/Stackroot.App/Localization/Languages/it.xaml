@@ -100,6 +100,7 @@
     <!-- ── Sites ── -->
     <sys:String x:Key="Loc.Sites.Title">Domini Web</sys:String>
     <sys:String x:Key="Loc.Sites.Subtitle">Domini di sviluppo locale raggruppati per stato</sys:String>
+    <sys:String x:Key="Loc.Sites.RestoreFromBackup">Ripristina da backup</sys:String>
     <sys:String x:Key="Loc.Sites.AddDomain">Aggiungi dominio</sys:String>
     <sys:String x:Key="Loc.Sites.WwwRoot">Radice WWW</sys:String>
     <sys:String x:Key="Loc.Sites.NoDomains">Nessun dominio ancora</sys:String>

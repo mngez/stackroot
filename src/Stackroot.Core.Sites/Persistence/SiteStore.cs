@@ -32,6 +32,12 @@ public sealed class SiteStore
     public string DataRoot { get; }
     public string SitesFilePath => Path.Combine(DataRoot, "sites.json");
 
+    /// <summary>
+    /// True when the last load found sites.json unreadable — blocks disk writes
+    /// so an accidental save can't overwrite the real data with an empty registry.
+    /// </summary>
+    public bool PersistenceBlocked { get; private set; }
+
     public SitesRegistry Load()
     {
         if (!File.Exists(SitesFilePath))
@@ -64,12 +70,76 @@ public sealed class SiteStore
         {
             registry = Load();
             error = null;
+            PersistenceBlocked = false;
             return true;
         }
         catch (Exception ex)
         {
             registry = new SitesRegistry();
             error = ex;
+            PersistenceBlocked = true;
+            return false;
+        }
+    }
+
+    public string? FindLatestBackupPath()
+    {
+        var directory = Path.GetDirectoryName(SitesFilePath);
+        var fileName = Path.GetFileName(SitesFilePath);
+        if (string.IsNullOrWhiteSpace(directory) || string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        // ".invalid-*.bak" copies are forensic snapshots of content that already
+        // failed to parse - never a restore candidate. Every failed load stamps
+        // a fresh one, so including them here would let a corrupted file keep
+        // "restoring" a newer copy of itself and bury the real backup (taken
+        // pre-migration/pre-repair, while the file was still good).
+        return Directory
+            .EnumerateFiles(directory, $"{fileName}.*.bak")
+            .Where(p => !Path.GetFileName(p).Contains(".invalid-", StringComparison.Ordinal))
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+    }
+
+    public bool TryRestoreFromLatestBackup(out string? error)
+    {
+        var backupPath = FindLatestBackupPath();
+        if (string.IsNullOrWhiteSpace(backupPath))
+        {
+            error = "No sites backup file was found.";
+            return false;
+        }
+
+        return TryRestoreFromBackup(backupPath, out error);
+    }
+
+    public bool TryRestoreFromBackup(string backupPath, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(backupPath) || !File.Exists(backupPath))
+        {
+            error = "Backup file not found.";
+            return false;
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(backupPath);
+            if (JsonSerializer.Deserialize<SitesRegistry>(raw, _jsonOptions) is null)
+            {
+                error = "Backup file is not valid Stackroot sites data.";
+                return false;
+            }
+
+            File.Copy(backupPath, SitesFilePath, overwrite: true);
+            PersistenceBlocked = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
             return false;
         }
     }
@@ -77,6 +147,12 @@ public sealed class SiteStore
     public void Save(SitesRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
+        if (PersistenceBlocked)
+        {
+            throw new InvalidOperationException(
+                "sites.json could not be read. Restore from a backup before saving changes.");
+        }
+
         Directory.CreateDirectory(DataRoot);
         registry.SchemaVersion = SitesRegistry.CurrentSchemaVersion;
         registry.Sites ??= [];

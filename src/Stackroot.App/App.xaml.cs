@@ -23,6 +23,7 @@ using Stackroot.Core.Observability;
 using Stackroot.Core.Services;
 using Stackroot.Core.Settings;
 using Stackroot.Core.Sites.Management;
+using Stackroot.Core.Sites.Persistence;
 using Stackroot.Core.Windows;
 
 namespace Stackroot.App;
@@ -181,6 +182,9 @@ public partial class App : System.Windows.Application
         var settingsStore = _services.GetRequiredService<SettingsStore>();
         _services.GetRequiredService<SettingsLoadState>().Initialize(settingsStore);
         LocalizationManager.Apply(settingsStore.Load().General.Language);
+
+        var siteStore = _services.GetRequiredService<SiteStore>();
+        _services.GetRequiredService<SitesLoadState>().Initialize(siteStore);
 
         UiInteractionDiagnostics.Register(_diagnostics);
         MariaDbCredentialSync.ActivityLog = message => _diagnostics.LogActivity("MariaDb", message);

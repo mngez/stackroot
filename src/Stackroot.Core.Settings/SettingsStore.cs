@@ -89,8 +89,14 @@ public sealed class SettingsStore
             return null;
         }
 
+        // ".invalid-*.bak" copies are forensic snapshots of content that already
+        // failed to parse - never a restore candidate. Every failed Load() call
+        // stamps a fresh one, so including them here would let a corrupted file
+        // keep "restoring" a newer copy of itself and bury the real backup
+        // (taken pre-migration/pre-repair, while the file was still good).
         return Directory
             .EnumerateFiles(directory, $"{fileName}.*.bak")
+            .Where(p => !System.IO.Path.GetFileName(p).Contains(".invalid-", StringComparison.Ordinal))
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();
     }

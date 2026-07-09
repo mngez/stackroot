@@ -100,6 +100,7 @@
         <!-- ── Sites ── -->
         <sys:String x:Key="Loc.Sites.Title">Web Alan Adları</sys:String>
         <sys:String x:Key="Loc.Sites.Subtitle">Duruma göre gruplandırılmış yerel geliştirme alan adları</sys:String>
+        <sys:String x:Key="Loc.Sites.RestoreFromBackup">Yedekten geri yükle</sys:String>
         <sys:String x:Key="Loc.Sites.AddDomain">Alan adı ekle</sys:String>
         <sys:String x:Key="Loc.Sites.WwwRoot">WWW kök dizini</sys:String>
         <sys:String x:Key="Loc.Sites.NoDomains">Henüz alan adı yok</sys:String>

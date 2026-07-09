@@ -73,6 +73,26 @@
                 <TextBlock Margin="0,6,0,0"
                            Foreground="{StaticResource StackrootTextMutedBrush}"
                            Text="{DynamicResource Loc.Sites.Subtitle}" />
+                <Border Margin="0,12,0,0"
+                        Padding="12"
+                        Background="#33E88A92"
+                        BorderBrush="{StaticResource StackrootDangerTextBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{Binding ShowCorruptedSitesBanner, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding CorruptedSitesBannerText}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource StackrootDangerTextBrush}" />
+                        <Button Margin="0,10,0,0"
+                                HorizontalAlignment="Left"
+                                Padding="12,6"
+                                Command="{Binding RestoreSitesFromBackupCommand}"
+                                Visibility="{Binding ShowRestoreSitesBackupButton, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{DynamicResource Loc.Sites.RestoreFromBackup}" />
+                        </Button>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right"
                         Style="{StaticResource StackrootPageActionsStyle}">
