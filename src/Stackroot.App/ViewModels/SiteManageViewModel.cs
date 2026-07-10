@@ -72,6 +72,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
     private string _criticalOperationLabel = string.Empty;
     private EventHandler<CriticalOperationEventArgs>? _operationStartedHandler;
     private EventHandler<CriticalOperationEventArgs>? _operationEndedHandler;
+    private EventHandler<SiteCommandCompletedEventArgs>? _commandCompletedHandler;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _reconciledCommandLogPaths = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _backupCts;
     private CancellationTokenSource? _restoreCts;
 
@@ -230,12 +232,37 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
         };
         _backupTracker.OperationStarted += _operationStartedHandler;
         _backupTracker.OperationEnded += _operationEndedHandler;
+
+        // Only finalizes commands rediscovered via ReconcileActiveCommands() on Load — a command
+        // started and completed within this same VM instance is already handled inline by
+        // RunCustomCommandTrackedAsync/RunQuickActionAsync, so this avoids racing/duplicating that.
+        _commandCompletedHandler = (_, args) =>
+        {
+            if (!_reconciledCommandLogPaths.TryRemove(args.LogPath, out var wasReconciled))
+            {
+                return;
+            }
+
+            void apply() => ApplyReconciledCommandCompletion(args);
+
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                apply();
+            }
+            else
+            {
+                dispatcher.InvokeAsync(apply);
+            }
+        };
+        _siteManager.SiteCommandCompleted += _commandCompletedHandler;
     }
 
     public void Dispose()
     {
         _backupTracker.OperationStarted -= _operationStartedHandler;
         _backupTracker.OperationEnded -= _operationEndedHandler;
+        _siteManager.SiteCommandCompleted -= _commandCompletedHandler;
     }
 
     public bool HasDevSslPaths => DevSslCertificateManager.TryGetExisting(_paths) is not null;
@@ -652,6 +679,94 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
         RaisePropertyChanged(nameof(HasCustomCommands));
     }
 
+    /// <summary>
+    /// Rediscovers commands still running for this site after navigating back to the page,
+    /// so the row/log/stop controls reappear instead of leaving the process untrackable.
+    /// </summary>
+    private void ReconcileActiveCommands()
+    {
+        if (string.IsNullOrWhiteSpace(SiteId))
+        {
+            return;
+        }
+
+        foreach (var active in _siteManager.GetActiveSiteCommands(SiteId))
+        {
+            _reconciledCommandLogPaths[active.LogPath] = true;
+
+            if (active.Kind == SiteCommandKind.Custom)
+            {
+                var vm = CustomCommandItems.FirstOrDefault(item => item.Id == active.CommandKey);
+                if (vm is null)
+                {
+                    continue;
+                }
+
+                vm.IsRunning = true;
+                vm.SetLogPath(active.LogPath);
+                vm.SetCommandLine(active.CommandLine);
+                vm.Status = $"Running {vm.Label}…";
+                if (!ActiveCommandStatuses.Contains(vm))
+                {
+                    ActiveCommandStatuses.Add(vm);
+                }
+            }
+            else if (!IsRunningAction)
+            {
+                _lastQuickActionId = active.CommandKey;
+                _lastCommandLabel = SiteQuickActionPresets.Get(active.CommandKey)?.Label ?? active.CommandKey;
+                _lastCommandLine = active.CommandLine;
+                _lastCommandLogPath = active.LogPath;
+                _lastCommandExitCode = null;
+                IsRunningAction = true;
+                CommandStatusMessage = $"Running {_lastCommandLabel}…";
+                ShowCommandLogButton = true;
+                RaiseCommandStatusChromeChanged();
+            }
+        }
+
+        RaisePropertyChanged(nameof(ShowCustomCommandStatus));
+        DismissCustomStatusCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ApplyReconciledCommandCompletion(SiteCommandCompletedEventArgs args)
+    {
+        if (!string.Equals(args.SiteId, SiteId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (args.Kind == SiteCommandKind.Custom)
+        {
+            var vm = CustomCommandItems.FirstOrDefault(item => item.Id == args.CommandKey);
+            if (vm is not null)
+            {
+                vm.IsRunning = false;
+                vm.IsCancelling = false;
+                vm.SetCompletion(args.ExitCode, 0);
+                vm.Status = FormatReconciledCompletionStatus(vm.Label, args.ExitCode);
+            }
+        }
+        else if (string.Equals(_lastQuickActionId, args.CommandKey, StringComparison.OrdinalIgnoreCase))
+        {
+            IsRunningAction = false;
+            _lastCommandExitCode = args.ExitCode;
+            CommandStatusMessage = FormatReconciledCompletionStatus(_lastCommandLabel, args.ExitCode);
+            ShowCommandLogButton = !string.IsNullOrWhiteSpace(_lastCommandLogPath);
+            RaiseCommandStatusChromeChanged();
+        }
+
+        DismissCustomStatusCommand.RaiseCanExecuteChanged();
+    }
+
+    private static string FormatReconciledCompletionStatus(string label, int exitCode) =>
+        exitCode switch
+        {
+            -1 => $"{label} cancelled.",
+            0 => $"{label} finished.",
+            _ => $"{label} failed (exit {exitCode}). View log for details."
+        };
+
     private void LoadCustomCommands()
     {
         _customCommands.Clear();
@@ -904,6 +1019,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
         LoadVersions();
         LoadCustomCommands();
         LoadCustomCommandItems();
+        ReconcileActiveCommands();
         LoadScheduledTasks();
         _ = LoadSiteBackupsAsync();
         RaiseSiteActionChromeChanged();

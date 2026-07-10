@@ -36,6 +36,14 @@ public sealed class SiteCommandRunner
 
     public bool TryCancel(string logPath) => _runRegistry.TryCancel(logPath);
 
+    public event EventHandler<SiteCommandCompletedEventArgs>? CommandCompleted
+    {
+        add => _runRegistry.CommandCompleted += value;
+        remove => _runRegistry.CommandCompleted -= value;
+    }
+
+    public IReadOnlyList<ActiveSiteCommand> GetActiveCommands(string siteId) => _runRegistry.GetActiveForSite(siteId);
+
     public SiteCommandResult RunCustomCommand(
         SiteModel site,
         string commandId,
@@ -50,7 +58,9 @@ public sealed class SiteCommandRunner
             site,
             commandLine.Trim(),
             $"custom-{SanitizeLogSlug(commandId)}",
-            onLogCreated);
+            onLogCreated,
+            SiteCommandKind.Custom,
+            commandId);
     }
 
     public SiteCommandResult RunQuickAction(SiteModel site, string actionId, Action<SiteCommandLogStarted>? onLogCreated = null)
@@ -62,14 +72,16 @@ public sealed class SiteCommandRunner
             ?? throw new InvalidOperationException($"Unknown site action: {actionId}");
 
         var commandLine = BuildQuickActionCommandLine(site, action.Runtime, action.Argv);
-        return RunSiteShellCommand(site, commandLine, action.Id, onLogCreated);
+        return RunSiteShellCommand(site, commandLine, action.Id, onLogCreated, SiteCommandKind.QuickAction, action.Id);
     }
 
     private SiteCommandResult RunSiteShellCommand(
         SiteModel site,
         string commandLine,
         string logSlug,
-        Action<SiteCommandLogStarted>? onLogCreated)
+        Action<SiteCommandLogStarted>? onLogCreated,
+        SiteCommandKind kind,
+        string commandKey)
     {
         if (!Directory.Exists(site.Path))
         {
@@ -78,7 +90,7 @@ public sealed class SiteCommandRunner
 
         var logPath = CreateSiteCommandLogFile(site.Id, logSlug);
         onLogCreated?.Invoke(new SiteCommandLogStarted(logPath, commandLine));
-        return RunShellCommand(commandLine, site.Path, ResolveSitePhpVersionId(site), logPath);
+        return RunShellCommand(commandLine, site.Path, ResolveSitePhpVersionId(site), logPath, site.Id, kind, commandKey);
     }
 
     /// <summary>
@@ -88,7 +100,10 @@ public sealed class SiteCommandRunner
         string commandLine,
         string workingDirectory,
         string? phpVersionId,
-        string logPath)
+        string logPath,
+        string? siteId = null,
+        SiteCommandKind kind = SiteCommandKind.Custom,
+        string? commandKey = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
         ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
@@ -102,7 +117,7 @@ public sealed class SiteCommandRunner
         var trimmed = commandLine.Trim();
         var environment = BuildSiteCommandEnvironment(phpVersionId);
         var startedAt = Stopwatch.StartNew();
-        var result = RunShellProcess(workingDirectory, trimmed, environment, logPath);
+        var result = RunShellProcess(workingDirectory, trimmed, environment, logPath, siteId, kind, commandKey);
         startedAt.Stop();
 
         return new SiteCommandResult
@@ -205,7 +220,10 @@ public sealed class SiteCommandRunner
         string cwd,
         string commandLine,
         IReadOnlyDictionary<string, string> environment,
-        string logPath)
+        string logPath,
+        string? siteId,
+        SiteCommandKind kind,
+        string? commandKey)
     {
         var startInfo = ProcessStreamEncoding.Create("cmd.exe", cwd);
         startInfo.ArgumentList.Add("/d");
@@ -214,7 +232,7 @@ public sealed class SiteCommandRunner
         startInfo.ArgumentList.Add(commandLine);
 
         ApplyEnvironment(startInfo, environment);
-        return RunCapturedProcess(startInfo, logPath, "Failed to start site command.");
+        return RunCapturedProcess(startInfo, logPath, "Failed to start site command.", siteId, kind, commandKey, commandLine);
     }
 
     private static void ApplyEnvironment(ProcessStartInfo startInfo, IReadOnlyDictionary<string, string> environment)
@@ -228,7 +246,11 @@ public sealed class SiteCommandRunner
     private ProcessResult RunCapturedProcess(
         ProcessStartInfo startInfo,
         string logPath,
-        string startFailureMessage)
+        string startFailureMessage,
+        string? siteId,
+        SiteCommandKind kind,
+        string? commandKey,
+        string? commandLine)
     {
         if (PseudoConsoleCapture.IsSupported && !PseudoConsoleCapture.PreferPipes)
         {
@@ -238,14 +260,14 @@ public sealed class SiteCommandRunner
                 var captured = PseudoConsoleCapture.Run(
                     startInfo,
                     logWriter,
-                    process => _runRegistry.Register(logPath, process));
+                    process => _runRegistry.Register(logPath, process, siteId, kind, commandKey, commandLine));
                 try
                 {
                     return new ProcessResult(captured.ExitCode, captured.Output, captured.Error);
                 }
                 finally
                 {
-                    _runRegistry.Complete(logPath);
+                    _runRegistry.Complete(logPath, captured.ExitCode);
                 }
             }
             catch (Exception ex) when (ex is Win32Exception or NotSupportedException or IOException)
@@ -254,13 +276,17 @@ public sealed class SiteCommandRunner
             }
         }
 
-        return RunPipeCapturedProcess(startInfo, logPath, startFailureMessage);
+        return RunPipeCapturedProcess(startInfo, logPath, startFailureMessage, siteId, kind, commandKey, commandLine);
     }
 
     private ProcessResult RunPipeCapturedProcess(
         ProcessStartInfo startInfo,
         string logPath,
-        string startFailureMessage)
+        string startFailureMessage,
+        string? siteId,
+        SiteCommandKind kind,
+        string? commandKey,
+        string? commandLine)
     {
         SiteProcessEnvironment.ApplyRedirectCaptureDefaults(startInfo);
 
@@ -271,7 +297,8 @@ public sealed class SiteCommandRunner
             throw new InvalidOperationException(startFailureMessage);
         }
 
-        var cancelToken = _runRegistry.Register(logPath, process);
+        var cancelToken = _runRegistry.Register(logPath, process, siteId, kind, commandKey, commandLine);
+        var exitCode = -1;
         try
         {
             var stdoutBuilder = new StringBuilder();
@@ -288,7 +315,7 @@ public sealed class SiteCommandRunner
                     process.WaitForExit(2000);
                     WaitForPumpTasks(stdoutTask, stderrTask, TimeSpan.FromMilliseconds(500));
                     return new ProcessResult(
-                        -1,
+                        exitCode,
                         stdoutBuilder.ToString(),
                         TrimWithMessage(stderrBuilder, "Command cancelled."));
                 }
@@ -301,16 +328,17 @@ public sealed class SiteCommandRunner
             if (cancelToken.IsCancellationRequested)
             {
                 return new ProcessResult(
-                    -1,
+                    exitCode,
                     stdoutBuilder.ToString(),
                     TrimWithMessage(stderrBuilder, "Command cancelled."));
             }
 
-            return new ProcessResult(process.ExitCode, stdoutBuilder.ToString(), stderrBuilder.ToString());
+            exitCode = process.ExitCode;
+            return new ProcessResult(exitCode, stdoutBuilder.ToString(), stderrBuilder.ToString());
         }
         finally
         {
-            _runRegistry.Complete(logPath);
+            _runRegistry.Complete(logPath, exitCode);
         }
     }
 

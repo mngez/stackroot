@@ -1,4 +1,20 @@
-﻿## Stackroot 0.3.2
+﻿## Stackroot 0.3.3
+
+Download and run `Stackroot-Setup-0.3.3.exe` on **Windows 10/11 (64-bit)**. Update over **0.3.2** — sites, databases, and settings are kept.
+
+### Site commands
+
+- **Running commands survive navigation** — if you leave a site's Manage page while a custom command or quick action is still running, returning to the page now rediscovers it instead of leaving the process untrackable in the background.
+- **Stop and log controls come back** — reconciled commands restore their running row, status banner, **Stop**, and **View log** controls so you can cancel or follow output after navigating away.
+- **Completion status updates correctly** — when a rediscovered command finishes, the Manage page shows whether it succeeded, failed, or was cancelled without duplicating status for commands you started in the same visit.
+
+### Upgrading from 0.3.2
+
+Your sites, databases, and settings are preserved. No manual steps required.
+
+---
+
+## Stackroot 0.3.2
 
 Download and run `Stackroot-Setup-0.3.2.exe` on **Windows 10/11 (64-bit)**. Update over **0.3.1** — sites, databases, and settings are kept.
 

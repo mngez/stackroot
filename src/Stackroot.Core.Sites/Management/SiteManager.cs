@@ -299,6 +299,15 @@ public sealed class SiteManager
 
     public bool CancelSiteCommand(string logPath) => _commandRunner.TryCancel(logPath);
 
+    /// <summary>Commands still running for a site, so a reopened site page can rediscover them.</summary>
+    public IReadOnlyList<ActiveSiteCommand> GetActiveSiteCommands(string siteId) => _commandRunner.GetActiveCommands(siteId);
+
+    public event EventHandler<SiteCommandCompletedEventArgs>? SiteCommandCompleted
+    {
+        add => _commandRunner.CommandCompleted += value;
+        remove => _commandRunner.CommandCompleted -= value;
+    }
+
     public DevSslTrustResult TrustDevSslCertificate()
     {
         _ = EnsureDevSslForCurrentDomains();
