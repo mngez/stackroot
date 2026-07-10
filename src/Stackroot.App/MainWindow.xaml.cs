@@ -49,11 +49,41 @@ public partial class MainWindow : Window
         SetupTrayIcon();
         Loaded += OnWindowLoaded;
         Microsoft.Win32.SystemEvents.PowerModeChanged += OnSystemPowerModeChanged;
+        Microsoft.Win32.SystemEvents.SessionEnding += OnSystemSessionEnding;
     }
 
     private void OnSystemPowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
     {
         _viewModel.OnSystemPowerModeChanged(e.Mode == Microsoft.Win32.PowerModes.Suspend);
+    }
+
+    private void OnSystemSessionEnding(object sender, Microsoft.Win32.SessionEndingEventArgs e)
+    {
+        if (_quitting)
+        {
+            return;
+        }
+
+        // Windows is logging off/shutting down/restarting: there is no one to answer the
+        // close-behavior confirmation dialog, and no minutes to spare waiting on background
+        // work, so skip straight to a fast, bounded stop instead of leaving the process (and
+        // its supervised nginx/PHP/MySQL/Node children) to be force-killed by the OS. Anything
+        // still standing when we do exit is caught by the process job object (kill-on-close).
+        BeginQuit();
+
+        try
+        {
+            Task.Run(() => _shutdown.ShutdownAsync(
+                    TimeSpan.FromSeconds(5),
+                    maxBackgroundOperationWait: TimeSpan.FromSeconds(3)))
+                .Wait(TimeSpan.FromSeconds(10));
+        }
+        catch
+        {
+            // Best-effort — OnExit and the process job object still clean up on the way out.
+        }
+
+        System.Windows.Application.Current?.Shutdown();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -153,6 +183,7 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         Microsoft.Win32.SystemEvents.PowerModeChanged -= OnSystemPowerModeChanged;
+        Microsoft.Win32.SystemEvents.SessionEnding -= OnSystemSessionEnding;
         _trayIcon?.Dispose();
         _trayMenu?.Dispose();
         _trayManagedIcon?.Dispose();

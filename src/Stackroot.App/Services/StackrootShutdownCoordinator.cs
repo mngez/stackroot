@@ -59,7 +59,15 @@ public sealed class StackrootShutdownCoordinator
         _runtimeMetricsService = runtimeMetricsService;
     }
 
-    public async Task ShutdownAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+    /// <param name="maxBackgroundOperationWait">
+    /// How long to wait for in-flight background work (e.g. backups) before stopping processes.
+    /// Defaults to 3 minutes for an explicit user-initiated quit. Pass a short bound when reacting
+    /// to an OS session-ending event, where there is no time to spare and no one to see a prompt.
+    /// </param>
+    public async Task ShutdownAsync(
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default,
+        TimeSpan? maxBackgroundOperationWait = null)
     {
         if (Interlocked.Exchange(ref _shutdownCompleted, 1) == 1)
         {
@@ -77,7 +85,7 @@ public sealed class StackrootShutdownCoordinator
         try
         {
             await BackgroundOperationTracker.WaitForCompletionAsync(
-                TimeSpan.FromMinutes(3),
+                maxBackgroundOperationWait ?? TimeSpan.FromMinutes(3),
                 cancellationToken,
                 active =>
                 {

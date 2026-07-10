@@ -8,6 +8,10 @@ Download and run `Stackroot-Setup-0.3.3.exe` on **Windows 10/11 (64-bit)**. Upda
 - **Stop and log controls come back** — reconciled commands restore their running row, status banner, **Stop**, and **View log** controls so you can cancel or follow output after navigating away.
 - **Completion status updates correctly** — when a rediscovered command finishes, the Manage page shows whether it succeeded, failed, or was cancelled without duplicating status for commands you started in the same visit.
 
+### App shutdown
+
+- **Cleaner exit on Windows logoff or restart** — when Windows is shutting down, signing out, or restarting, Stackroot now runs a fast bounded shutdown instead of waiting on close-behavior prompts or long-running background tasks. Managed services get a chance to stop cleanly before the OS force-kills the app.
+
 ### Upgrading from 0.3.2
 
 Your sites, databases, and settings are preserved. No manual steps required.
