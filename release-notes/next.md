@@ -2,7 +2,13 @@
 
 Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-**Current target:** **0.3.4** (unreleased).
+**Current target:** **0.3.4** (unreleased — draft notes in `release-notes/0.3.4.md`; do not push until more ships with it).
+
+### Draft notes (0.3.4)
+
+### Site install
+
+- **Database-not-running warning shows reliably** — when installing WordPress or Laravel and the chosen database engine is installed but not running, the warning dialog now appears correctly instead of failing after the port check.
 
 ### How publishing works
 

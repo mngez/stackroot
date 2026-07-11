@@ -2699,7 +2699,7 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
                 return;
             }
 
-            if (!await IsDatabasePortOpenAsync(svc).ConfigureAwait(false))
+            if (!await IsDatabasePortOpenAsync(svc))
             {
                 StackrootDialogs.ShowWarning(
                     System.Windows.Application.Current?.MainWindow,
