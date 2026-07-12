@@ -1,4 +1,30 @@
-﻿## Stackroot 0.3.3
+﻿## Stackroot 0.3.4
+
+Download and run `Stackroot-Setup-0.3.4.exe` on **Windows 10/11 (64-bit)**. Update over **0.3.3** — sites, databases, and settings are kept.
+
+### PHP
+
+- **Stop stays stopped** — stopping a required PHP listener from the Dashboard no longer brings it back within seconds. Auto-recovery skips versions you stopped until you restart them (or nginx starts and brings the pool up again).
+
+### Logs
+
+- **Log viewer scrolls to the real end** — after refreshing a large log, the view jumps to the latest lines instead of landing mid-document.
+
+### Site dashboard
+
+- **Open site, Open admin, and custom commands wrap on one row** — the action buttons stay visible and wrap cleanly when the window is narrow, including after adding or removing custom commands.
+
+### Site install
+
+- **Database-not-running warning shows reliably** — when installing WordPress or Laravel and the chosen database engine is installed but not running, the warning dialog now appears correctly instead of failing after the port check.
+
+### Upgrading from 0.3.3
+
+Your sites, databases, and settings are preserved. No manual steps required.
+
+---
+
+## Stackroot 0.3.3
 
 Download and run `Stackroot-Setup-0.3.3.exe` on **Windows 10/11 (64-bit)**. Update over **0.3.2** — sites, databases, and settings are kept.
 
