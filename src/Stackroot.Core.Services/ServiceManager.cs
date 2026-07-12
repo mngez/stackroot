@@ -32,6 +32,8 @@ public sealed class ServiceManager : IDisposable
     private readonly ConcurrentDictionary<ServiceId, bool> _supervisionEligible = new();
     /// <summary>User explicitly stopped — keep-alive must not restart until manual Start.</summary>
     private readonly ConcurrentDictionary<ServiceId, byte> _userStoppedServices = new();
+    /// <summary>PHP versions the user explicitly stopped — recovery must not respawn them until manual Restart or a nginx (re)start.</summary>
+    private readonly ConcurrentDictionary<string, byte> _userStoppedPhpVersions = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<ServiceId, byte> _supervisionRestartInFlight = new();
     private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _supervisionRecoveredAt = new();
     private readonly ConcurrentDictionary<ServiceId, DateTimeOffset> _unexpectedStopHandledAt = new();
@@ -962,11 +964,17 @@ public sealed class ServiceManager : IDisposable
 
     public Task StopAllPhpCgiAsync(CancellationToken cancellationToken = default)
     {
+        foreach (var versionId in ResolveRequiredPhpVersionIds())
+        {
+            MarkPhpUserStopped(versionId);
+        }
+
         return PhpCgiRuntime.StopAllPhpCgiAsync(cancellationToken);
     }
 
     public async Task StopPhpCgiAsync(string versionId, CancellationToken cancellationToken = default)
     {
+        MarkPhpUserStopped(versionId);
         await PhpCgiRuntime.StopPhpCgiAsync(versionId, cancellationToken).ConfigureAwait(false);
         var settings = _settingsStore.Load();
         PhpCgiRuntime.KillOwnedPhpCgiOnPort(settings, _registry, versionId);
@@ -1012,6 +1020,7 @@ public sealed class ServiceManager : IDisposable
         foreach (var versionId in versionIds)
         {
             _phpRecoveryAttemptedAt[versionId] = DateTimeOffset.UtcNow;
+            ClearPhpUserStopped(versionId);
         }
 
         var settings = _settingsStore.Load();
@@ -1041,6 +1050,11 @@ public sealed class ServiceManager : IDisposable
             .Select(site => site.PhpVersionId!)
             .ToList();
         var versionIds = PhpCgiRuntime.ResolveRequiredVersionIds(settings, _registry, sitePhpVersionIds, Catalog);
+        foreach (var versionId in versionIds)
+        {
+            ClearPhpUserStopped(versionId);
+        }
+
         var result = await PhpCgiRuntime.EnsurePhpFastCgiAsync(
             _paths,
             _registry,
@@ -1087,6 +1101,11 @@ public sealed class ServiceManager : IDisposable
             foreach (var versionId in versionIds)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if (IsPhpVersionUserStopped(versionId))
+                {
+                    continue;
+                }
 
                 var port = ResolvePhpPlannedPort(versionId);
                 if (port is null or <= 0)
@@ -2918,6 +2937,15 @@ public sealed class ServiceManager : IDisposable
             MarkUserStoppedIntent(serviceId);
         }
     }
+
+    private void MarkPhpUserStopped(string versionId)
+        => _userStoppedPhpVersions.TryAdd(versionId, 0);
+
+    private void ClearPhpUserStopped(string versionId)
+        => _userStoppedPhpVersions.TryRemove(versionId, out _);
+
+    public bool IsPhpVersionUserStopped(string versionId)
+        => _userStoppedPhpVersions.ContainsKey(versionId);
 
     private void RaiseSupervisionAlert(ServiceId serviceId, string serviceName, int failureCount)
     {

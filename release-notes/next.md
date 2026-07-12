@@ -2,9 +2,21 @@
 
 Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-**Current target:** **0.3.4** (unreleased — draft notes in `release-notes/0.3.4.md`; do not push until more ships with it).
+**Current target:** **0.3.4** (unreleased — draft notes in `release-notes/0.3.4.md`; do not push until you decide to ship).
 
 ### Draft notes (0.3.4)
+
+### PHP
+
+- **Stop stays stopped** — stopping a required PHP listener from the Dashboard no longer brings it back within seconds. Auto-recovery skips versions you stopped until you restart them (or nginx starts and brings the pool up again).
+
+### Logs
+
+- **Log viewer scrolls to the real end** — after refreshing a large log, the view jumps to the latest lines instead of landing mid-document.
+
+### Site dashboard
+
+- **Action buttons wrap cleanly** — Open site, Open admin, custom commands, and Manage commands share one wrapping row so they stay aligned when the window is narrow.
 
 ### Site install
 

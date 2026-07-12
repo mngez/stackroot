@@ -56,7 +56,7 @@ internal static class LogColorizer
         viewer.Document.Blocks.Add(paragraph);
         if (scrollToEnd)
         {
-            viewer.ScrollToEnd();
+            ScrollToTrueEnd(viewer);
         }
     }
 
@@ -78,8 +78,20 @@ internal static class LogColorizer
 
         if (scrollToEnd)
         {
-            viewer.ScrollToEnd();
+            ScrollToTrueEnd(viewer);
         }
+    }
+
+    /// <summary>
+    /// RichTextBox.ScrollToEnd() scrolls against whatever extent was known at the last
+    /// completed layout pass. Right after Blocks.Clear()/Add(), that pass hasn't run yet, so on
+    /// large documents it lands mid-document instead of at the real end. Forcing layout first
+    /// makes the extent current before we scroll.
+    /// </summary>
+    private static void ScrollToTrueEnd(RichTextBox viewer)
+    {
+        viewer.UpdateLayout();
+        viewer.ScrollToEnd();
     }
 
     public static string TrimTailForDisplay(string content, int maxChars)

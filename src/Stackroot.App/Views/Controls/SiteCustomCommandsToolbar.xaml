@@ -56,52 +56,56 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <WrapPanel Margin="0,8,0,0">
-            <Button Padding="10,6"
-                    Content="{DynamicResource Loc.Common.OpenSite}"
-                    Style="{StaticResource StackrootPrimaryButtonStyle}"
-                    Command="{Binding OpenSiteCommand}"
-                    Visibility="{Binding ShowOpenSiteButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
-            <Button Margin="8,0,0,0"
-                    Padding="10,6"
-                    Content="{DynamicResource Loc.Common.OpenAdmin}"
-                    Command="{Binding OpenPostInstallAdminCommand}"
-                    Visibility="{Binding ShowOpenAdminButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
-            <ItemsControl ItemsSource="{Binding CustomCommandItems}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Margin="8,0,4,0"
-                                    Padding="10,6"
-                                    ToolTip="{Binding Command}"
-                                    Command="{Binding RunCommand}"
-                                    Style="{StaticResource StackrootCustomCommandButtonStyle}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Width="16"
-                                           Height="16"
-                                           Margin="0,0,6,0"
-                                           Source="{Binding IconSource}"
-                                           Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
-                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayLabel}" />
-                                </StackPanel>
-                            </Button>
-                        </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Button Margin="8,0,0,0"
-                    Width="32"
-                    Height="32"
-                    ToolTip="{DynamicResource Loc.Common.ManageCustomCommands}"
-                    Style="{StaticResource StackrootPrimaryIconButtonStyle}"
-                    Command="{Binding ManageCustomCommandsCommand}">
-                <TextBlock FontFamily="{StaticResource StackrootIconFont}"
-                           FontSize="14"
-                           Text="&#xE8FD;" />
-            </Button>
-        </WrapPanel>
+        <ItemsControl Margin="0,4,0,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Margin="0,4,8,4"
+                            Padding="10,6"
+                            ToolTip="{Binding Command}"
+                            Command="{Binding RunCommand}"
+                            Style="{StaticResource StackrootCustomCommandButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="16"
+                                   Height="16"
+                                   Margin="0,0,6,0"
+                                   Source="{Binding IconSource}"
+                                   Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayLabel}" />
+                        </StackPanel>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsSource>
+                <CompositeCollection>
+                    <Button Margin="0,4,8,4"
+                            Padding="10,6"
+                            Content="{DynamicResource Loc.Common.OpenSite}"
+                            Style="{StaticResource StackrootPrimaryButtonStyle}"
+                            Command="{Binding OpenSiteCommand}"
+                            Visibility="{Binding ShowOpenSiteButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
+                    <Button Margin="0,4,8,4"
+                            Padding="10,6"
+                            Content="{DynamicResource Loc.Common.OpenAdmin}"
+                            Command="{Binding OpenPostInstallAdminCommand}"
+                            Visibility="{Binding ShowOpenAdminButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" />
+                    <CollectionContainer Collection="{Binding CustomCommandItems}" />
+                    <Button Margin="0,4,8,4"
+                            Width="32"
+                            Height="32"
+                            ToolTip="{DynamicResource Loc.Common.ManageCustomCommands}"
+                            Style="{StaticResource StackrootPrimaryIconButtonStyle}"
+                            Command="{Binding ManageCustomCommandsCommand}">
+                        <TextBlock FontFamily="{StaticResource StackrootIconFont}"
+                                   FontSize="14"
+                                   Text="&#xE8FD;" />
+                    </Button>
+                </CompositeCollection>
+            </ItemsControl.ItemsSource>
+        </ItemsControl>
     </StackPanel>
 </UserControl>

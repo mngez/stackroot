@@ -1500,7 +1500,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
             UpsertPhpListenerRow(existing, state, version, isRunning, statusText);
 
-            if (state.IsRequired && !isRunning && wasRunning)
+            if (state.IsRequired && !isRunning && wasRunning && !_serviceManager.IsPhpVersionUserStopped(state.VersionId))
             {
                 stoppedRequired.Add(state.VersionId);
             }
