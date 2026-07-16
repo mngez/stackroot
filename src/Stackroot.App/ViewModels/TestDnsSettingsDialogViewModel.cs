@@ -22,6 +22,7 @@ public sealed class TestDnsSettingsDialogViewModel : ViewModelBase
     private string _resolveAddress = LocalDnsResolveAddress.Default;
     private string _resolveAddressError = string.Empty;
     private bool _isSaving;
+    private bool _isClearingCache;
     private string _statusMessage = string.Empty;
     private string _saveButtonText = "Save";
 
@@ -42,6 +43,9 @@ public sealed class TestDnsSettingsDialogViewModel : ViewModelBase
         SaveCommand = new RelayCommand(_ => _ = SaveAsync(), _ => !IsSaving);
         CloseCommand = new RelayCommand(_ => RequestClose?.Invoke(this, EventArgs.Empty), _ => !IsSaving);
         CopyRecoveryCommand = new RelayCommand(_ => CopyRecoveryCommandToClipboard());
+        ClearCacheCommand = new RelayCommand(
+            _ => _ = ClearCacheAsync(),
+            _ => !IsSaving && !_isClearingCache && _testDns is not null);
     }
 
     public bool PowerUserModeEnabled => _allowDangerousSettings;
@@ -115,6 +119,7 @@ public sealed class TestDnsSettingsDialogViewModel : ViewModelBase
             {
                 SaveCommand.RaiseCanExecuteChanged();
                 CloseCommand.RaiseCanExecuteChanged();
+                ClearCacheCommand.RaiseCanExecuteChanged();
                 RaisePropertyChanged(nameof(IsIdle));
             }
         }
@@ -137,6 +142,7 @@ public sealed class TestDnsSettingsDialogViewModel : ViewModelBase
     public RelayCommand SaveCommand { get; }
     public RelayCommand CloseCommand { get; }
     public RelayCommand CopyRecoveryCommand { get; }
+    public RelayCommand ClearCacheCommand { get; }
 
     public string RecoveryCommandText => TestDnsRecoveryCommands.WindowsCleanupScript;
 
@@ -145,6 +151,32 @@ public sealed class TestDnsSettingsDialogViewModel : ViewModelBase
 
     private static void CopyRecoveryCommandToClipboard() =>
         Clipboard.SetText(TestDnsRecoveryCommands.WindowsCleanupScript);
+
+    private async Task ClearCacheAsync()
+    {
+        if (_testDns is null || _isClearingCache)
+        {
+            return;
+        }
+
+        _isClearingCache = true;
+        ClearCacheCommand.RaiseCanExecuteChanged();
+        StatusMessage = "Clearing DNS caches…";
+        try
+        {
+            await _testDns.FlushDnsCacheAsync().ConfigureAwait(true);
+            StatusMessage = "DNS caches cleared (helper cache + Windows resolver cache).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Could not clear DNS caches. {ex.Message}";
+        }
+        finally
+        {
+            _isClearingCache = false;
+            ClearCacheCommand.RaiseCanExecuteChanged();
+        }
+    }
 
     private void RefreshSuffixValidation()
     {

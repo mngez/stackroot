@@ -634,6 +634,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Choisissez dans quelle base de données restaurer cette sauvegarde :</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Remplacer la base de données (supprimer et recréer avant la restauration)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Désactivé : importer dans la base de données existante. Activé : vider la base de données cible d'abord, puis restaurer.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Désactiver les contrôles de clés étrangères</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Désactivé (par défaut) : appliquer les clés étrangères à l'import. Activé : ignorer les contrôles pour restaurer des dumps avec des insertions hors ordre (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Activez le service, choisissez le démarrage automatique et configurez les paramètres réseau.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Démarrer automatiquement avec Stackroot</sys:String>
@@ -668,6 +670,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">Si Internet ne fonctionne plus</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Supprime StackrootDnsHelper et toutes les règles NRPT de Stackroot :</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Copier la commande de nettoyage</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Supprime les réponses amont mises en cache dans l'assistant DNS et vide le cache du résolveur Windows. Les noms locaux ne sont jamais mis en cache.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">Vider le cache DNS</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">Installer WordPress</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Configurez votre site WordPress. Tous les champs sont pré-remplis.</sys:String>

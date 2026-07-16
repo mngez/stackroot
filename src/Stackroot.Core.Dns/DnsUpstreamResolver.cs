@@ -8,6 +8,28 @@ public static class DnsUpstreamResolver
 {
     private static readonly IPAddress Fallback = IPAddress.Parse("1.1.1.1");
 
+    // NetworkInterface.GetAllNetworkInterfaces() is one of the slowest Windows
+    // networking calls (tens of ms, far worse under CPU pressure). Forwarding
+    // happens for every non-local query, so the usable-upstream list is cached
+    // and refreshed only when Windows reports a network change or the entry ages out.
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+    private static readonly object CacheGate = new();
+    private static IReadOnlyList<IPAddress>? _cachedUsable;
+    private static DateTimeOffset _cachedAt;
+
+    static DnsUpstreamResolver()
+    {
+        try
+        {
+            NetworkChange.NetworkAddressChanged += (_, _) => Invalidate();
+            NetworkChange.NetworkAvailabilityChanged += (_, _) => Invalidate();
+        }
+        catch
+        {
+            // If change notifications are unavailable the TTL alone keeps the list fresh.
+        }
+    }
+
     public static IReadOnlyList<IPAddress> GetSystemDnsServers()
     {
         try
@@ -30,13 +52,36 @@ public static class DnsUpstreamResolver
     /// </summary>
     public static IReadOnlyList<IPAddress> GetUsable()
     {
+        lock (CacheGate)
+        {
+            if (_cachedUsable is not null && DateTimeOffset.UtcNow - _cachedAt < CacheTtl)
+            {
+                return _cachedUsable;
+            }
+        }
+
         var servers = GetSystemDnsServers()
             .Where(static address => !IPAddress.IsLoopback(address))
             .Distinct()
             .ToList();
 
-        return servers.Count > 0 ? servers : [Fallback];
+        IReadOnlyList<IPAddress> usable = servers.Count > 0 ? servers : [Fallback];
+        lock (CacheGate)
+        {
+            _cachedUsable = usable;
+            _cachedAt = DateTimeOffset.UtcNow;
+        }
+
+        return usable;
     }
 
     public static IPAddress GetPrimary() => GetUsable()[0];
+
+    public static void Invalidate()
+    {
+        lock (CacheGate)
+        {
+            _cachedUsable = null;
+        }
+    }
 }

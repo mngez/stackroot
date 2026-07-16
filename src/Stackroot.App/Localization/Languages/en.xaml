@@ -643,6 +643,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Choose which database to restore this backup into:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Replace database (drop and recreate before restore)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Off: import into the existing database. On: wipe the target database first, then restore.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Disable foreign key checks</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Off (default): enforce foreign keys during import. On: skip foreign key checks so dumps with out-of-order inserts can restore (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Enable the service, choose auto-start, and configure network settings.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Start automatically with Stackroot</sys:String>
@@ -676,6 +678,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">If the internet stops working</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Removes StackrootDnsHelper and all Stackroot NRPT rules:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Copy cleanup command</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Drops cached upstream answers in the DNS helper and flushes the Windows resolver cache. Local names are never cached.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">Clear DNS cache</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">Install WordPress</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Configure your WordPress site. All fields are pre-filled.</sys:String>

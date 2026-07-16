@@ -640,6 +640,8 @@
         <sys:String x:Key="Loc.PickDatabase.Subtitle">Elija en qué base de datos restaurar esta copia de respaldo:</sys:String>
         <sys:String x:Key="Loc.PickDatabase.Replace">Reemplazar base de datos (eliminar y recrear antes de restaurar)</sys:String>
         <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Apagado: importar en la base de datos existente. Encendido: limpiar la base de datos de destino primero, luego restaurar.</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Desactivar comprobaciones de claves foráneas</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Apagado (predeterminado): aplicar claves foráneas al importar. Encendido: omitir comprobaciones para restaurar volcados con inserciones desordenadas (MySQL/MariaDB/PostgreSQL).</sys:String>
     
         <sys:String x:Key="Loc.ServiceSettings.Subtitle">Active el servicio, elija el inicio automático y configure los ajustes de red.</sys:String>
         <sys:String x:Key="Loc.ServiceSettings.AutoStart">Iniciar automáticamente con Stackroot</sys:String>
@@ -674,6 +676,8 @@
         <sys:String x:Key="Loc.TestDns.IfInternetStops">Si el Internet deja de funcionar</sys:String>
         <sys:String x:Key="Loc.TestDns.RecoveryHint">Elimina StackrootDnsHelper y todas las reglas NRPT de Stackroot:</sys:String>
         <sys:String x:Key="Loc.TestDns.CopyCleanup">Copiar comando de limpieza</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCacheHint">Elimina las respuestas de servidores externos almacenadas en el asistente de DNS y vacía la caché del solucionador de Windows. Los nombres locales nunca se almacenan en caché.</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCache">Borrar caché de DNS</sys:String>
     
         <sys:String x:Key="Loc.WordPress.Title">Instalar WordPress</sys:String>
         <sys:String x:Key="Loc.WordPress.Subtitle">Configure su sitio de WordPress. Todos los campos están completados previamente.</sys:String>

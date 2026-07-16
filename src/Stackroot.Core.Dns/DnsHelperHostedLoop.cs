@@ -58,13 +58,13 @@ public sealed class DnsHelperHostedLoop : IAsyncDisposable
                 return;
             }
 
-            var hadRestartToken = config.RestartToken.HasValue;
+            var hadOneShotToken = config.RestartToken.HasValue || config.FlushCacheToken.HasValue;
             try
             {
                 await _engine.ApplyAsync(config, cancellationToken).ConfigureAwait(false);
-                if (hadRestartToken)
+                if (hadOneShotToken)
                 {
-                    DnsHelperConfigStore.ClearRestartToken(config);
+                    DnsHelperConfigStore.ClearOneShotTokens(config);
                 }
             }
             catch (Exception ex)

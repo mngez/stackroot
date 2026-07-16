@@ -637,6 +637,8 @@
         <sys:String x:Key="Loc.PickDatabase.Subtitle">このバックアップを復元するデータベースを選択してください：</sys:String>
         <sys:String x:Key="Loc.PickDatabase.Replace">データベースを置換（復元前に削除して再作成）</sys:String>
         <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">オフ：既存のデータベースにインポートします。オン：最初に対象データベースをクリアしてから復元します。</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">外部キーチェックを無効にする</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">オフ（既定）：インポート時に外部キーを適用します。オン：順序外の挿入があるダンプを復元できるようチェックをスキップします（MySQL/MariaDB/PostgreSQL）。</sys:String>
     
         <sys:String x:Key="Loc.ServiceSettings.Subtitle">サービスを有効にし、自動起動を選択し、ネットワーク設定を構成します。</sys:String>
         <sys:String x:Key="Loc.ServiceSettings.AutoStart">Stackroot 起動時に自動開始する</sys:String>
@@ -671,6 +673,8 @@
         <sys:String x:Key="Loc.TestDns.IfInternetStops">インターネットが機能しなくなった場合</sys:String>
         <sys:String x:Key="Loc.TestDns.RecoveryHint">StackrootDnsHelper とすべての Stackroot NRPT ルールを削除します：</sys:String>
         <sys:String x:Key="Loc.TestDns.CopyCleanup">クリーンアップコマンドをコピー</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCacheHint">DNSヘルパーにキャッシュされた上流の応答を削除し、Windowsリゾルバーのキャッシュをフラッシュします。ローカル名はキャッシュされません。</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCache">DNSキャッシュをクリア</sys:String>
     
         <sys:String x:Key="Loc.WordPress.Title">WordPress のインストール</sys:String>
         <sys:String x:Key="Loc.WordPress.Subtitle">WordPress サイトを設定します。すべてのフィールドがあらかじめ入力されています。</sys:String>

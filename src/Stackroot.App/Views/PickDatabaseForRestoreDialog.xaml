@@ -4,8 +4,8 @@
         xmlns:windows="clr-namespace:Stackroot.App.Windows"
         Title="{DynamicResource Loc.PickDatabase.Title}"
         FlowDirection="{DynamicResource Loc.FlowDirection}"
-        Width="440" Height="280"
-        MinHeight="280"
+        Width="440" Height="320"
+        MinHeight="320"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource StackrootWindowBrush}"
@@ -14,6 +14,7 @@
         windows:WindowsTheme.EnableDarkTitleBar="True">
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -39,7 +40,13 @@
                   IsChecked="{Binding ReplaceDatabaseBeforeRestore}"
                   ToolTip="{DynamicResource Loc.PickDatabase.ReplaceTooltip}" />
 
-        <StackPanel Grid.Row="5" Margin="0,16,0,0"
+        <CheckBox Grid.Row="4"
+                  Margin="0,10,0,0"
+                  Content="{DynamicResource Loc.PickDatabase.DisableForeignKeyChecks}"
+                  IsChecked="{Binding DisableForeignKeyChecks}"
+                  ToolTip="{DynamicResource Loc.PickDatabase.DisableForeignKeyChecksTooltip}" />
+
+        <StackPanel Grid.Row="6" Margin="0,16,0,0"
                     Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="{DynamicResource Loc.Common.Cancel}"
                     MinWidth="80" Padding="10,6"

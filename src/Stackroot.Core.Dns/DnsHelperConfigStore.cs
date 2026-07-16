@@ -57,18 +57,19 @@ public static class DnsHelperConfigStore
     }
 
     /// <summary>
-    /// Clears a one-shot restart token after the helper has consumed it so a later
-    /// service restart does not treat a stale token as a fresh restart request.
+    /// Clears one-shot tokens (restart, cache flush) after the helper has consumed
+    /// them so a later service restart does not treat a stale token as a fresh request.
     /// </summary>
-    public static void ClearRestartToken(DnsHelperRuntimeConfig config)
+    public static void ClearOneShotTokens(DnsHelperRuntimeConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
-        if (!config.RestartToken.HasValue)
+        if (!config.RestartToken.HasValue && !config.FlushCacheToken.HasValue)
         {
             return;
         }
 
         config.RestartToken = null;
+        config.FlushCacheToken = null;
         Publish(config);
     }
 

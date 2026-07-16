@@ -638,6 +638,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Kies in welke database u deze backup wilt herstellen:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Database vervangen (wissen en opnieuw aanmaken voor herstel)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Uit: importeren in de bestaande database. Aan: doeldatabase eerst leegmaken, daarna herstellen.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Controles op vreemde sleutels uitschakelen</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Uit (standaard): vreemde sleutels afdwingen tijdens import. Aan: controles overslaan zodat dumps met inserts buiten volgorde kunnen worden hersteld (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Schakel de service in, kies automatisch starten en configureer netwerkinstellingen.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Automatisch starten met Stackroot</sys:String>
@@ -672,6 +674,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">Als het internet stopt met werken</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Verwijdert StackrootDnsHelper en alle Stackroot NRPT-regels:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Herstelopdracht kopiëren</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Verwijdert gecachte upstream-antwoorden in de DNS-helper en wist de Windows-resolvercache. Lokale namen worden nooit gecachet.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">DNS-cache wissen</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">WordPress installeren</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Configureer uw WordPress-site. Alle velden zijn vooraf ingevuld.</sys:String>

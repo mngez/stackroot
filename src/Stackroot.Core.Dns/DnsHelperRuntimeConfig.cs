@@ -44,6 +44,14 @@ public sealed class DnsHelperRuntimeConfig
     [JsonPropertyName("restartToken")]
     public Guid? RestartToken { get; set; }
 
+    /// <summary>
+    /// Set to a fresh value to make the helper drop all cached upstream DNS answers
+    /// once. Consumed like <see cref="RestartToken"/>: each distinct value triggers
+    /// exactly one flush, and config-only republishes must leave it unchanged.
+    /// </summary>
+    [JsonPropertyName("flushCacheToken")]
+    public Guid? FlushCacheToken { get; set; }
+
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

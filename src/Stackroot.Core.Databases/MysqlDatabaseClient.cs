@@ -100,7 +100,8 @@ public static class MysqlDatabaseClient
         AppSettings settings,
         SqlEngine engine,
         string databaseName,
-        string backupPath)
+        string backupPath,
+        bool disableForeignKeyChecks = false)
     {
         var validatedName = ValidateDatabaseName(databaseName);
         var serviceId = ResolveServiceId(engine);
@@ -125,7 +126,8 @@ public static class MysqlDatabaseClient
                 creds.Password,
                 validatedName,
                 backupPath,
-                out var error))
+                out var error,
+                disableForeignKeyChecks))
         {
             throw new InvalidOperationException(
                 string.IsNullOrWhiteSpace(error)

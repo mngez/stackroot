@@ -638,6 +638,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Wybierz bazę danych, do której ma zostać przywrócona ta kopia zapasowa:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Zastąp bazę danych (usuń i utwórz ponownie przed przywróceniem)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Wyłączone: import do istniejącej bazy danych. Włączone: najpierw wyczyść docelową bazę danych, a następnie przywróć.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Wyłącz sprawdzanie kluczy obcych</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Wyłączone (domyślnie): wymuszaj klucze obce podczas importu. Włączone: pomiń sprawdzanie, aby przywrócić zrzuty z wstawkami poza kolejnością (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Włącz usługę, wybierz automatyczne uruchamianie i skonfiguruj ustawienia sieciowe.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Uruchamiaj automatycznie ze Stackroot</sys:String>
@@ -672,6 +674,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">Jeśli internet przestanie działać</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Usuwa StackrootDnsHelper i wszystkie reguły NRPT od Stackroot:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Kopiuj polecenie czyszczenia</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Usuwa zapisane w pamięci podręcznej odpowiedzi serwerów nadrzędnych w pomocniku DNS i czyści pamięć podręczną resolvera Windows. Nazwy lokalne nigdy nie są buforowane.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">Wyczyść pamięć podręczną DNS</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">Zainstaluj WordPress</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Skonfiguruj swoją witrynę WordPress. Wszystkie pola są wstępnie wypełnione.</sys:String>

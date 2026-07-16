@@ -639,6 +639,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Wählen Sie aus, in welche Datenbank dieses Backup wiederhergestellt werden soll:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Datenbank ersetzen (vor dem Wiederherstellen löschen und neu erstellen)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Aus: in die bestehende Datenbank importieren. Ein: Zieldatenbank zuerst bereinigen, dann wiederherstellen.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Fremdschlüsselprüfungen deaktivieren</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Aus (Standard): Fremdschlüssel beim Import prüfen. Ein: Prüfungen überspringen, damit Dumps mit ungeordneter Einfügereihenfolge wiederhergestellt werden können (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Dienst aktivieren, Autostart wählen und Netzwerkeinstellungen konfigurieren.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Automatisch mit Stackroot starten</sys:String>
@@ -673,6 +675,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">Wenn das Internet nicht mehr funktioniert</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Entfernt StackrootDnsHelper und alle Stackroot-NRPT-Regeln:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Bereinigungsbefehl kopieren</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Entfernt zwischengespeicherte Upstream-Antworten im DNS-Helfer und leert den Windows-Resolver-Cache. Lokale Namen werden nie zwischengespeichert.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">DNS-Cache leeren</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">WordPress installieren</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Konfigurieren Sie Ihre WordPress-Website. Alle Felder sind vorausgefüllt.</sys:String>

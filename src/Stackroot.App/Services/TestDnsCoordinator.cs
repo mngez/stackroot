@@ -271,6 +271,31 @@ public sealed class TestDnsCoordinator
         NotifyStatusChanged();
     }
 
+    /// <summary>
+    /// Clears the helper's forward cache (via a one-shot token the helper consumes)
+    /// and the Windows stub-resolver cache. Does not install or start the helper
+    /// service — with nothing running there is nothing cached in it.
+    /// </summary>
+    public async Task FlushDnsCacheAsync(CancellationToken cancellationToken = default)
+    {
+        // Preserve the current desired listen state: clearing the cache must never
+        // restart a listener the user stopped, nor stop a running one.
+        var settings = _settingsStore.Load();
+        var config = settings.TestDns.Enabled
+            ? BuildConfig(settings, listen: ResolveDesiredListenState(settings.TestDns))
+            : BuildConfig(settings, enabled: false, listen: false);
+        config.FlushCacheToken = Guid.NewGuid();
+        await _client.PublishAndRefreshAsync(config, cancellationToken).ConfigureAwait(false);
+
+        var windowsFlushed = WindowsDnsResolverCache.TryFlush();
+        _diagnostics?.LogActivity(
+            "Test DNS",
+            windowsFlushed
+                ? "DNS caches cleared (helper forward cache + Windows resolver cache)"
+                : "Helper DNS cache cleared (Windows resolver cache flush was unavailable)");
+        NotifyStatusChanged();
+    }
+
     public Task RefreshServerConfigurationAsync(CancellationToken cancellationToken = default)
         => RefreshServerConfigurationCoreAsync(cancellationToken);
 

@@ -8,6 +8,7 @@ namespace Stackroot.Core.Dns;
 /// <summary>
 /// Minimal UDP/TCP DNS responder on 127.0.0.1:53 for configured dev suffixes.
 /// Safe suffixes (e.g. .test) resolve to loopback; public suffixes only match local site names and forward the rest.
+/// Local-name matching always runs before the forward cache, so configured mappings win over cached upstream answers.
 /// </summary>
 public sealed class TestDnsServer : IAsyncDisposable
 {
@@ -18,13 +19,16 @@ public sealed class TestDnsServer : IAsyncDisposable
 
     private readonly object _optionsGate = new();
     private LocalDnsServerOptions _options = LocalDnsServerOptions.Default;
+    private readonly DnsForwardCache _forwardCache = new();
 
     private static readonly TimeSpan ForwardTimeout = TimeSpan.FromSeconds(2);
+    private const int ReceiveBufferBytes = 1 << 20;
 
     private const ushort FlagQr = 0x8000;
     private const ushort FlagAa = 0x0400;
     private const ushort FlagRd = 0x0100;
     private const ushort FlagRa = 0x0080;
+    private const ushort RcodeServFail = 0x0002;
     private const ushort RcodeNxDomain = 0x0003;
 
     private UdpClient? _client;
@@ -32,12 +36,18 @@ public sealed class TestDnsServer : IAsyncDisposable
     private CancellationTokenSource? _cts;
     private Task? _receiveTask;
     private Task? _tcpAcceptTask;
-    private SemaphoreSlim? _sendLock;
     private volatile ITestDnsQueryLogger? _queryLogger;
 
     public bool IsRunning { get; private set; }
 
     public string? LastError { get; private set; }
+
+    /// <summary>Test hook: overrides the system upstream list used for forwarding.</summary>
+    internal Func<IReadOnlyList<IPEndPoint>>? UpstreamProviderOverride { get; set; }
+
+    internal int? BoundUdpPort => (_client?.Client.LocalEndPoint as IPEndPoint)?.Port;
+
+    internal int ForwardCacheCount => _forwardCache.Count;
 
     public TestDnsServer(int listenPort = ListenPort)
     {
@@ -55,6 +65,9 @@ public sealed class TestDnsServer : IAsyncDisposable
 
     public void SetQueryLogger(ITestDnsQueryLogger? logger) => _queryLogger = logger;
 
+    /// <summary>Drops all cached upstream answers. Local answers are never cached.</summary>
+    public void FlushForwardCache() => _forwardCache.Flush();
+
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -68,9 +81,9 @@ public sealed class TestDnsServer : IAsyncDisposable
         {
             DisposeSocket();
             _client = new UdpClient(new IPEndPoint(IPAddress.Loopback, _listenPort));
+            UdpSocketHardening.Apply(_client.Client, ReceiveBufferBytes);
             _tcpListener = new TcpListener(IPAddress.Loopback, _listenPort);
             _tcpListener.Start();
-            _sendLock = new SemaphoreSlim(1, 1);
             _cts = new CancellationTokenSource();
             _receiveTask = ReceiveLoopAsync(_cts.Token);
             _tcpAcceptTask = AcceptTcpLoopAsync(_cts.Token);
@@ -81,9 +94,7 @@ public sealed class TestDnsServer : IAsyncDisposable
         catch (Exception ex)
         {
             LastError = ex.Message;
-            IsRunning = false;
-            _client?.Dispose();
-            _client = null;
+            DisposeSocket();
             return Task.FromException(ex);
         }
     }
@@ -147,8 +158,6 @@ public sealed class TestDnsServer : IAsyncDisposable
             _tcpListener = null;
         }
 
-        _sendLock?.Dispose();
-        _sendLock = null;
         IsRunning = false;
     }
 
@@ -172,6 +181,15 @@ public sealed class TestDnsServer : IAsyncDisposable
                 catch (ObjectDisposedException)
                 {
                     break;
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode is SocketError.ConnectionReset or SocketError.MessageSize)
+                {
+                    // ConnectionReset: ICMP echo of a response we sent to a client
+                    // that already gave up. MessageSize: oversized datagram. Neither
+                    // hurts the listener — receive again immediately. This loop is
+                    // the single intake for ALL queries; any delay here backs up the
+                    // socket buffer and drops queries exactly when the machine is busy.
+                    continue;
                 }
                 catch (SocketException ex)
                 {
@@ -248,7 +266,8 @@ public sealed class TestDnsServer : IAsyncDisposable
                 }
 
                 var options = GetOptionsSnapshot();
-                var (response, disposition) = await TryResolveQueryAsync(query, options, cancellationToken).ConfigureAwait(false);
+                var (response, disposition) = await TryResolveQueryAsync(
+                    query, options, _forwardCache, UpstreamProviderOverride, cancellationToken).ConfigureAwait(false);
                 LogQuery("tcp", client.Client.RemoteEndPoint?.ToString(), query, disposition);
                 if (response is null)
                 {
@@ -296,7 +315,8 @@ public sealed class TestDnsServer : IAsyncDisposable
         try
         {
             var options = GetOptionsSnapshot();
-            (response, disposition) = await TryResolveQueryAsync(result.Buffer, options, cancellationToken).ConfigureAwait(false);
+            (response, disposition) = await TryResolveQueryAsync(
+                result.Buffer, options, _forwardCache, UpstreamProviderOverride, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -309,27 +329,25 @@ public sealed class TestDnsServer : IAsyncDisposable
 
         LogQuery("udp", result.RemoteEndPoint.ToString(), result.Buffer, disposition);
 
-        if (response is null || _sendLock is null || _client is null)
+        var client = _client;
+        if (response is null || client is null)
         {
             return;
         }
 
         try
         {
-            await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                await _client.SendAsync(response, result.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                _sendLock.Release();
-            }
+            // Datagram sends on one socket are safe to issue concurrently; funneling
+            // every response through a lock serialized the whole server under load.
+            await client.SendAsync(response, result.RemoteEndPoint, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (ObjectDisposedException)
+        {
+        }
+        catch (SocketException)
         {
         }
     }
@@ -362,6 +380,8 @@ public sealed class TestDnsServer : IAsyncDisposable
     internal static async Task<(byte[]? Response, string Disposition)> TryResolveQueryAsync(
         ReadOnlyMemory<byte> query,
         LocalDnsServerOptions options,
+        DnsForwardCache? forwardCache = null,
+        Func<IReadOnlyList<IPEndPoint>>? upstreamProvider = null,
         CancellationToken cancellationToken = default)
     {
         if (!TryParseQuestion(query.Span, out var qname, out var questionOffset, out var questionLength, out var qtype))
@@ -374,12 +394,32 @@ public sealed class TestDnsServer : IAsyncDisposable
             return (BuildLoopbackPtrResponse(query.Span, questionOffset, questionLength), "ptr");
         }
 
+        // Local matching first, unconditionally: configured names/suffixes must
+        // answer locally even when the forward cache holds an upstream answer for
+        // the same name from before the configuration changed.
         if (!LocalDnsNameMatcher.ShouldAnswerLocally(qname, options.Suffixes, options.LocalNames))
         {
             if (ShouldForward(qname, options))
             {
-                var forwarded = await ForwardQueryAsync(query, cancellationToken).ConfigureAwait(false);
-                return (forwarded, forwarded is null ? "forward-timeout" : "forward");
+                var cacheKey = DnsForwardCache.MakeKey(qname, qtype);
+                if (forwardCache is not null
+                    && forwardCache.TryGet(cacheKey, query.Span, questionOffset, questionLength, out var cached))
+                {
+                    return (cached, "cache");
+                }
+
+                var upstreams = ResolveUpstreams(upstreamProvider);
+                var forwarded = await DnsForwarder.QueryAsync(query, upstreams, ForwardTimeout, cancellationToken)
+                    .ConfigureAwait(false);
+                if (forwarded is not null)
+                {
+                    forwardCache?.TryStore(cacheKey, forwarded, questionOffset, questionLength);
+                    return (forwarded, "forward");
+                }
+
+                // Answering SERVFAIL lets the client retry immediately instead of
+                // burning its full stub-resolver timeout on silence.
+                return (BuildServFailResponse(query.Span, questionOffset, questionLength), "forward-timeout");
             }
 
             return (BuildNxDomainResponse(query.Span, questionOffset, questionLength), "nxdomain");
@@ -390,6 +430,23 @@ public sealed class TestDnsServer : IAsyncDisposable
 
     internal static byte[]? TryBuildResponse(ReadOnlySpan<byte> query, LocalDnsServerOptions options) =>
         TryResolveQueryAsync(query.ToArray(), options).GetAwaiter().GetResult().Response;
+
+    private static IReadOnlyList<IPEndPoint> ResolveUpstreams(Func<IReadOnlyList<IPEndPoint>>? upstreamProvider)
+    {
+        if (upstreamProvider is not null)
+        {
+            return upstreamProvider();
+        }
+
+        var addresses = DnsUpstreamResolver.GetUsable();
+        var endpoints = new IPEndPoint[addresses.Count];
+        for (var i = 0; i < addresses.Count; i++)
+        {
+            endpoints[i] = new IPEndPoint(addresses[i], 53);
+        }
+
+        return endpoints;
+    }
 
     private static bool ShouldForward(string qname, LocalDnsServerOptions options)
     {
@@ -411,34 +468,6 @@ public sealed class TestDnsServer : IAsyncDisposable
         }
 
         return false;
-    }
-
-    private static async Task<byte[]?> ForwardQueryAsync(ReadOnlyMemory<byte> query, CancellationToken cancellationToken)
-    {
-        foreach (var upstream in DnsUpstreamResolver.GetUsable())
-        {
-            using var client = new UdpClient(AddressFamily.InterNetwork);
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(ForwardTimeout);
-
-            try
-            {
-                await client.SendAsync(query, new IPEndPoint(upstream, 53), timeoutCts.Token).ConfigureAwait(false);
-                var result = await client.ReceiveAsync(timeoutCts.Token).ConfigureAwait(false);
-                if (result.Buffer.Length > 0)
-                {
-                    return result.Buffer;
-                }
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-            }
-            catch
-            {
-            }
-        }
-
-        return null;
     }
 
     private static bool TryParseQuestion(
@@ -497,12 +526,26 @@ public sealed class TestDnsServer : IAsyncDisposable
         return (ushort)(FlagQr | FlagAa | (recursionDesired ? FlagRd : 0) | FlagRa | rcode);
     }
 
-    private static byte[] BuildResponsePacket(ReadOnlySpan<byte> query, int questionOffset, int questionLength, byte[] answer, ushort rcode = 0)
+    private static ushort BuildRecursiveFlags(ReadOnlySpan<byte> query, ushort rcode)
+    {
+        var flags = BinaryPrimitives.ReadUInt16BigEndian(query.Slice(2));
+        var recursionDesired = (flags & FlagRd) != 0;
+        return (ushort)(FlagQr | (recursionDesired ? FlagRd : 0) | FlagRa | rcode);
+    }
+
+    private static byte[] BuildResponsePacket(
+        ReadOnlySpan<byte> query,
+        int questionOffset,
+        int questionLength,
+        byte[] answer,
+        ushort rcode = 0,
+        bool authoritative = true)
     {
         var responseLength = 12 + questionLength + answer.Length;
         var response = new byte[responseLength];
         query[..12].CopyTo(response);
-        BinaryPrimitives.WriteUInt16BigEndian(response.AsSpan(2), BuildAuthoritativeFlags(query, rcode));
+        var flags = authoritative ? BuildAuthoritativeFlags(query, rcode) : BuildRecursiveFlags(query, rcode);
+        BinaryPrimitives.WriteUInt16BigEndian(response.AsSpan(2), flags);
         BinaryPrimitives.WriteUInt16BigEndian(response.AsSpan(6), answer.Length == 0 ? (ushort)0 : (ushort)1);
         query.Slice(questionOffset, questionLength).CopyTo(response.AsSpan(12));
         if (answer.Length > 0)
@@ -543,6 +586,9 @@ public sealed class TestDnsServer : IAsyncDisposable
 
     private static byte[] BuildNxDomainResponse(ReadOnlySpan<byte> query, int questionOffset, int questionLength) =>
         BuildResponsePacket(query, questionOffset, questionLength, [], RcodeNxDomain);
+
+    private static byte[] BuildServFailResponse(ReadOnlySpan<byte> query, int questionOffset, int questionLength) =>
+        BuildResponsePacket(query, questionOffset, questionLength, [], RcodeServFail, authoritative: false);
 
     private static byte[] BuildAddressAnswer(ReadOnlySpan<byte> query, int nameOffset, byte[] addressBytes)
     {

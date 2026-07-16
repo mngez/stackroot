@@ -637,6 +637,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">Выберите базу данных для восстановления этой резервной копии:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">Заменить базу данных (удалить и пересоздать перед восстановлением)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Выкл: импорт в существующую базу данных. Вкл: полная очистка целевой базы данных перед восстановлением.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Отключить проверку внешних ключей</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Выкл (по умолчанию): применять внешние ключи при импорте. Вкл: пропустить проверки, чтобы восстановить дампы со вставками не по порядку (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">Включите службу, выберите автозапуск и настройте параметры сети.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">Запускать автоматически вместе со Stackroot</sys:String>
@@ -671,6 +673,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">Если интернет перестал работать</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">Удаляет StackrootDnsHelper и все правила NRPT от Stackroot:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">Копировать команду очистки</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">Удаляет кэшированные ответы вышестоящих серверов в DNS-помощнике и очищает кэш резолвера Windows. Локальные имена никогда не кэшируются.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">Очистить кэш DNS</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">Установить WordPress</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">Настройка сайта WordPress. Все поля предварительно заполнены.</sys:String>

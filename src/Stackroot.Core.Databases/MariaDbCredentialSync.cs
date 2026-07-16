@@ -616,7 +616,8 @@ public static class MariaDbCredentialSync
         string? password,
         string databaseName,
         string backupPath,
-        out string? error)
+        out string? error,
+        bool disableForeignKeyChecks = false)
     {
         error = null;
         var mysqlClient = ResolveMysqlClient(installPath);
@@ -678,6 +679,11 @@ public static class MariaDbCredentialSync
                 var stdin = process.StandardInput.BaseStream;
                 stdin.Write("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;"u8);
                 stdin.Write("\n"u8);
+                if (disableForeignKeyChecks)
+                {
+                    stdin.Write("SET FOREIGN_KEY_CHECKS=0;"u8);
+                    stdin.Write("\n"u8);
+                }
 
                 using (var backup = File.OpenRead(backupPath))
                 using (var reader = new StreamReader(backup, Utf8NoBom, detectEncodingFromByteOrderMarks: true))
@@ -694,6 +700,12 @@ public static class MariaDbCredentialSync
                         stdin.Write(bytes);
                         stdin.Write("\n"u8);
                     }
+                }
+
+                if (disableForeignKeyChecks)
+                {
+                    stdin.Write("SET FOREIGN_KEY_CHECKS=1;"u8);
+                    stdin.Write("\n"u8);
                 }
 
                 process.StandardInput.Close();

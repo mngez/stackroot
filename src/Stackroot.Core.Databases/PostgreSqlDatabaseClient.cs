@@ -88,7 +88,8 @@ public static class PostgreSqlDatabaseClient
         InstallRegistryStore registry,
         AppSettings settings,
         string databaseName,
-        string backupPath)
+        string backupPath,
+        bool disableForeignKeyChecks = false)
     {
         var validatedName = ValidateDatabaseName(databaseName);
         var (installed, serviceSettings) = ResolveInstall(registry, settings);
@@ -118,8 +119,20 @@ public static class PostgreSqlDatabaseClient
         process.StartInfo.ArgumentList.Add(user);
         process.StartInfo.ArgumentList.Add("-d");
         process.StartInfo.ArgumentList.Add(validatedName);
+        if (disableForeignKeyChecks)
+        {
+            // Same session as -f: defer FK/trigger enforcement while the dump loads.
+            process.StartInfo.ArgumentList.Add("-c");
+            process.StartInfo.ArgumentList.Add("SET session_replication_role = replica;");
+        }
+
         process.StartInfo.ArgumentList.Add("-f");
         process.StartInfo.ArgumentList.Add(backupPath);
+        if (disableForeignKeyChecks)
+        {
+            process.StartInfo.ArgumentList.Add("-c");
+            process.StartInfo.ArgumentList.Add("SET session_replication_role = origin;");
+        }
 
         process.Start();
         var error = process.StandardError.ReadToEnd();

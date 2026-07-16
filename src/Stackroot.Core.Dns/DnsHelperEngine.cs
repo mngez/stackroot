@@ -13,6 +13,7 @@ public sealed class DnsHelperEngine : IAsyncDisposable
     private TestDnsQueryLogger? _queryLogger;
     private string? _lastError;
     private Guid? _lastAppliedRestartToken;
+    private Guid? _lastAppliedFlushCacheToken;
 
     public bool IsListenerRunning => _server.IsRunning;
 
@@ -37,6 +38,15 @@ public sealed class DnsHelperEngine : IAsyncDisposable
         // a disable/stop must not leave a stale "pending restart" around.
         var forceRestart = config.RestartToken.HasValue && config.RestartToken != _lastAppliedRestartToken;
         _lastAppliedRestartToken = config.RestartToken;
+
+        var flushCache = config.FlushCacheToken.HasValue && config.FlushCacheToken != _lastAppliedFlushCacheToken;
+        _lastAppliedFlushCacheToken = config.FlushCacheToken;
+        if (flushCache)
+        {
+            // The forward cache lives on the server instance independent of the
+            // listener state, so flushing is safe in every branch below.
+            _server.FlushForwardCache();
+        }
 
         lock (_gate)
         {

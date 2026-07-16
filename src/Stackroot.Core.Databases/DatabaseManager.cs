@@ -258,7 +258,8 @@ public sealed class DatabaseManager
     public string RestoreBackup(
         string backupPath,
         string? targetDatabaseName = null,
-        bool replaceExistingDatabase = false)
+        bool replaceExistingDatabase = false,
+        bool disableForeignKeyChecks = false)
     {
         if (ApplicationShutdownState.ShutdownRequested || ApplicationShutdownState.IsShuttingDown)
         {
@@ -293,7 +294,7 @@ public sealed class DatabaseManager
             CreateOnServer(settings, engine, databaseName);
         }
 
-        ImportToServer(settings, engine, databaseName, backupPath);
+        ImportToServer(settings, engine, databaseName, backupPath, disableForeignKeyChecks);
 
         var now = DateTimeOffset.UtcNow.ToString("O");
         if (!existsInRegistry)
@@ -461,15 +462,22 @@ public sealed class DatabaseManager
         }
     }
 
-    private void ImportToServer(AppSettings settings, SqlEngine engine, string name, string backupPath)
+    private void ImportToServer(
+        AppSettings settings,
+        SqlEngine engine,
+        string name,
+        string backupPath,
+        bool disableForeignKeyChecks)
     {
         switch (engine)
         {
             case SqlEngine.Mysql or SqlEngine.Mariadb:
-                MysqlDatabaseClient.ImportSqlFile(_installRegistry, settings, engine, name, backupPath);
+                MysqlDatabaseClient.ImportSqlFile(
+                    _installRegistry, settings, engine, name, backupPath, disableForeignKeyChecks);
                 break;
             case SqlEngine.Postgresql:
-                PostgreSqlDatabaseClient.ImportDump(_installRegistry, settings, name, backupPath);
+                PostgreSqlDatabaseClient.ImportDump(
+                    _installRegistry, settings, name, backupPath, disableForeignKeyChecks);
                 break;
             case SqlEngine.Mongodb:
                 MongoDatabaseClient.ImportDump(_installRegistry, settings, name, backupPath);

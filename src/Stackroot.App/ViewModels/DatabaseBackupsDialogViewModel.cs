@@ -379,7 +379,8 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
             () => Task.Run(() => _databaseManager.RestoreBackup(
                 backup.FullPath,
                 targetName,
-                choice.ReplaceExistingDatabase)),
+                choice.ReplaceExistingDatabase,
+                choice.DisableForeignKeyChecks)),
 
             value => IsBusy = value,
 
@@ -510,10 +511,14 @@ public sealed class DatabaseBackupsDialogViewModel : ViewModelBase
 
         return new RestoreTargetChoice(
             dialogVm.SelectedDatabase,
-            dialogVm.ReplaceDatabaseBeforeRestore);
+            dialogVm.ReplaceDatabaseBeforeRestore,
+            dialogVm.DisableForeignKeyChecks);
     }
 
-    private sealed record RestoreTargetChoice(string DatabaseName, bool ReplaceExistingDatabase);
+    private sealed record RestoreTargetChoice(
+        string DatabaseName,
+        bool ReplaceExistingDatabase,
+        bool DisableForeignKeyChecks);
 }
 
 public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
@@ -522,6 +527,7 @@ public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
 
     private string? _selectedDatabase;
     private bool _replaceDatabaseBeforeRestore;
+    private bool _disableForeignKeyChecks;
 
     public string? SelectedDatabase
     {
@@ -533,6 +539,12 @@ public sealed class PickDatabaseForRestoreDialogViewModel : ViewModelBase
     {
         get => _replaceDatabaseBeforeRestore;
         set => SetProperty(ref _replaceDatabaseBeforeRestore, value);
+    }
+
+    public bool DisableForeignKeyChecks
+    {
+        get => _disableForeignKeyChecks;
+        set => SetProperty(ref _disableForeignKeyChecks, value);
     }
 
     public RelayCommand RestoreCommand { get; }

@@ -637,6 +637,8 @@
         <sys:String x:Key="Loc.PickDatabase.Subtitle">Bu yedeğin hangi veritabanına geri yükleneceğini seçin:</sys:String>
         <sys:String x:Key="Loc.PickDatabase.Replace">Veritabanını değiştir (geri yüklemeden önce sil ve yeniden oluştur)</sys:String>
         <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">Kapalı: mevcut veritabanına içe aktarır. Açık: önce hedef veritabanını tamamen temizler, ardından geri yükler.</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">Yabancı anahtar kontrollerini devre dışı bırak</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">Kapalı (varsayılan): içe aktarma sırasında yabancı anahtarları uygula. Açık: sırasız eklemeler içeren yedeklerin geri yüklenmesi için kontrolleri atla (MySQL/MariaDB/PostgreSQL).</sys:String>
     
         <sys:String x:Key="Loc.ServiceSettings.Subtitle">Servisi etkinleştirin, otomatik başlatmayı seçin ve ağ ayarlarını yapılandırın.</sys:String>
         <sys:String x:Key="Loc.ServiceSettings.AutoStart">Stackroot ile otomatik olarak başlat</sys:String>
@@ -671,6 +673,8 @@
         <sys:String x:Key="Loc.TestDns.IfInternetStops">İnternet çalışmayı durdurursa</sys:String>
         <sys:String x:Key="Loc.TestDns.RecoveryHint">StackrootDnsHelper'ı ve tüm Stackroot NRPT kurallarını kaldırır:</sys:String>
         <sys:String x:Key="Loc.TestDns.CopyCleanup">Temizleme komutunu kopyala</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCacheHint">DNS yardımcısındaki önbelleğe alınmış üst sunucu yanıtlarını siler ve Windows çözümleyici önbelleğini temizler. Yerel adlar hiçbir zaman önbelleğe alınmaz.</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCache">DNS önbelleğini temizle</sys:String>
     
         <sys:String x:Key="Loc.WordPress.Title">WordPress Yükle</sys:String>
         <sys:String x:Key="Loc.WordPress.Subtitle">WordPress sitenizi yapılandırın. Tüm alanlar önceden doldurulmuştur.</sys:String>

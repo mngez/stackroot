@@ -638,6 +638,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">选择要将此备份结构恢复到哪一个数据库中：</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">覆盖原有数据库（恢复前先删除并重建结构）</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">关闭：直接导入到现有的数据库中。开启：恢复前先清空并擦除目标数据库。</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">禁用外键检查</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">关闭（默认）：导入时强制外键。开启：跳过检查，以便恢复插入顺序不一致的转储（MySQL/MariaDB/PostgreSQL）。</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">启用此基础服务、选择是否随系统自启，并配置底层的网络端点参数。</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">随 Stackroot 应用启动时自动运行</sys:String>
@@ -672,6 +674,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">如果本地互联网外部网络连接意外瘫痪死锁</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">此安全机制将一键强行卸载 StackrootDnsHelper 并安全擦除所有的 Stackroot NRPT 策略链规则：</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">复制应急恢复与清理指令</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">删除 DNS 助手中缓存的上游应答，并清空 Windows 解析器缓存。本地名称永远不会被缓存。</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">清除 DNS 缓存</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">部署 WordPress 站点</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">配置您的 WordPress 站点参数。所有项目均已实现自动预填。</sys:String>

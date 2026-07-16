@@ -643,6 +643,8 @@
     <sys:String x:Key="Loc.PickDatabase.Subtitle">اختر قاعدة البيانات التي ستستعيد فيها هذه النسخة الاحتياطية:</sys:String>
     <sys:String x:Key="Loc.PickDatabase.Replace">استبدال قاعدة البيانات (حذف وإعادة إنشاء قبل الاستعادة)</sys:String>
     <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">معطّل: استيراد في قاعدة البيانات الموجودة. مفعّل: مسح قاعدة البيانات المستهدفة أولاً ثم الاستعادة.</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">تعطيل فحص المفاتيح الأجنبية</sys:String>
+    <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">معطّل (افتراضي): فرض المفاتيح الأجنبية أثناء الاستيراد. مفعّل: تخطّي الفحص لاستعادة النسخ التي تحتوي إدراجات بترتيب غير متوافق (MySQL/MariaDB/PostgreSQL).</sys:String>
 
     <sys:String x:Key="Loc.ServiceSettings.Subtitle">تفعيل الخدمة واختيار البدء التلقائي وتهيئة إعدادات الشبكة.</sys:String>
     <sys:String x:Key="Loc.ServiceSettings.AutoStart">بدء تلقائي مع Stackroot</sys:String>
@@ -676,6 +678,8 @@
     <sys:String x:Key="Loc.TestDns.IfInternetStops">إذا توقف الإنترنت</sys:String>
     <sys:String x:Key="Loc.TestDns.RecoveryHint">يزيل StackrootDnsHelper وجميع قواعد NRPT الخاصة بـ Stackroot:</sys:String>
     <sys:String x:Key="Loc.TestDns.CopyCleanup">نسخ أمر التنظيف</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCacheHint">يحذف الردود المخزّنة مؤقتاً من الخوادم الأعلى في مساعد DNS ويمسح ذاكرة محلّل Windows. الأسماء المحلية لا تُخزّن مؤقتاً أبداً.</sys:String>
+    <sys:String x:Key="Loc.TestDns.ClearCache">مسح ذاكرة DNS المؤقتة</sys:String>
 
     <sys:String x:Key="Loc.WordPress.Title">تثبيت WordPress</sys:String>
     <sys:String x:Key="Loc.WordPress.Subtitle">تهيئة موقع WordPress. جميع الحقول مملوءة مسبقاً.</sys:String>

@@ -637,6 +637,8 @@
         <sys:String x:Key="Loc.PickDatabase.Subtitle">이 백업을 복원할 데이터베이스를 선택하세요:</sys:String>
         <sys:String x:Key="Loc.PickDatabase.Replace">데이터베이스 교체 (복원 전 삭제 후 재생성)</sys:String>
         <sys:String x:Key="Loc.PickDatabase.ReplaceTooltip">비활성화: 기존 데이터베이스에 가져옵니다. 활성화: 대상 데이터베이스를 먼저 비운 후 복원합니다.</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecks">외래 키 검사 비활성화</sys:String>
+        <sys:String x:Key="Loc.PickDatabase.DisableForeignKeyChecksTooltip">끄기(기본): 가져오기 중 외래 키를 적용합니다. 켜기: 순서가 맞지 않는 삽입이 있는 덤프를 복원할 수 있도록 검사를 건너뜁니다(MySQL/MariaDB/PostgreSQL).</sys:String>
     
         <sys:String x:Key="Loc.ServiceSettings.Subtitle">서비스를 활성화하고, 자동 시작을 선택하고, 네트워크 설정을 구성합니다.</sys:String>
         <sys:String x:Key="Loc.ServiceSettings.AutoStart">Stackroot 시작 시 자동으로 시작</sys:String>
@@ -671,6 +673,8 @@
         <sys:String x:Key="Loc.TestDns.IfInternetStops">인터넷 작동이 멈춘 경우</sys:String>
         <sys:String x:Key="Loc.TestDns.RecoveryHint">StackrootDnsHelper 및 모든 Stackroot NRPT 규칙을 제거합니다:</sys:String>
         <sys:String x:Key="Loc.TestDns.CopyCleanup">정리 명령어 복사</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCacheHint">DNS 도우미에 캐시된 업스트림 응답을 삭제하고 Windows 확인자 캐시를 지웁니다. 로컬 이름은 캐시되지 않습니다.</sys:String>
+        <sys:String x:Key="Loc.TestDns.ClearCache">DNS 캐시 지우기</sys:String>
     
         <sys:String x:Key="Loc.WordPress.Title">WordPress 설치</sys:String>
         <sys:String x:Key="Loc.WordPress.Subtitle">WordPress 사이트를 구성합니다. 모든 필드가 미리 채워져 있습니다.</sys:String>
