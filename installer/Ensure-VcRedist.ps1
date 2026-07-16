@@ -75,9 +75,46 @@ function Try-InstallFromUrl {
 
     $destination = Join-Path $env:TEMP ("vc-redist-x64-" + [guid]::NewGuid().ToString('n') + '.exe')
     Write-Host "Downloading $Url"
-    Invoke-WebRequest -Uri $Url -OutFile $destination -UseBasicParsing
-    Install-FromFile -InstallerPath $destination
+
+    $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+    $maxAttempts = 3
+    $lastError = $null
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        if (Test-Path -LiteralPath $destination) {
+            Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+        }
+
+        try {
+            if ($null -ne $curl) {
+                & curl.exe --fail --silent --show-error --location --retry 2 --retry-all-errors `
+                    --connect-timeout 30 --max-time 600 --output $destination $Url
+                if ($LASTEXITCODE -ne 0) {
+                    throw "curl.exe exited with code $LASTEXITCODE"
+                }
+            }
+            else {
+                Invoke-WebRequest -Uri $Url -OutFile $destination -UseBasicParsing -TimeoutSec 600
+            }
+
+            if ((Test-Path -LiteralPath $destination) -and (Get-Item -LiteralPath $destination).Length -gt 0) {
+                Install-FromFile -InstallerPath $destination
+                Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+                return
+            }
+
+            throw "Downloaded installer is missing or empty."
+        }
+        catch {
+            $lastError = $_
+            Write-Host "Download attempt $attempt/$maxAttempts failed: $($_.Exception.Message)"
+            if ($attempt -lt $maxAttempts) {
+                Start-Sleep -Seconds (2 * $attempt)
+            }
+        }
+    }
+
     Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue
+    throw "Failed to download Visual C++ Redistributable after $maxAttempts attempts. Last error: $lastError"
 }
 
 function Assert-VcRedistReady {

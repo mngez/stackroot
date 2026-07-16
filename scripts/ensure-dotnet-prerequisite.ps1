@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $repoRoot "installer/dotnet-prereq.ps1")
+. (Join-Path $PSScriptRoot "download-file.ps1")
 
 $prereqDir = Join-Path $repoRoot "installer/prerequisites"
 $destination = Join-Path $prereqDir $DotNetDesktopInstallerFileName
@@ -15,7 +16,7 @@ if ((Test-Path -LiteralPath $destination) -and (Get-Item -LiteralPath $destinati
 
 Write-Host "Downloading .NET Desktop Runtime prerequisite for offline install..."
 Write-Host $DotNetDesktopInstallerUrl
-Invoke-WebRequest -Uri $DotNetDesktopInstallerUrl -OutFile $destination -UseBasicParsing
+Download-FileWithRetry -Uri $DotNetDesktopInstallerUrl -OutFile $destination
 
 if (-not (Test-Path -LiteralPath $destination) -or (Get-Item -LiteralPath $destination).Length -eq 0) {
     throw "Downloaded .NET prerequisite is missing or empty: $destination"
