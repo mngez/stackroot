@@ -100,18 +100,28 @@ public sealed class MailpitManager
     {
         await ApplyAsync(cancellationToken).ConfigureAwait(false);
         var settings = _settingsStore.Load();
-        if (!settings.Mailpit.Enabled || !settings.Mailpit.AutoStart)
-        {
-            _diagnostics.LogActivity("Mailpit", "Auto-start skipped (disabled in settings)");
-            return await GetStatusAsync(cancellationToken).ConfigureAwait(false);
-        }
-
         var status = await GetStatusAsync(cancellationToken).ConfigureAwait(false);
-        if (status.Running)
+        var action = MailpitAutoStartDecision.Decide(
+            settings.Mailpit.Enabled,
+            settings.Mailpit.AutoStart,
+            status.Installed,
+            status.Running);
+
+        switch (action)
         {
-            _diagnostics.LogActivity("Mailpit", "Auto-start skipped (already running)");
-            NotifyStatusChanged();
-            return status;
+            case MailpitAutoStartAction.SkipDisabled:
+                _diagnostics.LogActivity("Mailpit", "Auto-start skipped (disabled in settings)");
+                return status;
+            case MailpitAutoStartAction.SkipNotInstalled:
+                _diagnostics.LogActivity("Mailpit", "Auto-start skipped (package not installed)");
+                return status with
+                {
+                    Message = "Mailpit is not installed; auto-start is waiting for installation."
+                };
+            case MailpitAutoStartAction.SkipAlreadyRunning:
+                _diagnostics.LogActivity("Mailpit", "Auto-start skipped (already running)");
+                NotifyStatusChanged();
+                return status;
         }
 
         _diagnostics.LogActivity("Mailpit", "Auto-starting Mailpit");

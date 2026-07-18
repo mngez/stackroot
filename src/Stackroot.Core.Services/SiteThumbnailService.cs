@@ -19,7 +19,7 @@ public sealed class SiteThumbnailService
     {
         _browsersPath = Path.Combine(
             paths?.RuntimeRoot ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Stackroot", "runtime"),
             "playwright-browsers");
         _diagnostics = diagnostics;

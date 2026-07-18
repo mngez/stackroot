@@ -2,20 +2,11 @@
 
 Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-**Current target:** **0.3.5** (unreleased — draft notes in `release-notes/0.3.5.md`; do not push until you decide to ship).
+**Current target:** **0.3.6** (notes in `release-notes/0.3.6.md`).
 
-### Draft notes (0.3.5)
+### Draft notes (0.3.6)
 
-### Database restore
-
-- **Disable foreign key checks** — optional checkbox on the restore target dialog (below **Replace database**), off by default. When on, MySQL/MariaDB skip `FOREIGN_KEY_CHECKS` during import and PostgreSQL defers FK/trigger enforcement so dumps with out-of-order inserts can restore cleanly.
-
-### Test DNS
-
-- **Faster forwarding under load** — upstream answers for non-local names are cached briefly; system DNS server discovery is cached too, so busy machines no longer stall every forwarded query.
-- **Clear DNS cache** — in Test DNS settings, clear the helper’s forward cache and flush the Windows resolver cache without restarting the listener.
-- **Clearer failure on forward timeout** — when an upstream does not answer in time, clients get `SERVFAIL` promptly instead of waiting out the full stub-resolver timeout in silence.
-- **More reliable listener under pressure** — UDP receive/send no longer serialize every response behind a lock; transient oversized or socket errors no longer stop the receive loop.
+See `release-notes/0.3.6.md`.
 
 ### How publishing works
 

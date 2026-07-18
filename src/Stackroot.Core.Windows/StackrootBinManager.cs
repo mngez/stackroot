@@ -24,6 +24,8 @@ public sealed class StackrootBinManager
 
     public string LegacyBinDirectory => Path.Combine(_paths.DataRoot, "bin");
 
+    public string LegacyRuntimeBinDirectory => Path.Combine(_paths.DataRoot, "runtime", "bin");
+
     private HashSet<string>? _activeShims;
 
     public Task SyncStackrootBinAsync(CancellationToken cancellationToken = default)
@@ -45,6 +47,7 @@ public sealed class StackrootBinManager
         _activeShims = null;
 
         RemoveLegacyBinFromUserPath();
+        RemoveLegacyRuntimeBinFromUserPath();
 
         if (settings.General.AddBinToPath == true)
         {
@@ -465,6 +468,11 @@ exit /b %ERRORLEVEL%
     private void RemoveLegacyBinFromUserPath()
     {
         RemovePathEntry(LegacyBinDirectory);
+    }
+
+    private void RemoveLegacyRuntimeBinFromUserPath()
+    {
+        RemovePathEntry(LegacyRuntimeBinDirectory);
     }
 
     private void RemovePathEntry(string directory)

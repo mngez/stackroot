@@ -33,7 +33,7 @@ public sealed class ServiceManagerPhpRecoveryTests
             {
                 Id = VersionId,
                 Type = PackageType.Php,
-                Version = "8.4.22",
+                Version = "8.4.23",
                 InstallPath = Path.Combine(dataRoot, "php"),
                 Source = PackageSourceType.Bundled
             });
@@ -78,7 +78,7 @@ public sealed class ServiceManagerPhpRecoveryTests
             {
                 Id = VersionId,
                 Type = PackageType.Php,
-                Version = "8.4.22",
+                Version = "8.4.23",
                 InstallPath = Path.Combine(dataRoot, "php"),
                 Source = PackageSourceType.Bundled
             });

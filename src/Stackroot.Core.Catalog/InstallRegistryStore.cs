@@ -1,12 +1,13 @@
 using System.IO;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Abstractions.DataDocuments;
 using Stackroot.Core.IO.Storage;
 
 namespace Stackroot.Core.Catalog;
 
 public sealed class InstallRegistryStore
 {
-    private const int Schema = 1;
+    private const int Schema = DataDocumentSchemas.Installed;
     private readonly string _dataRoot;
     private readonly IJsonFileStore _jsonFileStore;
     private InstallRegistry? _cached;

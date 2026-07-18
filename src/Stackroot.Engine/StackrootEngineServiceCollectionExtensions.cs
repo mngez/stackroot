@@ -11,7 +11,11 @@ public static class StackrootEngineServiceCollectionExtensions
 {
     public static IServiceCollection AddStackrootEngineCore(this IServiceCollection services)
     {
-        services.AddSingleton(_ => StackrootPathResolver.Resolve());
+        services.AddSingleton(_ =>
+        {
+            RuntimeRootMigration.Run();
+            return StackrootPathResolver.Resolve();
+        });
         services.AddSingleton<IJsonFileStore, JsonFileStore>();
         services.AddSingleton<SettingsStore>(provider =>
         {

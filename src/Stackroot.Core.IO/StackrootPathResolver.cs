@@ -6,17 +6,25 @@ public static class StackrootPathResolver
 {
     private const string AppName = "Stackroot";
 
+    public static string DefaultDataRoot =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppName);
+
+    public static string DefaultRuntimeRoot =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName, "runtime");
+
+    public static string LegacyRuntimeRoot =>
+        Path.Combine(DefaultDataRoot, "runtime");
+
     public static StackrootPaths Resolve(StackrootPaths? overrides = null, bool ensureDirectories = true)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var dataRoot = string.IsNullOrWhiteSpace(overrides?.DataRoot)
-            ? Path.Combine(appData, AppName)
+            ? DefaultDataRoot
             : overrides.DataRoot;
 
         var paths = new StackrootPaths
         {
             DataRoot = dataRoot,
-            RuntimeRoot = OrDefault(overrides?.RuntimeRoot, Path.Combine(dataRoot, "runtime")),
+            RuntimeRoot = OrDefault(overrides?.RuntimeRoot, DefaultRuntimeRoot),
             ResourcesRoot = OrDefault(overrides?.ResourcesRoot, Path.Combine(dataRoot, "resources")),
             SitesRoot = OrDefault(overrides?.SitesRoot, Path.Combine(dataRoot, "sites")),
             ConfigRoot = OrDefault(overrides?.ConfigRoot, Path.Combine(dataRoot, "config")),
@@ -71,6 +79,9 @@ public static class StackrootPathResolver
     public static string SiteCustomCommandIconsPath(string siteDataDir) => Path.Combine(siteDataDir, "custom-command-icons");
 
     public static string InstalledMarkerPath(string dataRoot) => FirstRunState.InstalledMarkerPath(dataRoot);
+
+    public static string RuntimeMigrationMarkerPath(string dataRoot) =>
+        Path.Combine(dataRoot, "runtime-local-migration.done");
 
     private static string OrDefault(string? value, string fallback)
     {

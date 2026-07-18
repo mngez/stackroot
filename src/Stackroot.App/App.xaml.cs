@@ -77,6 +77,9 @@ public partial class App : System.Windows.Application
 
         try
         {
+            // Move runtime packages to LocalAppData before any DI/path consumers start.
+            RuntimeRootMigration.Run();
+
             var paths = StackrootPathResolver.Resolve();
             DataMigrationRunner.Run(paths);
 

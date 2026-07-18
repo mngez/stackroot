@@ -128,6 +128,15 @@ public sealed class SessionActivityCoordinator : IDisposable
             return;
         }
 
+        if (!status.Installed)
+        {
+            _activity.Complete(
+                progressId,
+                status.Message ?? "Mailpit is not installed; install it from Services when ready.",
+                SessionActivityTone.Info);
+            return;
+        }
+
         if (actuallyRunning)
         {
             _activity.Complete(progressId, SessionActivityMessages.ServiceAction("Mailpit", "started", true));

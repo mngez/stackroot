@@ -14,6 +14,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Stackroot.Core.AdminTools\Stackroot.Core.AdminTools.csproj" />
+    <ProjectReference Include="..\..\src\Stackroot.Core.Catalog\Stackroot.Core.Catalog.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.Dns\Stackroot.Core.Dns.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.IO\Stackroot.Core.IO.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.Services\Stackroot.Core.Services.csproj" />

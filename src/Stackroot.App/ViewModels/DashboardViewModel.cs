@@ -1375,7 +1375,7 @@ public sealed class DashboardViewModel : ViewModelBase
                         PortOpen = mailpit.Enabled && mailpit.Running,
                         Status = mailpit.Enabled && mailpit.Running ? ServiceStatus.Running : ServiceStatus.Stopped,
                         Pid = mailpit.Pid,
-                        Message = mailpit.Installed ? null : "Install Mailpit package first"
+                        Message = mailpit.Installed ? null : "Install Mailpit from Services"
                     }, "snapshot");
                 }
 
@@ -3318,7 +3318,18 @@ public sealed class DashboardViewModel : ViewModelBase
     private bool CanStartService(string serviceKey)
     {
         var row = Services.FirstOrDefault(s => s.ServiceKey == serviceKey);
-        return row is not null && !row.IsBusy && !row.IsRunning;
+        if (row is null || row.IsBusy || row.IsRunning)
+        {
+            return false;
+        }
+
+        if (string.Equals(serviceKey, "mailpit", StringComparison.OrdinalIgnoreCase))
+        {
+            var settings = _settingsStore.Load();
+            return _registryStore.IsInstalled(settings.Mailpit.PackageId);
+        }
+
+        return true;
     }
 
     private bool CanStopService(string serviceKey)

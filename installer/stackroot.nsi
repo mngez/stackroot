@@ -380,6 +380,12 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
 
+  DetailPrint "Removing Stackroot bin entries from user PATH..."
+  SetOutPath "$PLUGINSDIR"
+  File "${INSTALLER_DIR}\Remove-StackrootBinFromPath.ps1"
+  Call un.GetSetupPowerShell
+  nsExec::ExecToLog '"$R8" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\Remove-StackrootBinFromPath.ps1"'
+
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\current.txt"
   Delete "$INSTDIR\launcher.version"

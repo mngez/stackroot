@@ -137,11 +137,11 @@ public static class SettingsDefaults
             {
                 FpmHost = "127.0.0.1",
                 FpmPort = 9000,
-                ActiveVersionId = "php-8.3.31",
+                ActiveVersionId = "php-8.3.32",
                 Versions = new Dictionary<string, PhpVersionSettings>
                 {
-                    ["php-8.3.31"] = php83,
-                    ["php-8.4.22"] = php84
+                    ["php-8.3.32"] = php83,
+                    ["php-8.4.23"] = php84
                 }
             },
             Node = new NodeSettings

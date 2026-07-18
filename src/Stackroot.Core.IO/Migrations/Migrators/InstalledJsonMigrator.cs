@@ -26,5 +26,33 @@ internal sealed class InstalledJsonMigrator : JsonDocumentMigrator
         {
             obj["packages"] = new JsonArray();
         }
+
+        if (toVersion == 2 && obj["packages"] is JsonArray packages)
+        {
+            var legacyPrefix = Path.GetFullPath(
+                Path.Combine(StackrootPathResolver.DefaultDataRoot, "runtime")
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                + Path.DirectorySeparatorChar;
+            var newRuntimeRoot = StackrootPathResolver.DefaultRuntimeRoot;
+
+            foreach (var node in packages)
+            {
+                if (node is not JsonObject package)
+                {
+                    continue;
+                }
+
+                var installPath = package["installPath"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(installPath))
+                {
+                    continue;
+                }
+
+                if (RuntimeRootMigration.TryRebasePath(installPath, legacyPrefix, newRuntimeRoot, out var rebased))
+                {
+                    package["installPath"] = rebased;
+                }
+            }
+        }
     }
 }

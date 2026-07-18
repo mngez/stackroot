@@ -254,14 +254,22 @@ public sealed class LaravelSiteInstaller : ISiteInstaller
 
     private static string? FindNpm()
     {
-        // Try the Stackroot-managed Node first
-        var runtimeBin = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Stackroot", "runtime", "bin");
-        var candidate = Path.Combine(runtimeBin, "npm.cmd");
-        if (File.Exists(candidate)) return candidate;
-        candidate = Path.Combine(runtimeBin, "npm");
-        if (File.Exists(candidate)) return candidate;
+        // Try Stackroot-managed Node (Local runtime, then legacy Roaming runtime)
+        foreach (var runtimeBin in new[]
+                 {
+                     Path.Combine(
+                         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                         "Stackroot", "runtime", "bin"),
+                     Path.Combine(
+                         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                         "Stackroot", "runtime", "bin")
+                 })
+        {
+            var candidate = Path.Combine(runtimeBin, "npm.cmd");
+            if (File.Exists(candidate)) return candidate;
+            candidate = Path.Combine(runtimeBin, "npm");
+            if (File.Exists(candidate)) return candidate;
+        }
 
         // Fall back to system PATH
         var paths = Environment.GetEnvironmentVariable("PATH") ?? "";

@@ -47,4 +47,20 @@ public sealed class PackageCatalogStore
 
     public PackageEntry? GetById(string id)
         => Load().Packages.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Packages that share an upgrade/compatibility series (e.g. PHP "8.4").
+    /// Useful for later same-series upgrade flows such as 8.4.22 → 8.4.23.
+    /// </summary>
+    public IReadOnlyList<PackageEntry> ListBySeries(PackageType type, string series)
+    {
+        if (string.IsNullOrWhiteSpace(series))
+        {
+            return [];
+        }
+
+        return List(type)
+            .Where(package => string.Equals(package.Series, series, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 }

@@ -141,6 +141,11 @@ public record class PackageEntry
     public string Id { get; init; } = string.Empty;
     public PackageType Type { get; init; }
     public string Version { get; init; } = string.Empty;
+    /// <summary>
+    /// Compatibility / upgrade line (e.g. PHP "8.4"). Same-series entries can later
+    /// support in-app upgrades such as 8.4.22 → 8.4.23 without changing major.minor.
+    /// </summary>
+    public string? Series { get; init; }
     public PlatformType Platform { get; init; } = PlatformType.WinX64;
     public string Label { get; init; } = string.Empty;
     public string? Description { get; init; }

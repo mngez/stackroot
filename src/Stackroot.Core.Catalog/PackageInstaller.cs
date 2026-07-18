@@ -105,7 +105,9 @@ public sealed class PackageInstaller
 
             var destination = Path.Combine(packagesDestinationDir, name);
             var shouldCopy = !File.Exists(destination)
-                || File.GetLastWriteTimeUtc(source) >= File.GetLastWriteTimeUtc(destination);
+                || File.GetLastWriteTimeUtc(source) >= File.GetLastWriteTimeUtc(destination)
+                || (string.Equals(name, "catalog.json", StringComparison.OrdinalIgnoreCase)
+                    && IsCatalogNewer(source, destination));
             if (shouldCopy)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -114,6 +116,45 @@ public sealed class PackageInstaller
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsCatalogNewer(string sourcePath, string destinationPath)
+    {
+        try
+        {
+            var sourceCatalog = System.Text.Json.JsonSerializer.Deserialize<PackageCatalog>(
+                File.ReadAllText(sourcePath),
+                Stackroot.Core.IO.JsonSerializerConfig.Default);
+            var destinationCatalog = System.Text.Json.JsonSerializer.Deserialize<PackageCatalog>(
+                File.ReadAllText(destinationPath),
+                Stackroot.Core.IO.JsonSerializerConfig.Default);
+
+            if (sourceCatalog is null || string.IsNullOrWhiteSpace(sourceCatalog.UpdatedAt))
+            {
+                return false;
+            }
+
+            if (destinationCatalog is null || string.IsNullOrWhiteSpace(destinationCatalog.UpdatedAt))
+            {
+                return true;
+            }
+
+            if (!DateTimeOffset.TryParse(sourceCatalog.UpdatedAt, out var sourceUpdated))
+            {
+                return false;
+            }
+
+            if (!DateTimeOffset.TryParse(destinationCatalog.UpdatedAt, out var destinationUpdated))
+            {
+                return true;
+            }
+
+            return sourceUpdated > destinationUpdated;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private async Task<string> InstallInternalAsync(
@@ -414,6 +455,7 @@ public sealed class PackageInstaller
 
         var urls = new[] { source.Url }
             .Concat(source.Mirrors ?? [])
+            .Concat(DerivePhpArchiveFallbackUrls(entry, source))
             .Where(static url => !string.IsNullOrWhiteSpace(url))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -542,6 +584,63 @@ public sealed class PackageInstaller
         }
 
         throw lastError ?? new InvalidOperationException($"Unable to download package {entry.Id}.");
+    }
+
+    /// <summary>
+    /// When PHP.net moves a pinned build from /releases/ to /releases/archives/, derive the
+    /// archive URL so installs still succeed even if the local catalog omitted mirrors.
+    /// </summary>
+    public static IEnumerable<string> DerivePhpArchiveFallbackUrls(PackageEntry entry, PackageSource source)
+    {
+        if (entry.Type != PackageType.Php)
+        {
+            yield break;
+        }
+
+        foreach (var candidate in new[] { source.Url }.Concat(source.Mirrors ?? []))
+        {
+            if (TryDerivePhpArchivesUrl(candidate, out var archiveUrl))
+            {
+                yield return archiveUrl;
+            }
+        }
+    }
+
+    public static bool TryDerivePhpArchivesUrl(string? url, out string archiveUrl)
+    {
+        archiveUrl = string.Empty;
+        if (string.IsNullOrWhiteSpace(url)
+            || !Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || uri.Scheme != Uri.UriSchemeHttps)
+        {
+            return false;
+        }
+
+        var host = uri.Host;
+        var isPhpHost = host.Equals("windows.php.net", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("downloads.php.net", StringComparison.OrdinalIgnoreCase);
+        if (!isPhpHost)
+        {
+            return false;
+        }
+
+        var path = uri.AbsolutePath;
+        const string releasesPrefix = "/downloads/releases/";
+        const string archivesPrefix = "/downloads/releases/archives/";
+        if (path.Contains(archivesPrefix, StringComparison.OrdinalIgnoreCase)
+            || !path.Contains(releasesPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var fileName = Path.GetFileName(path);
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return false;
+        }
+
+        archiveUrl = $"{uri.Scheme}://{uri.Authority}{archivesPrefix}{fileName}";
+        return true;
     }
 
     private bool IsPersistentDownloadPath(string archivePath)
