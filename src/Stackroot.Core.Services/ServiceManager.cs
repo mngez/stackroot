@@ -994,7 +994,8 @@ public sealed class ServiceManager : IDisposable
 
     public async Task<ServiceLifecycleResult> EnsurePhpFastCgiAsync(
         IReadOnlyList<string>? versionIds = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool pruneAbsentVersions = true)
     {
         var settings = _settingsStore.Load();
         var result = await PhpCgiRuntime.EnsurePhpFastCgiAsync(
@@ -1004,7 +1005,8 @@ public sealed class ServiceManager : IDisposable
             _jobManager,
             versionIds,
             cancellationToken,
-            diagnostics: _diagnostics).ConfigureAwait(false);
+            diagnostics: _diagnostics,
+            pruneAbsentVersions: pruneAbsentVersions).ConfigureAwait(false);
         NotifyPhpListenersChangedIfReady(result);
         return result;
     }
@@ -1033,7 +1035,8 @@ public sealed class ServiceManager : IDisposable
             versionIds,
             cancellationToken,
             forceRestart: true,
-            diagnostics: _diagnostics).ConfigureAwait(false);
+            diagnostics: _diagnostics,
+            pruneAbsentVersions: false).ConfigureAwait(false);
         _diagnostics.LogActivity("PHP", $"FastCGI restart {(result.Success ? "completed" : "failed")} in {restartWatch.ElapsedMilliseconds}ms");
         NotifyPhpListenersChangedIfReady(result);
         return result;
@@ -1135,7 +1138,10 @@ public sealed class ServiceManager : IDisposable
 
                 _diagnostics.LogActivity("PHP", $"Recovering php-cgi on {host}:{port} for {versionId}…");
 
-                var result = await EnsurePhpFastCgiAsync([versionId], cancellationToken).ConfigureAwait(false);
+                var result = await EnsurePhpFastCgiAsync(
+                    [versionId],
+                    cancellationToken,
+                    pruneAbsentVersions: false).ConfigureAwait(false);
                 if (result.Success)
                 {
                     recovered = true;

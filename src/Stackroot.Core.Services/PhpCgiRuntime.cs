@@ -63,7 +63,8 @@ public static class PhpCgiRuntime
         IReadOnlyList<string>? versionIds = null,
         CancellationToken cancellationToken = default,
         bool forceRestart = false,
-        IDiagnosticsReporter? diagnostics = null)
+        IDiagnosticsReporter? diagnostics = null,
+        bool pruneAbsentVersions = true)
     {
         var host = string.IsNullOrWhiteSpace(settings.Php.FpmHost) ? "127.0.0.1" : settings.Php.FpmHost;
         var versions = versionIds?.Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
@@ -81,8 +82,9 @@ public static class PhpCgiRuntime
         await EnsureSync.WaitAsync(cancellationToken);
         try
         {
-            var staleKeys = Managed.Keys.Where(k => !versions.Contains(k, StringComparer.OrdinalIgnoreCase)).ToList();
-            foreach (var stale in staleKeys)
+            // Full ensures (required set) prune unused pools. Partial ensures
+            // (restart / recover one version) must leave sibling pools alone.
+            foreach (var stale in ResolveStaleManagedKeys(Managed.Keys, versions, pruneAbsentVersions))
             {
                 if (Managed.TryRemove(stale, out var stalePool))
                 {
@@ -113,6 +115,25 @@ public static class PhpCgiRuntime
         {
             EnsureSync.Release();
         }
+    }
+
+    /// <summary>
+    /// Managed pools to stop when reconciling. Only when <paramref name="pruneAbsentVersions"/>
+    /// is true — i.e. the caller passed the authoritative keep-alive set (required versions).
+    /// </summary>
+    public static IReadOnlyList<string> ResolveStaleManagedKeys(
+        IEnumerable<string> managedKeys,
+        IReadOnlyList<string> ensureVersions,
+        bool pruneAbsentVersions)
+    {
+        if (!pruneAbsentVersions)
+        {
+            return Array.Empty<string>();
+        }
+
+        return managedKeys
+            .Where(key => !ensureVersions.Contains(key, StringComparer.OrdinalIgnoreCase))
+            .ToList();
     }
 
     /// <summary>

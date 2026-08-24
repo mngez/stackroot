@@ -9,6 +9,7 @@ public sealed class PhpCatalogContractTests
 {
     private static readonly string[] ExpectedPhpIds =
     [
+        "php-8.5.9",
         "php-8.5.8",
         "php-8.5.7",
         "php-8.4.23",

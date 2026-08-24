@@ -266,7 +266,8 @@ public sealed class PhpRedisAdminManager
             settings,
             _jobManager,
             [phpVersionId],
-            cancellationToken);
+            cancellationToken,
+            pruneAbsentVersions: false);
         if (!ensurePhp.Success)
         {
             ClearPathModeNginxLocations();
