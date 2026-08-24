@@ -94,7 +94,7 @@ public sealed class PackageInstaller
         var packagesDestinationDir = Path.Combine(_options.ResourcesRoot, "packages");
         Directory.CreateDirectory(packagesDestinationDir);
 
-        foreach (var name in new[] { "catalog.json", "php-extensions.json", "pie.phar" })
+        foreach (var name in new[] { "catalog.json", "php-extensions.json", "pie.phar", "cacert.pem" })
         {
             cancellationToken.ThrowIfCancellationRequested();
             var source = Path.Combine(packagesSourceDir, name);

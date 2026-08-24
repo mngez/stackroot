@@ -69,7 +69,14 @@ public sealed class PhpConfigWriter
             return iniPath;
         }
 
-        var directives = BuildDirectives(phpVersion, extensionDir, profile, sessionsPath, _paths.LogsRoot, effectiveVersionId);
+        var directives = BuildDirectives(
+            phpVersion,
+            extensionDir,
+            profile,
+            sessionsPath,
+            _paths.LogsRoot,
+            effectiveVersionId,
+            _paths.ResourcesRoot);
 
         foreach (var directive in phpVersion.IniOverrides)
         {
@@ -386,7 +393,8 @@ public sealed class PhpConfigWriter
         PhpConfigProfile profile,
         string? sessionsPath,
         string logsRoot,
-        string versionId)
+        string versionId,
+        string resourcesRoot)
     {
         Directory.CreateDirectory(logsRoot);
         var errorLogPath = PhpLogPaths.ToIniPath(PhpLogPaths.GetErrorLogPath(logsRoot, versionId));
@@ -405,6 +413,14 @@ public sealed class PhpConfigWriter
             ["realpath_cache_size"] = phpVersion.RealpathCacheSize,
             ["realpath_cache_ttl"] = phpVersion.RealpathCacheTtl.ToString()
         };
+
+        var caBundle = PhpCaBundle.TryResolve(resourcesRoot);
+        if (caBundle is not null)
+        {
+            var caIni = PhpCaBundle.ToIniValue(caBundle);
+            directives["curl.cainfo"] = caIni;
+            directives["openssl.cafile"] = caIni;
+        }
 
         if (profile == PhpConfigProfile.PhpMyAdmin)
         {

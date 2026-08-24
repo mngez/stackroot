@@ -31,6 +31,9 @@ Desktop.ini
 .env.*
 !.env.example
 
+# Public Mozilla CA bundle for PHP HTTPS (override a global *.pem excludesfile if present)
+!resources/packages/cacert.pem
+
 
 # Locked installer leftovers at repo root
 /packages/

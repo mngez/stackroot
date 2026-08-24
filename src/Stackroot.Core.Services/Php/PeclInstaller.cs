@@ -226,7 +226,24 @@ public sealed class PeclInstaller
         var extDir = Path.Combine(root, "ext").Replace('\\', '/');
         var iniDir = Path.Combine(_paths.RuntimeRoot, ".cache", "pie-ini", packageId);
         Directory.CreateDirectory(iniDir);
-        File.WriteAllText(Path.Combine(iniDir, "php.ini"), $"; Stackroot PIE target{Environment.NewLine}extension_dir=\"{extDir}\"{Environment.NewLine}");
+
+        var lines = new List<string>
+        {
+            "; Stackroot PIE target",
+            $"extension_dir=\"{extDir}\""
+        };
+
+        var caBundle = PhpCaBundle.TryResolve(_paths.ResourcesRoot);
+        if (caBundle is not null)
+        {
+            var caIni = PhpCaBundle.ToIniValue(caBundle);
+            lines.Add($"curl.cainfo={caIni}");
+            lines.Add($"openssl.cafile={caIni}");
+        }
+
+        File.WriteAllText(
+            Path.Combine(iniDir, "php.ini"),
+            string.Join(Environment.NewLine, lines) + Environment.NewLine);
         return iniDir;
     }
 
@@ -247,6 +264,16 @@ public sealed class PeclInstaller
 
         AddPieRunnerExtension(args, extDir, "openssl");
         AddPieRunnerExtension(args, extDir, "zip");
+
+        var caBundle = PhpCaBundle.TryResolve(_paths.ResourcesRoot);
+        if (caBundle is not null)
+        {
+            var caPath = Path.GetFullPath(caBundle).Replace('\\', '/');
+            args.Add("-d");
+            args.Add($"curl.cainfo={caPath}");
+            args.Add("-d");
+            args.Add($"openssl.cafile={caPath}");
+        }
 
         if (!IsPieRunnerExtensionLoaded(runner.Executable, extDir, "openssl")
             || !IsPieRunnerExtensionLoaded(runner.Executable, extDir, "zip"))

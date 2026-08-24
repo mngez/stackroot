@@ -59,6 +59,10 @@
       <Link>resources\packages\laravel-options.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\resources\packages\cacert.pem">
+      <Link>resources\packages\cacert.pem</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\..\assets\icons\tray.png">
       <Link>Assets\tray.png</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -76,8 +76,9 @@ $resourcesDestination = Join-Path $appDir "resources/packages"
 New-Item -ItemType Directory -Path $resourcesDestination -Force | Out-Null
 
 & (Join-Path $PSScriptRoot "ensure-pie.ps1") -RepoRoot $repoRoot | Out-Null
+& (Join-Path $PSScriptRoot "ensure-cacert.ps1") -RepoRoot $repoRoot | Out-Null
 
-foreach ($name in @("catalog.json", "php-extensions.json", "pie.phar")) {
+foreach ($name in @("catalog.json", "php-extensions.json", "pie.phar", "cacert.pem")) {
     $source = Join-Path $resourcesSource $name
     if (-not (Test-Path $source)) {
         throw "Missing bootstrap resource: $source"

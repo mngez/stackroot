@@ -620,7 +620,7 @@ public static class StackrootBootstrap
                 Path.Combine(AppContext.BaseDirectory, "resources", "packages")
             };
 
-        foreach (var name in new[] { "catalog.json", "php-extensions.json", "pie.phar" })
+        foreach (var name in new[] { "catalog.json", "php-extensions.json", "pie.phar", "cacert.pem" })
         {
             var destination = Path.Combine(destinationPackages, name);
             if (!ShouldSeedResource(destination, name))
