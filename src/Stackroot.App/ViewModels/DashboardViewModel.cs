@@ -2806,6 +2806,12 @@ public sealed class DashboardViewModel : ViewModelBase
             statusColor = status == ProcessStatus.Restarting ? "#E9BD5B" : "#8FD6B6";
             isRunning = true;
         }
+        else if (!available && status == ProcessStatus.Error)
+        {
+            statusText = "Needs update";
+            statusColor = "#EAAAB0";
+            isRunning = false;
+        }
         else if (!available)
         {
             statusText = "Unavailable";

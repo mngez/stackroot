@@ -22,6 +22,7 @@ public sealed class StatusTextConverter : IValueConverter
         ["Not installed"] = "Loc.Status.NotInstalled",
         ["Disabled"] = "Loc.Status.Disabled",
         ["Unavailable"] = "Loc.Status.Unavailable",
+        ["Needs update"] = "Loc.Status.NeedsUpdate",
     };
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

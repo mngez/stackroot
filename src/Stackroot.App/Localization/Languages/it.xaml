@@ -693,6 +693,7 @@
         <sys:String x:Key="Loc.Status.NotInstalled">Non installato</sys:String>
         <sys:String x:Key="Loc.Status.Disabled">Disattivato</sys:String>
         <sys:String x:Key="Loc.Status.Unavailable">Non disponibile</sys:String>
+        <sys:String x:Key="Loc.Status.NeedsUpdate">Da aggiornare</sys:String>
     
 
     <!-- ── Main Window (missing keys) ── -->

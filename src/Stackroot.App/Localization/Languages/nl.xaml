@@ -696,6 +696,7 @@
     <sys:String x:Key="Loc.Status.NotInstalled">Niet geïnstalleerd</sys:String>
     <sys:String x:Key="Loc.Status.Disabled">Uitgeschakeld</sys:String>
     <sys:String x:Key="Loc.Status.Unavailable">Niet beschikbaar</sys:String>
+    <sys:String x:Key="Loc.Status.NeedsUpdate">Bijwerken nodig</sys:String>
 
 
     <!-- ── Main Window (missing keys) ── -->

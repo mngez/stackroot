@@ -700,5 +700,6 @@
     <sys:String x:Key="Loc.Status.NotInstalled">Not installed</sys:String>
     <sys:String x:Key="Loc.Status.Disabled">Disabled</sys:String>
     <sys:String x:Key="Loc.Status.Unavailable">Unavailable</sys:String>
+    <sys:String x:Key="Loc.Status.NeedsUpdate">Needs update</sys:String>
 
 </ResourceDictionary>

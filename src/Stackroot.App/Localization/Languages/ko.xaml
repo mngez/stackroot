@@ -695,6 +695,7 @@
         <sys:String x:Key="Loc.Status.NotInstalled">설치되지 않음</sys:String>
         <sys:String x:Key="Loc.Status.Disabled">비활성화됨</sys:String>
         <sys:String x:Key="Loc.Status.Unavailable">사용 불가</sys:String>
+        <sys:String x:Key="Loc.Status.NeedsUpdate">업데이트 필요</sys:String>
     
 
     <!-- ── Main Window (missing keys) ── -->

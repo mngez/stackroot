@@ -695,6 +695,7 @@
         <sys:String x:Key="Loc.Status.NotInstalled">Yüklü değil</sys:String>
         <sys:String x:Key="Loc.Status.Disabled">Devre dışı</sys:String>
         <sys:String x:Key="Loc.Status.Unavailable">Kullanılamıyor</sys:String>
+        <sys:String x:Key="Loc.Status.NeedsUpdate">Güncelleme gerekli</sys:String>
     
 
     <!-- ── Main Window (missing keys) ── -->

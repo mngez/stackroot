@@ -696,6 +696,7 @@
     <sys:String x:Key="Loc.Status.NotInstalled">环境未安装</sys:String>
     <sys:String x:Key="Loc.Status.Disabled">已关闭禁用</sys:String>
     <sys:String x:Key="Loc.Status.Unavailable">服务当前不可用</sys:String>
+    <sys:String x:Key="Loc.Status.NeedsUpdate">需要更新</sys:String>
 
 
     <!-- ── Main Window (missing keys) ── -->

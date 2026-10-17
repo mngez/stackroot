@@ -695,6 +695,7 @@
     <sys:String x:Key="Loc.Status.NotInstalled">Не установлено</sys:String>
     <sys:String x:Key="Loc.Status.Disabled">Отключено</sys:String>
     <sys:String x:Key="Loc.Status.Unavailable">Недоступно</sys:String>
+    <sys:String x:Key="Loc.Status.NeedsUpdate">Нужно обновить</sys:String>
 
 
     <!-- ── Main Window (missing keys) ── -->

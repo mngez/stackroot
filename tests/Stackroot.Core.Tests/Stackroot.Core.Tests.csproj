@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Stackroot.Core.Dns\Stackroot.Core.Dns.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.IO\Stackroot.Core.IO.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.Services\Stackroot.Core.Services.csproj" />
+    <ProjectReference Include="..\..\src\Stackroot.Core.Supervisor\Stackroot.Core.Supervisor.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.Settings\Stackroot.Core.Settings.csproj" />
     <ProjectReference Include="..\..\src\Stackroot.Core.Windows\Stackroot.Core.Windows.csproj" />
   </ItemGroup>

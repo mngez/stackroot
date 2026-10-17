@@ -734,6 +734,11 @@ public sealed class ProcessesViewModel : ViewModelBase, IDisposable
             return process.Status == ProcessStatus.Restarting ? "Restarting" : "Running";
         }
 
+        if (!process.Available && process.Status == ProcessStatus.Error)
+        {
+            return "Needs update";
+        }
+
         if (!process.Available)
         {
             return "Unavailable";
@@ -859,8 +864,16 @@ public sealed class ProcessRowViewModel : ViewModelBase, IUptimeTooltipTarget
     public string Message
     {
         get => _message;
-        set => SetProperty(ref _message, value);
+        set
+        {
+            if (SetProperty(ref _message, value))
+            {
+                RaisePropertyChanged(nameof(HasMessage));
+            }
+        }
     }
+
+    public bool HasMessage => !string.IsNullOrWhiteSpace(_message);
 
     public bool Enabled { get; init; }
     public bool AutoStart { get; init; }

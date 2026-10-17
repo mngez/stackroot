@@ -37,14 +37,7 @@ public sealed class GlobalProcessManager
             ? processes
             : processes.Where(process => string.Equals(process.SiteId, siteId, StringComparison.OrdinalIgnoreCase)).ToList();
 
-        return filtered.Select(process =>
-            {
-                try { return ToProcessInfo(process, null); }
-                catch { return null; }
-            })
-            .Where(static snapshot => snapshot is not null)
-            .Select(static snapshot => snapshot!)
-            .ToList();
+        return filtered.Select(DescribeProcess).ToList();
     }
 
     public GlobalProcess Add(GlobalProcess process)
@@ -134,18 +127,11 @@ public sealed class GlobalProcessManager
             try
             {
                 var snapshot = _supervisor.Start(ToRunTarget(process));
-                results.Add(ToProcessInfo(process, snapshot));
+                results.Add(DescribeProcess(process, snapshot));
             }
             catch (Exception ex)
             {
-                results.Add(ToProcessInfo(process, new ManagedProcessSnapshot(
-                    CreateScope(process.Id),
-                    process.Name,
-                    ProcessStatus.Error,
-                    null,
-                    string.Join(' ', process.Argv),
-                    ex.Message,
-                    true)));
+                results.Add(DescribeProcess(process, setupError: ex.Message));
             }
         }
 
@@ -161,18 +147,11 @@ public sealed class GlobalProcessManager
             try
             {
                 var snapshot = _supervisor.Start(ToRunTarget(process));
-                results.Add(ToProcessInfo(process, snapshot));
+                results.Add(DescribeProcess(process, snapshot));
             }
             catch (Exception ex)
             {
-                results.Add(ToProcessInfo(process, new ManagedProcessSnapshot(
-                    CreateScope(process.Id),
-                    process.Name,
-                    ProcessStatus.Error,
-                    null,
-                    string.Join(' ', process.Argv ?? []),
-                    ex.Message,
-                    true)));
+                results.Add(DescribeProcess(process, setupError: ex.Message));
             }
         }
 
@@ -197,18 +176,11 @@ public sealed class GlobalProcessManager
             try
             {
                 var snapshot = _supervisor.Start(ToRunTarget(process));
-                results.Add(ToProcessInfo(process, snapshot));
+                results.Add(DescribeProcess(process, snapshot));
             }
             catch (Exception ex)
             {
-                results.Add(ToProcessInfo(process, new ManagedProcessSnapshot(
-                    CreateScope(process.Id),
-                    process.Name,
-                    ProcessStatus.Error,
-                    null,
-                    string.Join(' ', process.Argv ?? []),
-                    ex.Message,
-                    true)));
+                results.Add(DescribeProcess(process, setupError: ex.Message));
             }
 
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
@@ -227,7 +199,7 @@ public sealed class GlobalProcessManager
         {
             if (!string.IsNullOrWhiteSpace(siteId) && !string.Equals(process.SiteId, siteId, StringComparison.OrdinalIgnoreCase))
                 continue;
-            try { results.Add(ToProcessInfo(process)); } catch { }
+            results.Add(DescribeProcess(process));
         }
         RaiseChanged();
         return results;
@@ -250,6 +222,28 @@ public sealed class GlobalProcessManager
     {
         var process = _store.GetById(id) ?? throw new KeyNotFoundException($"Process not found: {id}");
         return _supervisor.GetLog(CreateScope(process.Id), string.Join(' ', process.Argv));
+    }
+
+    private ProcessInfo DescribeProcess(GlobalProcess process) => DescribeProcess(process, snapshot: null);
+
+    private ProcessInfo DescribeProcess(
+        GlobalProcess process,
+        ManagedProcessSnapshot? snapshot = null,
+        string? setupError = null)
+    {
+        if (setupError is null)
+        {
+            try
+            {
+                return ToProcessInfo(process, snapshot);
+            }
+            catch (Exception ex)
+            {
+                setupError = ex.Message;
+            }
+        }
+
+        return UnresolvedProcessInfo(process, setupError);
     }
 
     private ProcessInfo ToProcessInfo(GlobalProcess process, ManagedProcessSnapshot? snapshot = null)
@@ -293,6 +287,37 @@ public sealed class GlobalProcessManager
             RestartDelaySeconds = process.RestartDelaySeconds,
             Pid = pid,
             Message = snapshot?.Message,
+            FromPreset = process.FromPreset,
+            HasLog = true,
+            Supervised = true,
+            Scope = ProcessScopeType.Global,
+            SiteId = process.SiteId
+        };
+    }
+
+    private static ProcessInfo UnresolvedProcessInfo(GlobalProcess process, string message)
+    {
+        var argv = process.Argv ?? [];
+        return new ProcessInfo
+        {
+            Id = process.Id,
+            Name = process.Name,
+            Description = process.Description,
+            Runtime = process.Runtime,
+            RuntimeLabel = FormatRuntimeLabel(process),
+            Argv = argv.ToList(),
+            Cwd = process.Cwd ?? ".",
+            WorkDir = process.WorkDir,
+            Enabled = process.Enabled,
+            AutoStart = process.AutoStart,
+            Featured = process.Featured,
+            Available = false,
+            Status = ProcessStatus.Error,
+            CommandLine = string.Join(' ', argv),
+            PhpVersionId = process.PhpVersionId,
+            NodeVersion = process.NodeVersion,
+            RestartDelaySeconds = process.RestartDelaySeconds,
+            Message = message,
             FromPreset = process.FromPreset,
             HasLog = true,
             Supervised = true,
