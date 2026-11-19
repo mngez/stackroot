@@ -24,6 +24,7 @@ public sealed class DatabasesViewModel : ViewModelBase
     private readonly SiteManager _siteManager;
     private readonly ServiceManager _serviceManager;
     private readonly PhpMyAdminManager _phpMyAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly AppDomainConfigWriter _appDomainConfigWriter;
     private readonly IDiagnosticsReporter _diagnostics;
     private readonly SessionActivityReporter _activity;
@@ -44,6 +45,7 @@ public sealed class DatabasesViewModel : ViewModelBase
         SiteManager siteManager,
         ServiceManager serviceManager,
         PhpMyAdminManager phpMyAdminManager,
+        AdminerManager adminerManager,
         AppDomainConfigWriter appDomainConfigWriter,
         IDiagnosticsReporter diagnostics,
         SessionActivityReporter activity,
@@ -56,6 +58,7 @@ public sealed class DatabasesViewModel : ViewModelBase
         _siteManager = siteManager;
         _serviceManager = serviceManager;
         _phpMyAdminManager = phpMyAdminManager;
+        _adminerManager = adminerManager;
         _appDomainConfigWriter = appDomainConfigWriter;
         _diagnostics = diagnostics;
         _activity = activity;
@@ -530,6 +533,7 @@ public sealed class DatabasesViewModel : ViewModelBase
             _settingsStore,
             _serviceManager,
             _phpMyAdminManager,
+            _adminerManager,
             _appDomainConfigWriter,
             _diagnostics);
         var owner = Application.Current?.MainWindow;

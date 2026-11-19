@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Stackroot.Core.Abstractions;
+using Stackroot.Core.Catalog;
 using Stackroot.Core.IO;
 
 namespace Stackroot.Core.Services.Php;
@@ -75,7 +76,7 @@ public sealed class PhpExtensionsManifestStore
     {
         var manifest = Load();
         var entry = GetExtension(extensionId);
-        if (entry is null || entry.Downloads is null || !entry.Downloads.TryGetValue(phpPackageId, out var spec))
+        if (entry is null || !TryGetDownload(entry, phpPackageId, out var spec))
         {
             return null;
         }
@@ -140,16 +141,79 @@ public sealed class PhpExtensionsManifestStore
     private PeclBuildSpec? BuildFromRelease(PhpExtensionManifestEntry entry, string phpPackageId, string release, string dll)
     {
         var manifest = Load();
-        var pkg = manifest.PhpPackages?.FirstOrDefault(p => string.Equals(p.Id, phpPackageId, StringComparison.OrdinalIgnoreCase));
-        if (pkg is null)
+        var line = ResolvePackageLine(manifest, phpPackageId);
+        if (line is null)
         {
             return null;
         }
 
         var peclName = entry.Id;
         var archive = dll.Replace(".dll", "", StringComparison.OrdinalIgnoreCase);
-        var url = $"{PeclBase}/{peclName}/{release}/{archive}-{release}-{pkg.Line}-nts-{pkg.Toolset}-x64.zip";
+        var url = $"{PeclBase}/{peclName}/{release}/{archive}-{release}-{line.Value.Line}-nts-{line.Value.Toolset}-x64.zip";
         return new PeclBuildSpec(url, dll);
+    }
+
+    private static bool TryGetDownload(PhpExtensionManifestEntry entry, string phpPackageId, out JsonElement spec)
+    {
+        spec = default;
+        if (entry.Downloads is null)
+        {
+            return false;
+        }
+
+        if (entry.Downloads.TryGetValue(phpPackageId, out spec))
+        {
+            return true;
+        }
+
+        var series = PhpSeriesFallback.SeriesOf(phpPackageId);
+        if (series is null)
+        {
+            return false;
+        }
+
+        foreach (var pair in entry.Downloads)
+        {
+            if (string.Equals(PhpSeriesFallback.SeriesOf(pair.Key), series, StringComparison.OrdinalIgnoreCase))
+            {
+                spec = pair.Value;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static (string Line, string Toolset)? ResolvePackageLine(PhpExtensionsManifest manifest, string phpPackageId)
+    {
+        var listed = manifest.PhpPackages?.FirstOrDefault(p =>
+            string.Equals(p.Id, phpPackageId, StringComparison.OrdinalIgnoreCase));
+        if (listed is not null && !string.IsNullOrWhiteSpace(listed.Line) && !string.IsNullOrWhiteSpace(listed.Toolset))
+        {
+            return (listed.Line, listed.Toolset);
+        }
+
+        var series = PhpSeriesFallback.SeriesOf(phpPackageId);
+        if (series is null)
+        {
+            return null;
+        }
+
+        var sibling = manifest.PhpPackages?.FirstOrDefault(p =>
+            string.Equals(p.Line, series, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(p.Toolset));
+        if (sibling is not null)
+        {
+            return (series, sibling.Toolset);
+        }
+
+        var toolset = series switch
+        {
+            "8.4" or "8.5" or "8.6" => "vs17",
+            "7.4" or "7.3" or "7.2" or "7.1" or "7.0" => "vc15",
+            _ => "vs16"
+        };
+        return (series, toolset);
     }
 
     private static string? ExtractReleaseFromArchiveUrl(string archiveUrl)

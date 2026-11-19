@@ -23,6 +23,7 @@ public sealed class ToolsViewModel : ViewModelBase
 
     private readonly PhpMyAdminManager _phpMyAdminManager;
     private readonly PhpRedisAdminManager _phpRedisAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly SettingsStore _settingsStore;
     private readonly InstallRegistryStore _registryStore;
     private readonly PackageCatalogStore _catalogStore;
@@ -63,14 +64,26 @@ public sealed class ToolsViewModel : ViewModelBase
     private bool _phpRedisAdminIsBusy;
     private bool _suppressPhpRedisAdminEnabledPersist;
 
+    private bool _adminerCanOpen;
+    private bool _adminerShowInstallButton = true;
+    private bool _adminerShowVersionsButton;
+    private bool _adminerIsBusy;
+    private string _adminerStatus = "Unknown";
+    private string _adminerMessage = string.Empty;
+    private string _adminerUrl = string.Empty;
+    private string _adminerActivePackageLabel = string.Empty;
+    private string _adminerPhpVersionBadge = string.Empty;
+
     private readonly AdminUiToolViewModel _phpMyAdminAdminRow;
     private readonly AdminUiToolViewModel _phpRedisAdminAdminRow;
+    private readonly AdminUiToolViewModel _adminerRow;
 
     private string? _message;
 
     public ToolsViewModel(
         PhpMyAdminManager phpMyAdminManager,
         PhpRedisAdminManager phpRedisAdminManager,
+        AdminerManager adminerManager,
         SettingsStore settingsStore,
         InstallRegistryStore registryStore,
         PackageCatalogStore catalogStore,
@@ -86,6 +99,7 @@ public sealed class ToolsViewModel : ViewModelBase
     {
         _phpMyAdminManager = phpMyAdminManager;
         _phpRedisAdminManager = phpRedisAdminManager;
+        _adminerManager = adminerManager;
         _settingsStore = settingsStore;
         _registryStore = registryStore;
         _catalogStore = catalogStore;
@@ -141,6 +155,11 @@ public sealed class ToolsViewModel : ViewModelBase
         OpenPhpRedisAdminVersionsCommand = new RelayCommand(_ => OpenPhpRedisAdminVersions(), _ => !PhpRedisAdminIsBusy);
         InstallPhpRedisAdminCommand = new RelayCommand(_ => OpenPhpRedisAdminVersions(), _ => PhpRedisAdminShowInstallButton && !PhpRedisAdminIsBusy);
 
+        OpenAdminerCommand = new RelayCommand(_ => OpenAdminer(), _ => _adminerCanOpen && !_adminerIsBusy);
+        OpenAdminerSettingsCommand = new RelayCommand(_ => OpenAdminerSettings(), _ => !_adminerIsBusy);
+        OpenAdminerVersionsCommand = new RelayCommand(_ => OpenAdminerVersions(), _ => !_adminerIsBusy);
+        InstallAdminerCommand = new RelayCommand(_ => OpenAdminerVersions(), _ => _adminerShowInstallButton && !_adminerIsBusy);
+
         _phpMyAdminAdminRow = new AdminUiToolViewModel
         {
             Name = "phpMyAdmin",
@@ -159,11 +178,21 @@ public sealed class ToolsViewModel : ViewModelBase
             VersionsCommand = OpenPhpRedisAdminVersionsCommand,
             OpenCommand = OpenPhpRedisAdminCommand
         };
-        AdminTools = [_phpMyAdminAdminRow, _phpRedisAdminAdminRow];
+        _adminerRow = new AdminUiToolViewModel
+        {
+            Name = "Adminer",
+            Description = "Web UI for PostgreSQL, MySQL, MariaDB, and SQLite.",
+            SettingsCommand = OpenAdminerSettingsCommand,
+            InstallCommand = InstallAdminerCommand,
+            VersionsCommand = OpenAdminerVersionsCommand,
+            OpenCommand = OpenAdminerCommand
+        };
+        AdminTools = [_phpMyAdminAdminRow, _phpRedisAdminAdminRow, _adminerRow];
 
         var webGroup = new ToolGroupViewModel { Title = "Web Panels" };
         webGroup.Items.Add(_phpMyAdminAdminRow);
         webGroup.Items.Add(_phpRedisAdminAdminRow);
+        webGroup.Items.Add(_adminerRow);
         Groups.Add(webGroup);
 
         _ = RefreshAsync();
@@ -183,6 +212,10 @@ public sealed class ToolsViewModel : ViewModelBase
     public RelayCommand OpenPhpRedisAdminSettingsCommand { get; }
     public RelayCommand OpenPhpRedisAdminVersionsCommand { get; }
     public RelayCommand InstallPhpRedisAdminCommand { get; }
+    public RelayCommand OpenAdminerCommand { get; }
+    public RelayCommand OpenAdminerSettingsCommand { get; }
+    public RelayCommand OpenAdminerVersionsCommand { get; }
+    public RelayCommand InstallAdminerCommand { get; }
 
     public bool PhpMyAdminInstalled
     {
@@ -536,12 +569,30 @@ public sealed class ToolsViewModel : ViewModelBase
         PhpRedisAdminActivePackageLabel = ResolvePackageLabel(praStatus.PackageId);
         PhpRedisAdminPhpVersionBadge = BuildPhpVersionBadge(praStatus.PhpVersionId, praStatus.PhpVersionCompatible, praStatus.PackageInstalled);
 
-        UpdateAdminToolRows(phpStatus, praStatus);
+        var adminerStatus = _adminerManager.GetStatus();
+        _adminerCanOpen = adminerStatus.Ready && !string.IsNullOrWhiteSpace(adminerStatus.Url);
+        _adminerShowInstallButton = !adminerStatus.PackageInstalled;
+        _adminerShowVersionsButton = adminerStatus.PackageInstalled;
+        _adminerStatus = adminerStatus.Ready
+            ? "Ready"
+            : !string.IsNullOrWhiteSpace(adminerStatus.Message)
+                ? adminerStatus.Message
+                : adminerStatus.Enabled ? "Pending setup" : "Disabled";
+        _adminerMessage = adminerStatus.Message ?? string.Empty;
+        _adminerUrl = adminerStatus.Url;
+        _adminerActivePackageLabel = ResolvePackageLabel(adminerStatus.PackageId);
+        _adminerPhpVersionBadge = BuildPhpVersionBadge(adminerStatus.PhpVersionId, adminerStatus.PhpVersionCompatible, adminerStatus.PackageInstalled);
+        OpenAdminerCommand.RaiseCanExecuteChanged();
+        OpenAdminerSettingsCommand.RaiseCanExecuteChanged();
+        OpenAdminerVersionsCommand.RaiseCanExecuteChanged();
+        InstallAdminerCommand.RaiseCanExecuteChanged();
+
+        UpdateAdminToolRows(phpStatus, praStatus, adminerStatus);
         RaisePropertyChanged(nameof(ShowPhpMyAdminPhpSelector));
         return Task.CompletedTask;
     }
 
-    private void UpdateAdminToolRows(PhpMyAdminStatus phpStatus, PhpRedisAdminStatus praStatus)
+    private void UpdateAdminToolRows(PhpMyAdminStatus phpStatus, PhpRedisAdminStatus praStatus, AdminerStatus adminerStatus)
     {
         _phpMyAdminAdminRow.Installed = phpStatus.PackageInstalled;
         _phpMyAdminAdminRow.IsReady = phpStatus.Ready;
@@ -573,6 +624,22 @@ public sealed class ToolsViewModel : ViewModelBase
             PhpRedisAdminActivePackageLabel,
             PhpRedisAdminUrl,
             PhpRedisAdminOpenLabel);
+
+        _adminerRow.Installed = adminerStatus.PackageInstalled;
+        _adminerRow.IsReady = adminerStatus.Ready;
+        _adminerRow.IsBusy = _adminerIsBusy;
+        _adminerRow.ShowInstallButton = _adminerShowInstallButton;
+        _adminerRow.ShowVersionsButton = _adminerShowVersionsButton;
+        _adminerRow.ShowOpenButton = _adminerCanOpen;
+        _adminerRow.BadgeText = _adminerPhpVersionBadge;
+        _adminerRow.StatusText = _adminerStatus;
+        _adminerRow.StatusColor = adminerStatus.Ready ? "#8FD6B6" : "#91A0B5";
+        _adminerRow.Message = _adminerMessage;
+        _adminerRow.DetailsText = BuildAdminDetailsText(
+            adminerStatus.PackageInstalled,
+            _adminerActivePackageLabel,
+            _adminerUrl,
+            adminerStatus.OpenLabel);
     }
 
     private static string BuildAdminDetailsText(
@@ -1247,6 +1314,211 @@ public sealed class ToolsViewModel : ViewModelBase
 
         await _dashboardViewModel.RefreshAfterStartupAsync().ConfigureAwait(false);
         await RefreshAsync();
+    }
+
+    private void OpenAdminer()
+    {
+        var nginxRunning = _dashboardViewModel.Services
+            .FirstOrDefault(s => s.ServiceKey == "nginx")?.IsRunning == true;
+        if (!nginxRunning)
+        {
+            ConfirmDialog.Show(
+                System.Windows.Application.Current?.MainWindow,
+                "Nginx not running",
+                "Adminer requires the web server. Start Nginx first from the Dashboard or Services page.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_adminerUrl))
+        {
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo { FileName = _adminerUrl, UseShellExecute = true });
+    }
+
+    private void OpenAdminerSettings()
+    {
+        var dialogVm = new AdminerSettingsDialogViewModel(_adminerManager, _settingsStore);
+        var owner = Application.Current?.MainWindow;
+        var dialog = new AdminerSettingsDialog
+        {
+            DataContext = dialogVm,
+            Owner = owner
+        };
+
+        dialogVm.RequestClose += (_, _) => dialog.Close();
+
+        SettingsSaveFeedback.DeferredSettingsSave? deferred = null;
+        dialogVm.SettingsSaved += (_, _) =>
+        {
+            deferred = new SettingsSaveFeedback.DeferredSettingsSave(
+                "Applying Adminer settings…",
+                "Adminer settings saved.",
+                ConfigureAdminerStackAsync);
+        };
+
+        dialog.ShowDialog();
+
+        if (deferred is { } save)
+        {
+            _ = SettingsSaveFeedback.RunDeferredOnSessionActivityAsync(_activity, save);
+        }
+    }
+
+    private void OpenAdminerVersions()
+    {
+        var catalog = _catalogStore.List(PackageType.Adminer);
+        if (catalog.Count == 0)
+        {
+            StackrootDialogs.ShowWarning(
+                Application.Current?.MainWindow,
+                "Package catalog empty",
+                "No Adminer versions were found.",
+                $"Catalog file:{Environment.NewLine}{_catalogStore.Path}{Environment.NewLine}{Environment.NewLine}Restart the app after updating Stackroot.");
+            return;
+        }
+
+        var dialogVm = new PackageVersionsDialogViewModel(
+            "Adminer versions",
+            VersionsHint,
+            catalog,
+            _registryStore,
+            () =>
+            {
+                var current = _settingsStore.Load().Adminer.PackageId;
+                return string.IsNullOrWhiteSpace(current)
+                    ? SettingsDefaults.DefaultAdminerPackageId
+                    : current;
+            },
+            package => InstallAdminerPackageAsync(package),
+            package => UninstallAdminerPackageAsync(package),
+            package => SetActiveAdminerPackageAsync(package));
+
+        ShowPackageVersionsDialog(dialogVm);
+    }
+
+    private async Task InstallAdminerPackageAsync(PackageEntry package)
+    {
+        SetAdminerBusy(true);
+        try
+        {
+            if (_registryStore.IsInstalled(package.Id))
+            {
+                return;
+            }
+
+            if (!PackageInstallWithPhpDialogHost.TryPrompt(
+                    Application.Current?.MainWindow,
+                    package,
+                    _catalogStore,
+                    _registryStore,
+                    AdminToolPhpResolver.RequirementForAdminer(_catalogStore, package.Id),
+                    out var phpVersionId))
+            {
+                return;
+            }
+
+            var phpPackage = _catalogStore.GetById(phpVersionId!)
+                ?? throw new InvalidOperationException($"Catalog package '{phpVersionId}' was not found.");
+            Message = _registryStore.IsInstalled(phpVersionId!)
+                ? $"Installing {package.Label}…"
+                : $"Installing {phpPackage.Label}, then {package.Label}…";
+
+            await PackageInstallWithPhpDialogHost.EnsurePhpInstalledAsync(
+                phpVersionId!,
+                _catalogStore,
+                _registryStore,
+                _packages);
+
+            var settings = _settingsStore.Load();
+            _settingsStore.UpdatePhp(settings.Php with { ActiveVersionId = phpVersionId });
+            _phpConfigWriter.WritePhpConfig(_settingsStore.Load(), phpVersionId);
+            await _phpViewModel.RefreshNowAsync();
+
+            Message = $"Installing {package.Label}…";
+            await _packages.InstallAsync(package);
+            _adminerManager.ApplyConfig(new AdminerConfigUpdate
+            {
+                PackageId = package.Id,
+                Enabled = true,
+                PhpVersionId = phpVersionId
+            });
+            Message = $"Configuring {package.Label}…";
+            await ConfigureAdminerStackAsync().ConfigureAwait(true);
+            Message = $"Installed {package.Label}.";
+            _activity.LogSuccess("Tools", SessionActivityMessages.PackageInstalled(package.Label));
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            await RefreshAsync();
+        }
+        finally
+        {
+            SetAdminerBusy(false);
+        }
+    }
+
+    private async Task SetActiveAdminerPackageAsync(PackageEntry package)
+    {
+        _adminerManager.ApplyConfig(new AdminerConfigUpdate { PackageId = package.Id });
+        Message = $"{package.Label} is now the active version.";
+        await ConfigureAdminerStackAsync().ConfigureAwait(true);
+    }
+
+    private async Task UninstallAdminerPackageAsync(PackageEntry package)
+    {
+        if (!StackrootDialogs.ConfirmWarning(
+                Application.Current?.MainWindow,
+                "Uninstall Adminer?",
+                $"Uninstall {package.Label}? Files will be removed from the runtime folder."))
+        {
+            return;
+        }
+
+        SetAdminerBusy(true);
+        try
+        {
+            await _packages.UninstallAsync(package);
+            await _adminerManager.ApplyAsync();
+            _appDomainConfigWriter.Write();
+            Message = $"Removed {package.Label}.";
+            _activity.LogSuccess("Tools", SessionActivityMessages.PackageUninstalled(package.Label));
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message;
+            await RefreshAsync();
+        }
+        finally
+        {
+            SetAdminerBusy(false);
+        }
+    }
+
+    private async Task ConfigureAdminerStackAsync()
+    {
+        await Task.Run(async () =>
+        {
+            await _nginxWebStackRebuilder.ApplyAdminToolAndReloadAsync(
+                () => _adminerManager.ApplyAsync(),
+                forceNginxRestart: true).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+
+        await _dashboardViewModel.RefreshAfterStartupAsync().ConfigureAwait(false);
+        await RefreshAsync();
+    }
+
+    private void SetAdminerBusy(bool busy)
+    {
+        _adminerIsBusy = busy;
+        _adminerRow.IsBusy = busy;
+        OpenAdminerCommand.RaiseCanExecuteChanged();
+        OpenAdminerSettingsCommand.RaiseCanExecuteChanged();
+        OpenAdminerVersionsCommand.RaiseCanExecuteChanged();
+        InstallAdminerCommand.RaiseCanExecuteChanged();
     }
 
     private static void ShowPackageVersionsDialog(PackageVersionsDialogViewModel dialogVm)

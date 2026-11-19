@@ -435,7 +435,7 @@ public sealed class ServicesViewModel : ViewModelBase
             item.Enabled = item.Settings.Enabled;
             item.ActivePackageLabel = ResolvePackageLabel(item.Settings.PackageId ?? item.Definition.PackageId);
             item.RefreshCommandStates();
-            _dashboard.SyncServicePresentationFromSettings(id);
+            _dashboard.NotifyServiceRosterChanged();
 
             if (dialogVm.ClosedAfterSave)
             {
@@ -1030,6 +1030,7 @@ public sealed class ServicesViewModel : ViewModelBase
             });
 
             await RefreshAsync(force: true);
+            _dashboard.NotifyServiceRosterChanged();
         }
     }
 
@@ -1152,6 +1153,7 @@ public sealed class ServicesViewModel : ViewModelBase
             });
 
             await RefreshAsync(force: true);
+            _dashboard.NotifyServiceRosterChanged();
         }
     }
 

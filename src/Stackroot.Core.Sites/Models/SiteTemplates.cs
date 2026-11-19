@@ -19,6 +19,9 @@ public sealed class SiteTemplateDefinition
 
     /// <summary>Short installer description shown next to the checkbox.</summary>
     public string? InstallerDescription { get; init; }
+
+    /// <summary>Laravel and WordPress need a PHP version. An empty site can run without one.</summary>
+    public bool RequiresPhp { get; init; }
 }
 
 public static class SiteTemplates
@@ -37,7 +40,8 @@ public static class SiteTemplates
             Label = "Laravel",
             DocumentRoot = "public",
             HasInstaller = true,
-            InstallerDescription = "Install latest Laravel via Composer"
+            InstallerDescription = "Install latest Laravel via Composer",
+            RequiresPhp = true
         },
         new SiteTemplateDefinition
         {
@@ -45,7 +49,8 @@ public static class SiteTemplates
             Label = "WordPress",
             DocumentRoot = ".",
             HasInstaller = true,
-            InstallerDescription = "Download and extract latest WordPress"
+            InstallerDescription = "Download and extract latest WordPress",
+            RequiresPhp = true
         }
     ];
 

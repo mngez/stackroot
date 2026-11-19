@@ -611,6 +611,11 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">Web 访问二级路径</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">依赖解析 PHP 版本</sys:String>
 
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
+
     <sys:String x:Key="Loc.PhpRuntime.Title">高级选项 — PHP 运行环境参数</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">每个已安装的环境版本均会在指定端口组（基础端口 + 偏移量）上分配并运行独立的 php-cgi 工作进程池。通常情况下您无需修改此项。</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI 主机</sys:String>

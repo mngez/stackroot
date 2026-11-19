@@ -1156,12 +1156,8 @@ public sealed class SiteManageViewModel : ViewModelBase, IScheduledTaskRowHost, 
         if (PhpVersions.Count == 0)
         {
             PhpVersions.Add(new PhpVersionOptionViewModel("no-php", "No PHP"));
-            var installedIds = _catalogStore.List(PackageType.Php)
-                .Select(e => e.Id)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var entry in _catalogStore.List(PackageType.Php)
-                         .Where(e => installedIds.Contains(e.Id))
-                         .OrderByDescending(e => e.Id, StringComparer.OrdinalIgnoreCase))
+            var registry = _services.GetRequiredService<InstallRegistryStore>();
+            foreach (var entry in InstalledPhpPackages.List(_catalogStore, registry))
                 PhpVersions.Add(new PhpVersionOptionViewModel(entry.Id, entry.Label));
         }
 

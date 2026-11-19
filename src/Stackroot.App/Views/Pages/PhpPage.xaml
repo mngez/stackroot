@@ -98,7 +98,7 @@
                           Margin="0,0,10,0"
                           Padding="8,4"
                           ItemsSource="{Binding CatalogPhpPackages}"
-                          DisplayMemberPath="Id"
+                          DisplayMemberPath="Label"
                           SelectedValuePath="Id"
                           SelectedValue="{Binding SelectedCatalogPackageId}" />
 
@@ -153,6 +153,11 @@
                                     <TextBlock Margin="0,4,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                                Text="{Binding Version, StringFormat=Version: {0}}" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               Foreground="{StaticResource StackrootTextMutedBrush}"
+                                               Text="{Binding CatalogNote}"
+                                               TextWrapping="Wrap"
+                                               Visibility="{Binding ShowCatalogNote, Converter={StaticResource BoolToVis}}" />
                                     <TextBlock Margin="0,4,0,0"
                                                Foreground="{StaticResource StackrootTextMutedBrush}"
                                                Text="{Binding InstallPath}"

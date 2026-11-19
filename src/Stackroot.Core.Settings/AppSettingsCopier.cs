@@ -26,6 +26,7 @@ public static class AppSettingsCopier
             },
             Phpmyadmin = source.Phpmyadmin with { },
             Phpredisadmin = source.Phpredisadmin with { },
+            Adminer = source.Adminer with { },
             Mailpit = source.Mailpit with { },
             TestDns = source.TestDns with { },
             NginxHttp = source.NginxHttp with { },

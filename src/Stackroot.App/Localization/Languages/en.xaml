@@ -616,6 +616,11 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL path</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP version</sys:String>
 
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
+
     <sys:String x:Key="Loc.PhpRuntime.Title">Advanced — PHP runtime</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">Each installed version runs a pool of php-cgi workers on a block of ports (base port + offset). You rarely need to change this.</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI host</sys:String>

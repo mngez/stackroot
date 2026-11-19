@@ -119,28 +119,28 @@ public sealed class SiteNginxVhostWriter
         sb.AppendLine($"    root {normalizedRoot};");
         sb.AppendLine("    index index.php index.html index.htm;");
         sb.AppendLine();
-        sb.AppendLine("    location / {");
-        sb.AppendLine($"        {BuildMainTryFiles(site)}");
-        sb.AppendLine("    }");
-        sb.AppendLine();
 
-        foreach (var proxy in site.DevProxies ?? [])
+        var proxies = CollectDevProxies(site, httpSettings);
+        if (!proxies.Any(static proxy => proxy.ClaimsSiteRoot))
         {
-            if (!proxy.Enabled || string.IsNullOrWhiteSpace(SiteDevProxyDirectives.TryGetProxyPass(proxy, httpSettings)))
+            sb.AppendLine("    location / {");
+            sb.AppendLine($"        {BuildMainTryFiles(site)}");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        var writtenLocations = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var proxy in proxies)
+        {
+            if (!writtenLocations.Add(proxy.Location))
             {
+                sb.AppendLine($"    # skipped duplicate location {proxy.Location}");
                 continue;
             }
 
-            var (kind, pattern) = SiteDevProxyLocation.Normalize(proxy.LocationKind, proxy.LocationPath);
-            if (SiteDevProxyLocation.Validate(kind, pattern) is not null)
-            {
-                continue;
-            }
-
-            var location = SiteDevProxyLocation.Format(kind, pattern);
-            sb.AppendLine($"    location {location} {{");
-            SiteDevProxyDirectives.AppendLocationBlock(sb, proxy, httpSettings);
-            NginxStabilityDirectives.AppendProxyLocation(sb, httpSettings);
+            sb.AppendLine($"    location {proxy.Location} {{");
+            SiteDevProxyDirectives.AppendLocationBlock(sb, proxy.Proxy, httpSettings);
+            NginxStabilityDirectives.AppendProxyLocation(sb, httpSettings, websocket: proxy.Proxy.Websocket == true);
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -160,6 +160,34 @@ public sealed class SiteNginxVhostWriter
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }
+
+    private static List<DevProxyLocation> CollectDevProxies(Site site, NginxHttpSettings? httpSettings)
+    {
+        var proxies = new List<DevProxyLocation>();
+        foreach (var proxy in site.DevProxies ?? [])
+        {
+            if (!proxy.Enabled || string.IsNullOrWhiteSpace(SiteDevProxyDirectives.TryGetProxyPass(proxy, httpSettings)))
+            {
+                continue;
+            }
+
+            var (kind, pattern) = SiteDevProxyLocation.Normalize(proxy.LocationKind, proxy.LocationPath);
+            if (SiteDevProxyLocation.Validate(kind, pattern) is not null)
+            {
+                continue;
+            }
+
+            var location = SiteDevProxyLocation.Format(kind, pattern);
+            proxies.Add(new DevProxyLocation(
+                proxy,
+                location,
+                kind == SiteDevProxyLocationKind.Prefix && pattern.Trim() == "/"));
+        }
+
+        return proxies;
+    }
+
+    private readonly record struct DevProxyLocation(SiteDevProxy Proxy, string Location, bool ClaimsSiteRoot);
 
     private static string BuildMainTryFiles(Site site)
     {

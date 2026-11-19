@@ -10,6 +10,7 @@ public static class NginxSitesEnabledReservedFiles
         "stackroot-app.conf",
         "stackroot-phpmyadmin.conf",
         "stackroot-phpredisadmin.conf",
+        "stackroot-adminer.conf",
     };
 
     public static bool IsReserved(string fileName) => ConfFileNames.Contains(fileName);

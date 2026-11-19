@@ -609,6 +609,11 @@
         <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">„서비스“ → „Redis“ 메뉴에 설정된 호스트/포트를 사용하여 Redis에 연결합니다.</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL 경로</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP 버전</sys:String>
+
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
     
         <sys:String x:Key="Loc.PhpRuntime.Title">고급 — PHP 런타임</sys:String>
         <sys:String x:Key="Loc.PhpRuntime.Subtitle">설치된 각 버전은 포트 블록(기본 포트 + 오프셋)에서 php-cgi 워커 풀을 구동합니다. 이 설정을 변경해야 하는 경우는 거의 없습니다.</sys:String>

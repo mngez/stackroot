@@ -610,6 +610,11 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">Путь URL</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">Версия PHP</sys:String>
 
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
+
     <sys:String x:Key="Loc.PhpRuntime.Title">Дополнительно — среда выполнения PHP</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">Каждая установленная версия запускает пул воркеров php-cgi на блоке портов (базовый порт + смещение). Вам редко понадобится это изменять.</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">Хост FastCGI</sys:String>

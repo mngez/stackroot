@@ -612,6 +612,11 @@
         <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">Se conecta a Redis utilizando el host/puerto de Servicios → Redis.</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">Ruta URL</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">Versión de PHP</sys:String>
+
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
     
         <sys:String x:Key="Loc.PhpRuntime.Title">Avanzado — Entorno de ejecución de PHP</sys:String>
         <sys:String x:Key="Loc.PhpRuntime.Subtitle">Cada versión instalada ejecuta un grupo de procesos de php-cgi en un bloque de puertos (puerto base + desplazamiento). Rara vez necesitará cambiar esto.</sys:String>

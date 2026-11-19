@@ -126,6 +126,23 @@ public static class PhpCgiPlanner
             }
         }
 
+        if (settings.Adminer.Enabled && registry.List(PackageType.Adminer).Count > 0)
+        {
+            var packageId = string.IsNullOrWhiteSpace(settings.Adminer.PackageId)
+                ? SettingsDefaults.DefaultAdminerPackageId
+                : settings.Adminer.PackageId.Trim();
+            var requirement = AdminToolPhpResolver.RequirementForAdminer(catalog, packageId);
+            var phpVersionId = AdminToolPhpResolver.ResolveVersionId(
+                settings.Adminer.PhpVersionId,
+                requirement,
+                settings,
+                registry);
+            if (!string.IsNullOrWhiteSpace(phpVersionId))
+            {
+                required.Add(phpVersionId);
+            }
+        }
+
         foreach (var versionId in extraVersionIds ?? [])
         {
             if (!string.IsNullOrWhiteSpace(versionId) && registry.GetById(versionId) is not null)

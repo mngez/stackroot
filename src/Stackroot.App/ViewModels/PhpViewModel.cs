@@ -446,7 +446,9 @@ public sealed class PhpViewModel : ViewModelBase
 
         var phpPackages = _catalogStore.List(PackageType.Php)
 
-            .OrderByDescending(p => p.Id, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p.Deprecated == true)
+
+            .ThenByDescending(p => PhpSeriesFallback.TryParseVersion(p.Version) ?? new Version(0, 0))
 
             .ToList();
 
@@ -705,7 +707,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             {
 
-                InstalledVersions.Add(CreateVersionRow(version, isListening));
+                InstalledVersions.Add(CreateVersionRow(version, isListening, CatalogNoteFor(version.Id)));
 
                 continue;
 
@@ -713,7 +715,7 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-            ApplyVersionRow(existing, version, isListening);
+            ApplyVersionRow(existing, version, isListening, CatalogNoteFor(version.Id));
 
         }
 
@@ -807,7 +809,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             {
 
-                InstalledVersions.Add(CreateVersionRow(version, isListening));
+                InstalledVersions.Add(CreateVersionRow(version, isListening, CatalogNoteFor(version.Id)));
 
             }
 
@@ -815,7 +817,7 @@ public sealed class PhpViewModel : ViewModelBase
 
             {
 
-            ApplyVersionRow(existing, version, isListening);
+            ApplyVersionRow(existing, version, isListening, CatalogNoteFor(version.Id));
 
         }
 
@@ -841,13 +843,39 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-    private static PhpVersionRowViewModel CreateVersionRow(PhpVersionInfo version, bool isListening)
+    private string CatalogNoteFor(string versionId)
+
+    {
+
+        var entry = _catalogStore.GetById(versionId);
+
+        if (entry is null)
+
+        {
+
+            return "No longer in the catalog. You can still use, configure, and uninstall this version.";
+
+        }
+
+
+
+        return entry.Deprecated == true
+
+            ? "Deprecated. It stays available so existing projects keep working."
+
+            : string.Empty;
+
+    }
+
+
+
+    private static PhpVersionRowViewModel CreateVersionRow(PhpVersionInfo version, bool isListening, string catalogNote)
 
     {
 
         var row = new PhpVersionRowViewModel();
 
-        ApplyVersionRow(row, version, isListening);
+        ApplyVersionRow(row, version, isListening, catalogNote);
 
         return row;
 
@@ -855,7 +883,7 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-    private static void ApplyVersionRow(PhpVersionRowViewModel row, PhpVersionInfo version, bool isListening)
+    private static void ApplyVersionRow(PhpVersionRowViewModel row, PhpVersionInfo version, bool isListening, string catalogNote)
 
     {
 
@@ -872,6 +900,8 @@ public sealed class PhpViewModel : ViewModelBase
         row.IsRequired = version.IsRequired;
 
         row.IsRunning = isListening;
+
+        row.CatalogNote = catalogNote;
 
     }
 
@@ -1195,13 +1225,13 @@ public sealed class PhpViewModel : ViewModelBase
 
 
 
-        var package = _catalogStore.GetById(versionId);
+        var package = InstalledPhpPackages.ResolveInstalled(_catalogStore, _registryStore, versionId);
 
         if (package is null)
 
         {
 
-            StatusMessage = $"Catalog package '{versionId}' not found.";
+            StatusMessage = $"PHP {versionId} is not installed.";
 
             return;
 
@@ -2008,6 +2038,38 @@ public sealed class PhpVersionRowViewModel : ViewModelBase
         set => SetProperty(ref _installPath, value);
 
     }
+
+
+
+    private string _catalogNote = string.Empty;
+
+
+
+    public string CatalogNote
+
+    {
+
+        get => _catalogNote;
+
+        set
+
+        {
+
+            if (SetProperty(ref _catalogNote, value))
+
+            {
+
+                RaisePropertyChanged(nameof(ShowCatalogNote));
+
+            }
+
+        }
+
+    }
+
+
+
+    public bool ShowCatalogNote => !string.IsNullOrWhiteSpace(CatalogNote);
 
 
 

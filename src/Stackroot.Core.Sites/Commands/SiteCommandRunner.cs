@@ -192,9 +192,10 @@ public sealed class SiteCommandRunner
     private string ResolveSitePhpVersionId(SiteModel site)
     {
         var settings = _settingsStore.Load();
-        return string.IsNullOrWhiteSpace(site.PhpVersionId)
+        var selected = string.IsNullOrWhiteSpace(site.PhpVersionId)
             ? settings.Php.ActiveVersionId ?? string.Empty
             : site.PhpVersionId;
+        return PhpSeriesFallback.PreferInstalled(_registry, selected) ?? selected;
     }
 
     private Dictionary<string, string> BuildSiteCommandEnvironment(string? phpVersionId)

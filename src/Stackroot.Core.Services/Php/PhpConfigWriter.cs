@@ -20,7 +20,7 @@ public sealed class PhpConfigWriter
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private static readonly string[] PhpMyAdminExtensions =
     [
-        "mbstring", "mysqli", "openssl", "curl", "zip", "gd", "fileinfo", "xml"
+        "mbstring", "mysqli", "pdo_mysql", "pgsql", "pdo_pgsql", "pdo_sqlite", "sqlite3", "openssl", "curl", "zip", "gd", "fileinfo", "xml"
     ];
 
     private readonly StackrootPaths _paths;

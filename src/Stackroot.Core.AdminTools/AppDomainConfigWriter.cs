@@ -20,6 +20,7 @@ public sealed class AppDomainConfigWriter
     private readonly InstallRegistryStore _registryStore;
     private readonly PhpMyAdminManager _phpMyAdminManager;
     private readonly PhpRedisAdminManager _phpRedisAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly HostsFileEditor _hostsFileEditor;
 
     public AppDomainConfigWriter(
@@ -29,6 +30,7 @@ public sealed class AppDomainConfigWriter
         InstallRegistryStore registryStore,
         PhpMyAdminManager phpMyAdminManager,
         PhpRedisAdminManager phpRedisAdminManager,
+        AdminerManager adminerManager,
         HostsFileEditor hostsFileEditor)
     {
         _paths = paths;
@@ -37,6 +39,7 @@ public sealed class AppDomainConfigWriter
         _registryStore = registryStore;
         _phpMyAdminManager = phpMyAdminManager;
         _phpRedisAdminManager = phpRedisAdminManager;
+        _adminerManager = adminerManager;
         _hostsFileEditor = hostsFileEditor;
     }
 
@@ -85,6 +88,15 @@ public sealed class AppDomainConfigWriter
             praLabel = praStatus.OpenLabel;
         }
 
+        var adminerStatus = _adminerManager.GetStatus();
+        string? adminerUrl = null;
+        string? adminerLabel = null;
+        if (adminerStatus.Enabled && adminerStatus.PackageInstalled && !string.IsNullOrWhiteSpace(adminerStatus.Url))
+        {
+            adminerUrl = adminerStatus.Url;
+            adminerLabel = adminerStatus.OpenLabel;
+        }
+
         string? mailpitUrl = null;
         string? mailpitLabel = null;
         var mailpitLocations = string.Empty;
@@ -111,7 +123,7 @@ public sealed class AppDomainConfigWriter
         var indexHtml = Path.Combine(appHtmlDir, "index.html");
         File.WriteAllText(
             indexHtml,
-            GenerateLandingHtml(appDomain, pmaUrl, pmaLabel, praUrl, praLabel, mailpitUrl, mailpitLabel, sites),
+            GenerateLandingHtml(appDomain, pmaUrl, pmaLabel, praUrl, praLabel, adminerUrl, adminerLabel, mailpitUrl, mailpitLabel, sites),
             Utf8NoBom);
 
         var confPath = Path.Combine(confDir, ConfFileName);
@@ -143,6 +155,12 @@ public sealed class AppDomainConfigWriter
             sb.Append(praLocations);
         }
 
+        var adminerLocations = _adminerManager.GetPathModeNginxLocations();
+        if (!string.IsNullOrWhiteSpace(adminerLocations))
+        {
+            sb.Append(adminerLocations);
+        }
+
         sb.AppendLine("    location = / {");
         sb.AppendLine("        try_files /index.html =404;");
         sb.AppendLine("    }");
@@ -170,6 +188,8 @@ public sealed class AppDomainConfigWriter
         string? pmaLabel,
         string? praUrl,
         string? praLabel,
+        string? adminerUrl,
+        string? adminerLabel,
         string? mailpitUrl,
         string? mailpitLabel,
         IReadOnlyList<AppDomainSiteEntry> sites)
@@ -179,6 +199,9 @@ public sealed class AppDomainConfigWriter
             : string.Empty;
         var praBlock = praUrl is not null && praLabel is not null
             ? $"<li><a href=\"{EscapeHtml(praUrl)}\">phpRedisAdmin</a> — <code>{EscapeHtml(praLabel)}</code></li>"
+            : string.Empty;
+        var adminerBlock = adminerUrl is not null && adminerLabel is not null
+            ? $"<li><a href=\"{EscapeHtml(adminerUrl)}\">Adminer</a> — <code>{EscapeHtml(adminerLabel)}</code></li>"
             : string.Empty;
         var mailpitBlock = mailpitUrl is not null && mailpitLabel is not null
             ? $"<li><a href=\"{EscapeHtml(mailpitUrl)}\">Mailpit</a> — <code>{EscapeHtml(mailpitLabel)}</code></li>"
@@ -191,7 +214,7 @@ public sealed class AppDomainConfigWriter
                     $"<li><a href=\"http://{EscapeHtml(site.Domain)}/\">{EscapeHtml(site.Name)}</a> — <code>{EscapeHtml(site.Domain)}</code></li>"))
             : "<li class=\"muted\">No sites yet — create one in Stackroot.</li>";
 
-        var toolsFallback = string.IsNullOrEmpty(pmaBlock) && string.IsNullOrEmpty(praBlock) && string.IsNullOrEmpty(mailpitBlock)
+        var toolsFallback = string.IsNullOrEmpty(pmaBlock) && string.IsNullOrEmpty(praBlock) && string.IsNullOrEmpty(adminerBlock) && string.IsNullOrEmpty(mailpitBlock)
             ? "<li class=\"muted\">No tools configured</li>"
             : string.Empty;
 
@@ -224,7 +247,7 @@ public sealed class AppDomainConfigWriter
               <p class="lead">Local development hub — <code>{{EscapeHtml(appDomain)}}</code></p>
               <h2>Tools</h2>
               <ul>
-                {{pmaBlock}}{{praBlock}}{{mailpitBlock}}{{toolsFallback}}
+                {{pmaBlock}}{{praBlock}}{{adminerBlock}}{{mailpitBlock}}{{toolsFallback}}
               </ul>
               <h2>Sites</h2>
               <ul>

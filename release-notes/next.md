@@ -2,11 +2,11 @@
 
 Working draft for the next version. When you ship, copy this content to `release-notes/{Version}.md`.
 
-**Current target:** **0.3.8** (notes in `release-notes/0.3.8.md`).
+**Current target:** **0.3.9** (notes in `release-notes/0.3.9.md`).
 
-### Draft notes (0.3.8)
+### Draft notes (0.3.9)
 
-See `release-notes/0.3.8.md`.
+See `release-notes/0.3.9.md`.
 
 ### How publishing works
 

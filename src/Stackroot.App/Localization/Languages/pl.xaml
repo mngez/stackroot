@@ -609,7 +609,12 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.Title">Ustawienia phpRedisAdmin</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">Łączy się z Redis przy użyciu hosta/portu z Usługi → Redis.</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">Ścieżka URL</sys:String>
-    <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">Wersja PHP</sys:String> 
+    <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">Wersja PHP</sys:String>
+
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String> 
 
     <sys:String x:Key="Loc.PhpRuntime.Title">Zaawansowane — Środowisko uruchomieniowe PHP</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">Każda zainstalowana wersja uruchamia pulę workerów php-cgi na bloku portów (port bazowy + przesunięcie). Rzadko zachodzi potrzeba zmiany tego ustawienia.</sys:String>

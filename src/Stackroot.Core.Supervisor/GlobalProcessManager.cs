@@ -249,9 +249,10 @@ public sealed class GlobalProcessManager
     private ProcessInfo ToProcessInfo(GlobalProcess process, ManagedProcessSnapshot? snapshot = null)
     {
         snapshot ??= _supervisor.GetStatus(CreateScope(process.Id));
+        var argv = ResolveArgv(process);
+        process = _store.GetById(process.Id) ?? process;
         var workDir = _argvResolver?.ResolveWorkDir(process) ?? ProcessWorkDir.Resolve(process);
         var resolvedCwd = ProcessWorkingDirectory.Resolve(workDir, process.Cwd);
-        var argv = ResolveArgv(process);
         var available = ProcessAvailability.IsAvailable(process, argv, resolvedCwd);
         var status = snapshot?.Status ?? ProcessStatus.Stopped;
         var pid = snapshot?.Pid;

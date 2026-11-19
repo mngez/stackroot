@@ -30,6 +30,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private readonly GlobalProcessManager _processManager;
     private readonly PhpMyAdminManager _phpMyAdminManager;
     private readonly PhpRedisAdminManager _phpRedisAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly MailpitManager _mailpitManager;
     private readonly PhpConfigWriter _phpConfigWriter;
     private readonly StackrootPaths _paths;
@@ -64,6 +65,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private string? _errorMessage;
     private int _pendingStartupResync;
     private int _pendingInstallTrackerResync;
+    private int _pendingServiceRosterResync;
     private int _pendingRuntimeApply;
     private int _runtimeApplyScheduled;
     private int _visibilityStaleRefreshDone;
@@ -94,6 +96,7 @@ public sealed class DashboardViewModel : ViewModelBase
         GlobalProcessManager processManager,
         PhpMyAdminManager phpMyAdminManager,
         PhpRedisAdminManager phpRedisAdminManager,
+        AdminerManager adminerManager,
         MailpitManager mailpitManager,
         PhpConfigWriter phpConfigWriter,
         StackrootPaths paths,
@@ -113,6 +116,7 @@ public sealed class DashboardViewModel : ViewModelBase
         _processManager = processManager;
         _phpMyAdminManager = phpMyAdminManager;
         _phpRedisAdminManager = phpRedisAdminManager;
+        _adminerManager = adminerManager;
         _mailpitManager = mailpitManager;
         _phpConfigWriter = phpConfigWriter;
         _paths = paths;
@@ -288,7 +292,8 @@ public sealed class DashboardViewModel : ViewModelBase
     private static bool IsStackPackage(string packageId)
         => packageId.StartsWith("php-", StringComparison.OrdinalIgnoreCase)
            || packageId.StartsWith("phpmyadmin-", StringComparison.OrdinalIgnoreCase)
-           || packageId.StartsWith("phpredisadmin-", StringComparison.OrdinalIgnoreCase);
+           || packageId.StartsWith("phpredisadmin-", StringComparison.OrdinalIgnoreCase)
+           || packageId.StartsWith("adminer-", StringComparison.OrdinalIgnoreCase);
 
     public void EndLoading()
     {
@@ -1744,7 +1749,26 @@ public sealed class DashboardViewModel : ViewModelBase
             {
                 _ = OnInstallTrackerChangedAsync();
             }
+
+            if (Interlocked.Exchange(ref _pendingServiceRosterResync, 0) == 1)
+            {
+                _ = RefreshAsync(silent: true, resyncStructure: true);
+            }
         }
+    }
+
+    /// <summary>
+    /// Rebuilds the dashboard service list after a package is installed, removed, or enabled.
+    /// </summary>
+    public void NotifyServiceRosterChanged()
+    {
+        if (!_dashboardInitialized || _isSilentRefreshing || IsRefreshing)
+        {
+            Interlocked.Exchange(ref _pendingServiceRosterResync, 1);
+            return;
+        }
+
+        _ = RefreshAsync(silent: true, resyncStructure: true);
     }
 
     private static Task RunOnUiAsync(Action action)
@@ -2883,6 +2907,12 @@ public sealed class DashboardViewModel : ViewModelBase
         if (pra.Enabled && pra.Ready && !string.IsNullOrWhiteSpace(pra.Url) && nginxRunning)
         {
             desired.Add(CreateQuickLink("phpRedisAdmin", pra.Url));
+        }
+
+        var adminer = _adminerManager.GetStatus();
+        if (adminer.Enabled && adminer.Ready && !string.IsNullOrWhiteSpace(adminer.Url) && nginxRunning)
+        {
+            desired.Add(CreateQuickLink("Adminer", adminer.Url));
         }
 
         var mailpit = await _mailpitManager.GetStatusAsync().ConfigureAwait(true);

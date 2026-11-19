@@ -9,13 +9,17 @@ public sealed class PhpCatalogContractTests
 {
     private static readonly string[] ExpectedPhpIds =
     [
+        "php-8.5.12",
         "php-8.5.9",
         "php-8.5.8",
         "php-8.5.7",
+        "php-8.4.27",
         "php-8.4.23",
         "php-8.4.22",
+        "php-8.3.36",
         "php-8.3.32",
         "php-8.3.31",
+        "php-8.2.35",
         "php-8.2.32",
         "php-8.2.31",
         "php-8.1.34",
@@ -72,7 +76,11 @@ public sealed class PhpCatalogContractTests
             .Select(p => p.Id)
             .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        Assert.Equal(["php-8.4.22", "php-8.4.23"], series84);
+        Assert.Equal(["php-8.4.22", "php-8.4.23", "php-8.4.27"], series84);
+        Assert.True(phpPackages.Single(p => p.Id == "php-8.4.22").Deprecated);
+        Assert.NotEqual(true, phpPackages.Single(p => p.Id == "php-8.4.27").Deprecated);
+        Assert.Contains(phpPackages, p => p.Id == "php-8.5.7" && p.Deprecated == true);
+        Assert.Contains(phpPackages, p => p.Id == "php-8.1.34" && p.Deprecated != true);
     }
 
     private static string ResolveCatalogPath()

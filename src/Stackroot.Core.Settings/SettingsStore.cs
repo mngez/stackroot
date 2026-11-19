@@ -257,7 +257,8 @@ public sealed class SettingsStore
                 updated = updated with
                 {
                     Phpmyadmin = updated.Phpmyadmin with { BaseDomain = updated.General.AppDomain! },
-                    Phpredisadmin = updated.Phpredisadmin with { BaseDomain = updated.General.AppDomain! }
+                    Phpredisadmin = updated.Phpredisadmin with { BaseDomain = updated.General.AppDomain! },
+                    Adminer = updated.Adminer with { BaseDomain = updated.General.AppDomain! }
                 };
             }
 
@@ -403,6 +404,23 @@ public sealed class SettingsStore
                 Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Phpredisadmin.Path : patch.Path,
                 PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Phpredisadmin.PackageId : patch.PackageId,
                 PhpVersionId = patch.PhpVersionId ?? settings.Phpredisadmin.PhpVersionId
+            }
+        });
+    }
+
+    public AppSettings UpdateAdminer(AdminerSettings patch)
+    {
+        return Mutate(settings => settings with
+        {
+            Adminer = settings.Adminer with
+            {
+                Enabled = patch.Enabled,
+                BaseDomain = string.IsNullOrWhiteSpace(patch.BaseDomain) ? settings.Adminer.BaseDomain : patch.BaseDomain,
+                AccessMode = patch.AccessMode,
+                Subdomain = string.IsNullOrWhiteSpace(patch.Subdomain) ? settings.Adminer.Subdomain : patch.Subdomain,
+                Path = string.IsNullOrWhiteSpace(patch.Path) ? settings.Adminer.Path : patch.Path,
+                PackageId = string.IsNullOrWhiteSpace(patch.PackageId) ? settings.Adminer.PackageId : patch.PackageId,
+                PhpVersionId = patch.PhpVersionId ?? settings.Adminer.PhpVersionId
             }
         });
     }
@@ -595,6 +613,7 @@ public sealed class SettingsStore
                 PackageId = string.IsNullOrWhiteSpace(stored.Phpredisadmin.PackageId) ? defaults.Phpredisadmin.PackageId : stored.Phpredisadmin.PackageId,
                 PhpVersionId = stored.Phpredisadmin.PhpVersionId ?? defaults.Phpredisadmin.PhpVersionId
             },
+            Adminer = MergeAdminer(defaults.Adminer, stored.Adminer),
             Mailpit = defaults.Mailpit with
             {
                 Enabled = stored.Mailpit.Enabled,
@@ -669,6 +688,21 @@ public sealed class SettingsStore
         };
 
         return services;
+    }
+
+    private static AdminerSettings MergeAdminer(AdminerSettings defaults, AdminerSettings? stored)
+    {
+        var current = stored ?? defaults;
+        return defaults with
+        {
+            Enabled = current.Enabled,
+            BaseDomain = string.IsNullOrWhiteSpace(current.BaseDomain) ? defaults.BaseDomain : current.BaseDomain,
+            AccessMode = current.AccessMode,
+            Subdomain = string.IsNullOrWhiteSpace(current.Subdomain) ? defaults.Subdomain : current.Subdomain,
+            Path = string.IsNullOrWhiteSpace(current.Path) ? defaults.Path : current.Path,
+            PackageId = string.IsNullOrWhiteSpace(current.PackageId) ? defaults.PackageId : current.PackageId,
+            PhpVersionId = current.PhpVersionId ?? defaults.PhpVersionId
+        };
     }
 
     private static Dictionary<ServiceId, ServicePortSettings> MergeServices(

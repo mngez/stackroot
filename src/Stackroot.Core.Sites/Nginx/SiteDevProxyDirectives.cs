@@ -26,6 +26,7 @@ public static class SiteDevProxyDirectives
 
         if (proxy.Websocket == true)
         {
+            entries.Add(new("proxy_set_header:Host", "$host"));
             entries.Add(new("proxy_set_header:Upgrade", "$http_upgrade"));
             entries.Add(new("proxy_set_header:Connection", "\"upgrade\""));
         }

@@ -17,6 +17,7 @@ public sealed class ProcessArgvResolver : IGlobalProcessArgvResolver
     private readonly SettingsStore _settingsStore;
     private readonly StackrootPaths _paths;
     private readonly SiteManager _siteManager;
+    private readonly GlobalProcessStore _processStore;
     private readonly INpmTooling? _npmTooling;
 
     public ProcessArgvResolver(
@@ -24,16 +25,19 @@ public sealed class ProcessArgvResolver : IGlobalProcessArgvResolver
         SettingsStore settingsStore,
         StackrootPaths paths,
         SiteManager siteManager,
+        GlobalProcessStore processStore,
         INpmTooling? npmTooling = null)
     {
         _registry = registry;
         _settingsStore = settingsStore;
         _paths = paths;
         _siteManager = siteManager;
+        _processStore = processStore;
         _npmTooling = npmTooling;
     }
     public IReadOnlyList<string> Resolve(GlobalProcess process)
     {
+        process = RetainPinnedPhp(process);
         var argv = process.Argv ?? [];
         if (argv.Count == 0 || process.Runtime == SiteCommandRuntime.Shell)
         {
@@ -89,6 +93,7 @@ public sealed class ProcessArgvResolver : IGlobalProcessArgvResolver
 
     public IReadOnlyDictionary<string, string?> BuildEnvironment(GlobalProcess process)
     {
+        process = RetainPinnedPhp(process);
         var site = !string.IsNullOrWhiteSpace(process.SiteId) ? _siteManager.Get(process.SiteId) : null;
         var versionId = ResolveEffectivePhpVersionId(site, process.PhpVersionId);
         var environment = SiteProcessEnvironment.Build(_paths, versionId, _npmTooling);
@@ -103,6 +108,7 @@ public sealed class ProcessArgvResolver : IGlobalProcessArgvResolver
             return command;
         }
 
+        process = RetainPinnedPhp(process);
         var site = !string.IsNullOrWhiteSpace(process.SiteId) ? _siteManager.Get(process.SiteId) : null;
         var versionId = ResolveEffectivePhpVersionId(site, process.PhpVersionId);
         var alias = !string.IsNullOrWhiteSpace(versionId)
@@ -401,15 +407,33 @@ public sealed class ProcessArgvResolver : IGlobalProcessArgvResolver
     {
         if (!string.IsNullOrWhiteSpace(phpVersionIdOverride))
         {
-            return phpVersionIdOverride;
+            return PhpSeriesFallback.PreferInstalled(_registry, phpVersionIdOverride);
         }
 
         if (!string.IsNullOrWhiteSpace(site?.PhpVersionId))
         {
-            return site.PhpVersionId;
+            return PhpSeriesFallback.PreferInstalled(_registry, site.PhpVersionId);
         }
 
-        return _settingsStore.Load().Php.ActiveVersionId;
+        return PhpSeriesFallback.PreferInstalled(_registry, _settingsStore.Load().Php.ActiveVersionId);
+    }
+
+    private GlobalProcess RetainPinnedPhp(GlobalProcess process)
+    {
+        if (string.IsNullOrWhiteSpace(process.PhpVersionId))
+        {
+            return process;
+        }
+
+        var resolved = PhpSeriesFallback.PreferInstalled(_registry, process.PhpVersionId);
+        if (string.IsNullOrWhiteSpace(resolved)
+            || string.Equals(resolved, process.PhpVersionId, StringComparison.OrdinalIgnoreCase)
+            || !_registry.IsInstalled(resolved))
+        {
+            return process;
+        }
+
+        return _processStore.Upsert(process with { PhpVersionId = resolved });
     }
 
     private static string? ResolveProjectPath(SiteModel? site, string? workDir) =>

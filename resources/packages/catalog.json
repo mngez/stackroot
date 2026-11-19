@@ -1,7 +1,99 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-24T10:02:52.249Z",
+  "updatedAt": "2026-11-18T21:00:00.000Z",
   "packages": [
+    {
+      "id": "php-8.5.12",
+      "type": "php",
+      "version": "8.5.12",
+      "series": "8.5",
+      "platform": "win-x64",
+      "label": "PHP 8.5.12",
+      "description": "PHP 8.5 NTS x64 - newest; not compatible with phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.5.12-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.5.12-1-nts-Win32-vs17-x64.zip",
+        "sha256": "2a36a2edcb7a5b9252f638fd5e4cf84d7f6e066092654220dc0b63e5cf4e9723",
+        "mirrors": [
+          "https://windows.php.net/downloads/releases/archives/php-8.5.12-1-nts-Win32-vs17-x64.zip"
+        ]
+      },
+      "installDir": "php/8.5.12",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.4.27",
+      "type": "php",
+      "version": "8.4.27",
+      "series": "8.4",
+      "platform": "win-x64",
+      "label": "PHP 8.4.27",
+      "description": "PHP 8.4 NTS x64 - not compatible with phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.4.27-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.4.27-1-nts-Win32-vs17-x64.zip",
+        "sha256": "dbae154a0a89791f36c3d48e68bae797878333e7d6cb5721e74617de59b63ab7",
+        "mirrors": [
+          "https://windows.php.net/downloads/releases/archives/php-8.4.27-1-nts-Win32-vs17-x64.zip"
+        ]
+      },
+      "installDir": "php/8.4.27",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.3.36",
+      "type": "php",
+      "version": "8.3.36",
+      "series": "8.3",
+      "platform": "win-x64",
+      "label": "PHP 8.3.36",
+      "description": "PHP 8.3 NTS x64 - recommended for phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.3.36-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.3.36-1-nts-Win32-vs16-x64.zip",
+        "sha256": "1a097d52b7a68622cdc723073b61cc70caf79c941218ff65b2d8441dbc6b10d4",
+        "mirrors": [
+          "https://windows.php.net/downloads/releases/archives/php-8.3.36-1-nts-Win32-vs16-x64.zip"
+        ]
+      },
+      "installDir": "php/8.3.36",
+      "executable": "php.exe"
+    },
+    {
+      "id": "php-8.2.35",
+      "type": "php",
+      "version": "8.2.35",
+      "series": "8.2",
+      "platform": "win-x64",
+      "label": "PHP 8.2.35",
+      "description": "PHP 8.2 NTS x64 - stable for phpMyAdmin 5.2",
+      "source": {
+        "type": "bundled",
+        "archive": "php/php-8.2.35-nts-win-x64.zip"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://windows.php.net/downloads/releases/php-8.2.35-1-nts-Win32-vs16-x64.zip",
+        "sha256": "ebe75134c03869826cb1714d31fd5eb96afefa6d9fd35d786971c03020e7bce2",
+        "mirrors": [
+          "https://windows.php.net/downloads/releases/archives/php-8.2.35-1-nts-Win32-vs16-x64.zip"
+        ]
+      },
+      "installDir": "php/8.2.35",
+      "executable": "php.exe"
+    },
     {
       "id": "php-8.5.9",
       "type": "php",
@@ -9,7 +101,7 @@
       "series": "8.5",
       "platform": "win-x64",
       "label": "PHP 8.5.9",
-      "description": "PHP 8.5 NTS x64 - newest; not compatible with phpMyAdmin 5.2",
+      "description": "PHP 8.5 NTS x64 - previous 8.5 patch (kept for existing installs)",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.5.9-nts-win-x64.zip"
@@ -30,9 +122,10 @@
       "type": "php",
       "version": "8.5.8",
       "series": "8.5",
+      "deprecated": true,
       "platform": "win-x64",
-      "label": "PHP 8.5.8",
-      "description": "PHP 8.5 NTS x64 - previous 8.5 patch (kept for existing installs)",
+      "label": "PHP 8.5.8 (deprecated)",
+      "description": "Deprecated PHP 8.5 patch. Kept so existing installs stay usable.",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.5.8-nts-win-x64.zip"
@@ -53,9 +146,10 @@
       "type": "php",
       "version": "8.5.7",
       "series": "8.5",
+      "deprecated": true,
       "platform": "win-x64",
-      "label": "PHP 8.5.7",
-      "description": "PHP 8.5 NTS x64 - previous 8.5 patch (kept for existing installs)",
+      "label": "PHP 8.5.7 (deprecated)",
+      "description": "Deprecated PHP 8.5 patch. Kept so existing installs stay usable.",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.5.7-nts-win-x64.zip"
@@ -78,7 +172,7 @@
       "series": "8.4",
       "platform": "win-x64",
       "label": "PHP 8.4.23",
-      "description": "PHP 8.4 NTS x64 - not compatible with phpMyAdmin 5.2",
+      "description": "PHP 8.4 NTS x64 - previous 8.4 patch (kept for existing installs)",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.4.23-nts-win-x64.zip"
@@ -99,9 +193,10 @@
       "type": "php",
       "version": "8.4.22",
       "series": "8.4",
+      "deprecated": true,
       "platform": "win-x64",
-      "label": "PHP 8.4.22",
-      "description": "PHP 8.4 NTS x64 - previous 8.4 patch (kept for existing installs)",
+      "label": "PHP 8.4.22 (deprecated)",
+      "description": "Deprecated PHP 8.4 patch. Kept so existing installs stay usable.",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.4.22-nts-win-x64.zip"
@@ -124,7 +219,7 @@
       "series": "8.3",
       "platform": "win-x64",
       "label": "PHP 8.3.32",
-      "description": "PHP 8.3 NTS x64 - recommended for phpMyAdmin 5.2",
+      "description": "PHP 8.3 NTS x64 - previous 8.3 patch (kept for existing installs)",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.3.32-nts-win-x64.zip"
@@ -145,9 +240,10 @@
       "type": "php",
       "version": "8.3.31",
       "series": "8.3",
+      "deprecated": true,
       "platform": "win-x64",
-      "label": "PHP 8.3.31",
-      "description": "PHP 8.3 NTS x64 - previous 8.3 patch (kept for existing installs)",
+      "label": "PHP 8.3.31 (deprecated)",
+      "description": "Deprecated PHP 8.3 patch. Kept so existing installs stay usable.",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.3.31-nts-win-x64.zip"
@@ -170,7 +266,7 @@
       "series": "8.2",
       "platform": "win-x64",
       "label": "PHP 8.2.32",
-      "description": "PHP 8.2 NTS x64 - stable for phpMyAdmin 5.2",
+      "description": "PHP 8.2 NTS x64 - previous 8.2 patch (kept for existing installs)",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.2.32-nts-win-x64.zip"
@@ -191,9 +287,10 @@
       "type": "php",
       "version": "8.2.31",
       "series": "8.2",
+      "deprecated": true,
       "platform": "win-x64",
-      "label": "PHP 8.2.31",
-      "description": "PHP 8.2 NTS x64 - previous 8.2 patch (kept for existing installs)",
+      "label": "PHP 8.2.31 (deprecated)",
+      "description": "Deprecated PHP 8.2 patch. Kept so existing installs stay usable.",
       "source": {
         "type": "bundled",
         "archive": "php/php-8.2.31-nts-win-x64.zip"
@@ -699,6 +796,28 @@
         "url": "https://github.com/erikdubbelboer/phpRedisAdmin/archive/refs/tags/v1.26.0.zip"
       },
       "installDir": "phpredisadmin/1.26.0",
+      "requiresPhp": {
+        "min": "7.4.0"
+      }
+    },
+    {
+      "id": "adminer-6.3.0",
+      "type": "adminer",
+      "version": "6.3.0",
+      "platform": "win-x64",
+      "label": "Adminer 6.3.0",
+      "description": "Single-file web UI for PostgreSQL, MySQL, MariaDB, and SQLite",
+      "source": {
+        "type": "remote",
+        "url": "https://github.com/vrana/adminer/releases/download/v6.3.0/adminer-6.3.0.php",
+        "sha256": "641e1a31e8cc333a309e202ef9446e1fd38c2069ed5f9ee509b80d70089d0503"
+      },
+      "remote": {
+        "type": "remote",
+        "url": "https://github.com/vrana/adminer/releases/download/v6.3.0/adminer-6.3.0.php",
+        "sha256": "641e1a31e8cc333a309e202ef9446e1fd38c2069ed5f9ee509b80d70089d0503"
+      },
+      "installDir": "adminer/6.3.0",
       "requiresPhp": {
         "min": "7.4.0"
       }

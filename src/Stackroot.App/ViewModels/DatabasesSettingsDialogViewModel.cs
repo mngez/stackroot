@@ -13,6 +13,7 @@ public sealed class DatabasesSettingsDialogViewModel : ViewModelBase
     private readonly SettingsStore _settingsStore;
     private readonly ServiceManager _serviceManager;
     private readonly PhpMyAdminManager _phpMyAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly AppDomainConfigWriter _appDomainConfigWriter;
     private readonly IDiagnosticsReporter _diagnostics;
     private string _mysqlUsername = "root";
@@ -25,12 +26,14 @@ public sealed class DatabasesSettingsDialogViewModel : ViewModelBase
         SettingsStore settingsStore,
         ServiceManager serviceManager,
         PhpMyAdminManager phpMyAdminManager,
+        AdminerManager adminerManager,
         AppDomainConfigWriter appDomainConfigWriter,
         IDiagnosticsReporter diagnostics)
     {
         _settingsStore = settingsStore;
         _serviceManager = serviceManager;
         _phpMyAdminManager = phpMyAdminManager;
+        _adminerManager = adminerManager;
         _appDomainConfigWriter = appDomainConfigWriter;
         _diagnostics = diagnostics;
 
@@ -110,6 +113,7 @@ public sealed class DatabasesSettingsDialogViewModel : ViewModelBase
             {
                 await _serviceManager.SyncEnabledSqlCredentialsAsync().ConfigureAwait(false);
                 await _phpMyAdminManager.ApplyAsync().ConfigureAwait(false);
+                await _adminerManager.ApplyAsync().ConfigureAwait(false);
                 _appDomainConfigWriter.Write();
             },
             _ => { },

@@ -7,6 +7,7 @@ public static class SettingsDefaults
 {
     public const string DefaultPhpMyAdminPackageId = "phpmyadmin-5.2.3";
     public const string DefaultPhpRedisAdminPackageId = "phpredisadmin-1.26.0";
+    public const string DefaultAdminerPackageId = "adminer-6.3.0";
     public const string DefaultMailpitPackageId = "mailpit-1.21.8";
     public const int SchemaVersion = DataDocumentSchemas.Settings;
 
@@ -137,11 +138,11 @@ public static class SettingsDefaults
             {
                 FpmHost = "127.0.0.1",
                 FpmPort = 9000,
-                ActiveVersionId = "php-8.3.32",
+                ActiveVersionId = "php-8.3.36",
                 Versions = new Dictionary<string, PhpVersionSettings>
                 {
-                    ["php-8.3.32"] = php83,
-                    ["php-8.4.23"] = php84
+                    ["php-8.3.36"] = php83,
+                    ["php-8.4.27"] = php84
                 }
             },
             Node = new NodeSettings
@@ -172,6 +173,15 @@ public static class SettingsDefaults
                 Subdomain = "phpredisadmin",
                 Path = "phpredisadmin",
                 PackageId = DefaultPhpRedisAdminPackageId
+            },
+            Adminer = new AdminerSettings
+            {
+                Enabled = true,
+                BaseDomain = "stackroot.test",
+                AccessMode = AccessMode.Path,
+                Subdomain = "adminer",
+                Path = "adminer",
+                PackageId = DefaultAdminerPackageId
             },
             Mailpit = new MailpitSettings
             {

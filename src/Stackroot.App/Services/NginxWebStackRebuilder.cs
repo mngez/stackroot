@@ -17,6 +17,7 @@ public sealed class NginxWebStackRebuilder
     private readonly AppDomainConfigWriter _appDomainConfigWriter;
     private readonly PhpMyAdminManager _phpMyAdminManager;
     private readonly PhpRedisAdminManager _phpRedisAdminManager;
+    private readonly AdminerManager _adminerManager;
     private readonly MailpitManager _mailpitManager;
     private readonly SettingsStore _settingsStore;
     private readonly InstallRegistryStore _registryStore;
@@ -32,6 +33,7 @@ public sealed class NginxWebStackRebuilder
         AppDomainConfigWriter appDomainConfigWriter,
         PhpMyAdminManager phpMyAdminManager,
         PhpRedisAdminManager phpRedisAdminManager,
+        AdminerManager adminerManager,
         MailpitManager mailpitManager,
         SettingsStore settingsStore,
         InstallRegistryStore registryStore,
@@ -46,6 +48,7 @@ public sealed class NginxWebStackRebuilder
         _appDomainConfigWriter = appDomainConfigWriter;
         _phpMyAdminManager = phpMyAdminManager;
         _phpRedisAdminManager = phpRedisAdminManager;
+        _adminerManager = adminerManager;
         _mailpitManager = mailpitManager;
         _settingsStore = settingsStore;
         _registryStore = registryStore;
@@ -67,6 +70,7 @@ public sealed class NginxWebStackRebuilder
         }
         await ApplyAdminToolSafelyAsync(() => _phpMyAdminManager.ApplyAsync(cancellationToken));
         await ApplyAdminToolSafelyAsync(() => _phpRedisAdminManager.ApplyAsync(cancellationToken));
+        await ApplyAdminToolSafelyAsync(() => _adminerManager.ApplyAsync(cancellationToken));
         await _mailpitManager.ApplyAsync(cancellationToken);
         await FinalizeAndReloadAsync(cancellationToken);
         _sslTrustPrompt?.ScheduleCheck();
@@ -118,6 +122,7 @@ public sealed class NginxWebStackRebuilder
     {
         await ApplyAdminToolSafelyAsync(() => _phpMyAdminManager.ApplyAsync(cancellationToken)).ConfigureAwait(false);
         await ApplyAdminToolSafelyAsync(() => _phpRedisAdminManager.ApplyAsync(cancellationToken)).ConfigureAwait(false);
+        await ApplyAdminToolSafelyAsync(() => _adminerManager.ApplyAsync(cancellationToken)).ConfigureAwait(false);
         _appDomainConfigWriter.Write();
     }
 

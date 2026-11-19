@@ -58,13 +58,16 @@ public sealed class PhpProfileImporter
         };
 
         var catalogEntry = _catalogStore.GetById(versionId);
-        if (catalogEntry is null)
+        if (catalogEntry is null && !_registryStore.IsInstalled(versionId))
         {
             throw new InvalidOperationException(
-                $"Profile targets '{versionId}', which is not in the package catalog. Export from a machine with that PHP version available.");
+                $"Profile targets '{versionId}', which is not installed and is not in the package catalog. Export from a machine with that PHP version available.");
         }
 
-        await EnsurePhpInstalledAsync(versionId, catalogEntry, result, onProgress, cancellationToken).ConfigureAwait(false);
+        if (catalogEntry is not null)
+        {
+            await EnsurePhpInstalledAsync(versionId, catalogEntry, result, onProgress, cancellationToken).ConfigureAwait(false);
+        }
 
         var manifest = _manifestStore.Load();
         var requiredServices = CollectRequiredServices(profile, manifest);

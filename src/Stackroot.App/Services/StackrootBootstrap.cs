@@ -138,6 +138,7 @@ public static class StackrootBootstrap
         services.AddSingleton<PhpMyAdminManager>();
         services.AddSingleton<AppDomainConfigWriter>();
         services.AddSingleton<PhpRedisAdminManager>();
+        services.AddSingleton<AdminerManager>();
         services.AddSingleton<MailpitManager>();
         services.AddSingleton<StackrootShutdownCoordinator>();
         services.AddSingleton<NginxWebStackRebuilder>(provider => new NginxWebStackRebuilder(
@@ -145,6 +146,7 @@ public static class StackrootBootstrap
             provider.GetRequiredService<AppDomainConfigWriter>(),
             provider.GetRequiredService<PhpMyAdminManager>(),
             provider.GetRequiredService<PhpRedisAdminManager>(),
+            provider.GetRequiredService<AdminerManager>(),
             provider.GetRequiredService<MailpitManager>(),
             provider.GetRequiredService<SettingsStore>(),
             provider.GetRequiredService<InstallRegistryStore>(),
@@ -532,6 +534,7 @@ public static class StackrootBootstrap
                     var serviceManager = services.GetRequiredService<ServiceManager>();
                     var phpMyAdminManager = services.GetRequiredService<PhpMyAdminManager>();
                     var phpRedisAdminManager = services.GetRequiredService<PhpRedisAdminManager>();
+                    var adminerManager = services.GetRequiredService<AdminerManager>();
                     var webStackRebuilder = services.GetRequiredService<NginxWebStackRebuilder>();
                     var globalProcessManager = services.GetRequiredService<GlobalProcessManager>();
                     var activityCoordinator = services.GetRequiredService<SessionActivityCoordinator>();
@@ -545,6 +548,10 @@ public static class StackrootBootstrap
                     await ApplyAdminToolSafelyAsync(
                         "phpRedisAdmin",
                         () => phpRedisAdminManager.ApplyAsync(startupToken),
+                        diagnostics).ConfigureAwait(false);
+                    await ApplyAdminToolSafelyAsync(
+                        "Adminer",
+                        () => adminerManager.ApplyAsync(startupToken),
                         diagnostics).ConfigureAwait(false);
 
                     webStackRebuilder.WriteAppDomainConfig();

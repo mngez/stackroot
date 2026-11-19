@@ -612,6 +612,11 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL-Pfad</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP-Version</sys:String>
 
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
+
     <sys:String x:Key="Loc.PhpRuntime.Title">Erweitert — PHP-Runtime</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">Jede installierte Version führt einen Pool von php-cgi-Workern auf einem Block von Ports aus (Basisport + Offset). Dies müssen Sie selten ändern.</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">FastCGI-Host</sys:String>

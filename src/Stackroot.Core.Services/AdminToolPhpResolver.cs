@@ -12,6 +12,7 @@ public static class AdminToolPhpResolver
 {
     public static readonly RequiresPhp DefaultPhpMyAdminRequirement = new() { Min = "7.2.0" };
     public static readonly RequiresPhp DefaultPhpRedisAdminRequirement = new() { Min = "7.4.0" };
+    public static readonly RequiresPhp DefaultAdminerRequirement = new() { Min = "7.4.0" };
 
     private static readonly string[] PreferredPhpLines = ["8.5", "8.4", "8.3", "8.2", "8.1", "8.0", "7.4"];
 
@@ -29,6 +30,9 @@ public static class AdminToolPhpResolver
 
     public static RequiresPhp RequirementForPhpRedisAdmin(PackageCatalogStore? catalog, string packageId) =>
         RequirementForPackage(catalog, packageId, DefaultPhpRedisAdminRequirement);
+
+    public static RequiresPhp RequirementForAdminer(PackageCatalogStore? catalog, string packageId) =>
+        RequirementForPackage(catalog, packageId, DefaultAdminerRequirement);
 
     public static string? ResolveVersionId(
         string? configuredVersionId,

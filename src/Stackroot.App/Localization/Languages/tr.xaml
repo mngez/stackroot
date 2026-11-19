@@ -609,6 +609,11 @@
         <sys:String x:Key="Loc.PhpRedisAdmin.Subtitle">Servisler → Redis bölümündeki ana bilgisayar/port bilgilerini kullanarak Redis'e bağlanır.</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">URL yolu</sys:String>
         <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">PHP sürümü</sys:String>
+
+    <sys:String x:Key="Loc.Adminer.Title">Adminer settings</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">Web UI for PostgreSQL, MySQL, MariaDB, and SQLite. Sign in with server 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">URL path</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">PHP version</sys:String>
     
         <sys:String x:Key="Loc.PhpRuntime.Title">Gelişmiş — PHP Çalışma Zamanı</sys:String>
         <sys:String x:Key="Loc.PhpRuntime.Subtitle">Yüklenen her sürüm, bir port bloğunda (taban port + ofset) bir php-cgi worker havuzu çalıştırır. Bunu değiştirmenize nadiren gerek duyulur.</sys:String>

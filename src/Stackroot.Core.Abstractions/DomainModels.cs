@@ -3,7 +3,8 @@ namespace Stackroot.Core.Abstractions;
 public enum PackageType
 {
     Php, Nginx, Redis, Memcached, Imagemagick, Gdlibs, Mysql, Mariadb, Postgresql, Mongodb,
-    Nvm, Node, Phpmyadmin, Phpredisadmin, Composer, Pnpm, Vite, Git, Openssl, Python, Sqlite, Notepadpp, Mailpit, Laravel, WpCli, Mongosh, MongodbTools
+    Nvm, Node, Phpmyadmin, Phpredisadmin, Composer, Pnpm, Vite, Git, Openssl, Python, Sqlite, Notepadpp, Mailpit, Laravel, WpCli, Mongosh, MongodbTools,
+    Adminer
 }
 
 public enum PlatformType
@@ -146,6 +147,11 @@ public record class PackageEntry
     /// support in-app upgrades such as 8.4.22 → 8.4.23 without changing major.minor.
     /// </summary>
     public string? Series { get; init; }
+    /// <summary>
+    /// Still listed and installable, but no longer a current patch. Kept so existing
+    /// installs do not lose the version.
+    /// </summary>
+    public bool? Deprecated { get; init; }
     public PlatformType Platform { get; init; } = PlatformType.WinX64;
     public string Label { get; init; } = string.Empty;
     public string? Description { get; init; }
@@ -464,6 +470,17 @@ public record class PhpRedisAdminSettings
     public string? PhpVersionId { get; set; }
 }
 
+public record class AdminerSettings
+{
+    public bool Enabled { get; set; } = true;
+    public string BaseDomain { get; set; } = "stackroot.test";
+    public AccessMode AccessMode { get; set; } = AccessMode.Path;
+    public string Subdomain { get; set; } = "adminer";
+    public string Path { get; set; } = "adminer";
+    public string PackageId { get; set; } = string.Empty;
+    public string? PhpVersionId { get; set; }
+}
+
 public record class MailpitSettings
 {
     public bool Enabled { get; set; } = true;
@@ -484,6 +501,7 @@ public record class AppSettings
     public DatabaseSettings Databases { get; set; } = new();
     public PhpMyAdminSettings Phpmyadmin { get; set; } = new();
     public PhpRedisAdminSettings Phpredisadmin { get; set; } = new();
+    public AdminerSettings Adminer { get; set; } = new();
     public MailpitSettings Mailpit { get; set; } = new();
     public TestDnsSettings TestDns { get; set; } = new();
     public NginxHttpSettings NginxHttp { get; set; } = new();

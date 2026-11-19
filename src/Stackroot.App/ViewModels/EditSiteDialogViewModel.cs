@@ -237,6 +237,8 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
     public bool PhpSelectorEnabled => true;
 
+    private bool PhpRequired => SiteTemplates.Resolve(_selectedTemplate).RequiresPhp;
+
     public int EnabledProxyCount => DevProxies.Count(proxy => proxy.Enabled);
 
     public bool ShowEmptyProxies => DevProxies.Count == 0;
@@ -304,26 +306,11 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
 
-        if (PhpSelectorEnabled)
-
+        if (PhpRequired
+            && SelectedPhpVersionId == SitePhpSelection.NoneId
+            && PhpVersions.FirstOrDefault(v => v.Id != "no-php") is { } first)
         {
-
-            if (SelectedPhpVersionId == "no-php" && PhpVersions.FirstOrDefault(v => v.Id != "no-php") is { } first)
-
-            {
-
-                SelectedPhpVersionId = first.Id;
-
-            }
-
-        }
-
-        else
-
-        {
-
-            SelectedPhpVersionId = "no-php";
-
+            SelectedPhpVersionId = first.Id;
         }
 
 
@@ -463,7 +450,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
             && !string.IsNullOrWhiteSpace(Path)
 
-            && (!PhpSelectorEnabled || SelectedPhpVersionId != "no-php");
+            && (!PhpRequired || SelectedPhpVersionId != SitePhpSelection.NoneId);
 
     }
 
@@ -501,7 +488,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
 
 
-        if (PhpSelectorEnabled && SelectedPhpVersionId == "no-php")
+        if (PhpRequired && SelectedPhpVersionId == SitePhpSelection.NoneId)
 
         {
 
@@ -563,7 +550,7 @@ public sealed class EditSiteDialogViewModel : ViewModelBase
 
             ForceHttps = ForceHttps,
 
-            PhpVersionId = SelectedPhpVersionId,
+            PhpVersionId = SitePhpSelection.ToStoredId(SelectedPhpVersionId) ?? string.Empty,
 
             Path = trimmedPath,
 

@@ -248,14 +248,7 @@ public sealed class AddGlobalProcessDialogViewModel : ViewModelBase
     private void LoadPhpVersions()
     {
         PhpVersions.Clear();
-        var installedIds = _registryStore.List()
-            .Where(package => package.Type == PackageType.Php)
-            .Select(package => package.Id)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var entry in _catalogStore.List(PackageType.Php)
-                     .Where(entry => installedIds.Contains(entry.Id))
-                     .OrderByDescending(entry => entry.Id, StringComparer.OrdinalIgnoreCase))
+        foreach (var entry in InstalledPhpPackages.List(_catalogStore, _registryStore))
         {
             PhpVersions.Add(new PhpVersionOptionViewModel(entry.Id, entry.Label));
         }

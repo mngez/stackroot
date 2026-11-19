@@ -209,7 +209,7 @@ public sealed class SiteStore
             Domain = domain,
             DomainAliases = SiteDomainNames.NormalizeAliases(domain, input.DomainAliases),
             Template = template.Id,
-            PhpVersionId = string.IsNullOrWhiteSpace(input.PhpVersionId) ? null : input.PhpVersionId.Trim(),
+            PhpVersionId = SitePhpSelection.ToStoredId(input.PhpVersionId),
             NodeVersionId = string.IsNullOrWhiteSpace(input.NodeVersionId) ? null : input.NodeVersionId.Trim(),
             Path = SitePaths.ResolveSitePath(input, settings.General.WwwPath),
             DocumentRoot = template.DocumentRoot,
@@ -298,7 +298,9 @@ public sealed class SiteStore
             Domain = updatedDomain,
             DomainAliases = updatedAliases,
             Template = templateChanged ? template.Id : current.Template,
-            PhpVersionId = patch.PhpVersionId is null ? current.PhpVersionId : patch.PhpVersionId.Trim(),
+            PhpVersionId = patch.PhpVersionId is null
+                ? current.PhpVersionId
+                : SitePhpSelection.ToStoredId(patch.PhpVersionId),
             NodeVersionId = patch.NodeVersionId is null ? current.NodeVersionId : (patch.NodeVersionId.Trim() is { Length: > 0 } nv ? nv : null),
             Path = newPath,
             DocumentRoot = string.IsNullOrWhiteSpace(patch.DocumentRoot)
@@ -369,7 +371,7 @@ public sealed class SiteStore
             Domain = domain,
             DomainAliases = SiteDomainNames.NormalizeAliases(domain, site.DomainAliases),
             Template = template.Id,
-            PhpVersionId = string.IsNullOrWhiteSpace(site.PhpVersionId) ? null : site.PhpVersionId.Trim(),
+            PhpVersionId = SitePhpSelection.ToStoredId(site.PhpVersionId),
             NodeVersionId = string.IsNullOrWhiteSpace(site.NodeVersionId) ? null : site.NodeVersionId.Trim(),
             Path = path,
             DocumentRoot = string.IsNullOrWhiteSpace(site.DocumentRoot) ? template.DocumentRoot : site.DocumentRoot.Trim(),

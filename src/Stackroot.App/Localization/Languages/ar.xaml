@@ -616,6 +616,11 @@
     <sys:String x:Key="Loc.PhpRedisAdmin.UrlPath">مسار URL</sys:String>
     <sys:String x:Key="Loc.PhpRedisAdmin.PhpVersion">إصدار PHP</sys:String>
 
+    <sys:String x:Key="Loc.Adminer.Title">إعدادات Adminer</sys:String>
+    <sys:String x:Key="Loc.Adminer.Subtitle">واجهة ويب لـ PostgreSQL وMySQL وMariaDB وSQLite. سجّل الدخول بخادم 127.0.0.1.</sys:String>
+    <sys:String x:Key="Loc.Adminer.UrlPath">مسار URL</sys:String>
+    <sys:String x:Key="Loc.Adminer.PhpVersion">إصدار PHP</sys:String>
+
     <sys:String x:Key="Loc.PhpRuntime.Title">متقدم — بيئة تشغيل PHP</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.Subtitle">كل إصدار مثبّت يشغّل مجموعة من عمال php-cgi على كتلة من المنافذ (المنفذ الأساسي + الإزاحة). نادراً ما تحتاج لتغيير هذا.</sys:String>
     <sys:String x:Key="Loc.PhpRuntime.FastCgiHost">مضيف FastCGI</sys:String>

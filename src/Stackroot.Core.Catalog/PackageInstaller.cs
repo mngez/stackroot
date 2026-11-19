@@ -308,6 +308,12 @@ public sealed class PackageInstaller
             return;
         }
 
+        if (extension == ".php")
+        {
+            InstallPhpFileAsIndex(archivePath, destination);
+            return;
+        }
+
         ExtractZipToDirectory(archivePath, destination);
     }
 
@@ -326,6 +332,17 @@ public sealed class PackageInstaller
         }
 
         File.Copy(archivePath, Path.Combine(destination, fileName), overwrite: true);
+    }
+
+    private static void InstallPhpFileAsIndex(string archivePath, string destination)
+    {
+        if (Directory.Exists(destination))
+        {
+            Directory.Delete(destination, recursive: true);
+        }
+
+        Directory.CreateDirectory(destination);
+        File.Copy(archivePath, Path.Combine(destination, "index.php"), overwrite: true);
     }
 
     private static void ExtractZipToDirectory(string archivePath, string destination)
@@ -687,6 +704,12 @@ public sealed class PackageInstaller
             return;
         }
 
+        if (extension == ".php")
+        {
+            EnsurePhpFileSignature(filePath);
+            return;
+        }
+
         using (var stream = File.OpenRead(filePath))
         {
             Span<byte> buffer = stackalloc byte[4];
@@ -721,6 +744,29 @@ public sealed class PackageInstaller
         if (!isZipPhar && !isGzipPhar && !isStubPhar)
         {
             throw new InvalidOperationException("Downloaded PHAR file does not look valid.");
+        }
+    }
+
+    private static void EnsurePhpFileSignature(string filePath)
+    {
+        var info = new FileInfo(filePath);
+        if (info.Length < 64)
+        {
+            throw new InvalidOperationException("Downloaded PHP file is too small to be valid.");
+        }
+
+        using var stream = File.OpenRead(filePath);
+        Span<byte> header = stackalloc byte[5];
+        var read = stream.Read(header);
+        var isPhp = read == 5
+            && header[0] == (byte)'<'
+            && header[1] == (byte)'?'
+            && header[2] == (byte)'p'
+            && header[3] == (byte)'h'
+            && header[4] == (byte)'p';
+        if (!isPhp)
+        {
+            throw new InvalidOperationException("Downloaded file is not a PHP script.");
         }
     }
 

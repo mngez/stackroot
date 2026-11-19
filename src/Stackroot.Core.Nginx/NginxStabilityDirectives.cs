@@ -30,12 +30,23 @@ public static class NginxStabilityDirectives
         sb.AppendLine($"{indent}fastcgi_busy_buffers_size 256k;");
     }
 
-    public static void AppendProxyLocation(StringBuilder sb, NginxHttpSettings? http = null, string indent = "        ")
+    public static void AppendProxyLocation(
+        StringBuilder sb,
+        NginxHttpSettings? http = null,
+        string indent = "        ",
+        bool websocket = false)
     {
         var settings = http ?? new NginxHttpSettings();
         sb.AppendLine($"{indent}proxy_connect_timeout {settings.ProxyConnectTimeoutSeconds}s;");
         sb.AppendLine($"{indent}proxy_send_timeout {settings.ProxySendTimeoutSeconds}s;");
         sb.AppendLine($"{indent}proxy_read_timeout {settings.ProxyReadTimeoutSeconds}s;");
+        if (websocket)
+        {
+            sb.AppendLine($"{indent}proxy_http_version 1.1;");
+            sb.AppendLine($"{indent}proxy_buffering off;");
+            return;
+        }
+
         sb.AppendLine($"{indent}proxy_buffering on;");
         sb.AppendLine($"{indent}proxy_buffer_size 128k;");
         sb.AppendLine($"{indent}proxy_buffers 16 128k;");
